@@ -63,7 +63,6 @@ public class SpotinstCloud extends Cloud {
                 for (ScaleResultNewInstance instance : scaleUpResult.getNewInstances()) {
                     SpotinstSlave slave = buildSpotinstSlave(instance.getInstanceId(), groupId, instance.getInstanceType(), label, idleTerminationMinutes);
                     slaves.add(slave);
-                    ((SpotinstComputer) slave.getComputer()).setLaunchTime(System.currentTimeMillis());
                 }
             }
             if (scaleUpResult.getNewSpotRequests() != null) {

@@ -3,7 +3,6 @@ package hudson.plugins.spotinst.spot;
 import hudson.Extension;
 import hudson.model.AsyncPeriodicWork;
 import hudson.model.TaskListener;
-import hudson.plugins.spotinst.SpotinstComputer;
 import hudson.plugins.spotinst.common.SpotinstGateway;
 import hudson.plugins.spotinst.SpotinstSlave;
 import hudson.plugins.spotinst.common.SpotinstContext;
@@ -55,7 +54,6 @@ public class SpotRequestsMonitor extends AsyncPeriodicWork {
 
             String instanceId = spotRequest.getInstanceId();
             SpotinstSlave node = (SpotinstSlave) Jenkins.getInstance().getNode(spotRequestId);
-            ((SpotinstComputer) node.getComputer()).setLaunchTime(System.currentTimeMillis());
 
             if (node != null) {
                 updateNodeName(label, spotRequests, spotRequestId, instanceId, node);
