@@ -1,0 +1,22 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form">
+
+    <f:section title="Spotinst">
+
+        <tr>
+            <td>
+                <img style="width:32px;height:32px;border-radius:3px"
+                     src="https://s3.amazonaws.com/spotinst-emails/layout/spotinst-icon.png"/>
+            </td>
+            <td>
+                <f:entry title="Spotinst api token" field="spotinstToken">
+
+                    <f:textbox/>
+                </f:entry>
+
+                <f:validateButton title="${%Validate Token}" progress="${%Checking...}" method="validateToken"
+                                  with="spotinstToken"/>
+            </td>
+        </tr>
+    </f:section>
+</j:jelly>
