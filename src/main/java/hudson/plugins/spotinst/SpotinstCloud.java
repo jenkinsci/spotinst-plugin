@@ -51,7 +51,7 @@ public class SpotinstCloud extends Cloud {
 
     //region Private Methods
     private synchronized List<SpotinstSlave> provisionSlaves(int excessWorkload, String label) {
-        List<SpotinstSlave> slaves = new LinkedList<>();
+        List<SpotinstSlave> slaves = new LinkedList<SpotinstSlave>();
 
         LOGGER.info("Scale up Elastigroup: " + groupId + " with " + excessWorkload + " instances");
 

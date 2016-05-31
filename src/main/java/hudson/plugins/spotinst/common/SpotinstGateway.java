@@ -24,7 +24,7 @@ public class SpotinstGateway {
 
     //region Private Methods
     private static Map<String, String> buildHeaders() {
-        Map<String, String> headers = new HashMap<>();
+        Map<String, String> headers = new HashMap<String, String>();
         headers.put("Authorization", "Bearer " + SpotinstContext.getInstance().getSpotinstToken());
         headers.put("Content-Type", "application/json");
 
@@ -34,7 +34,7 @@ public class SpotinstGateway {
 
     //region Public Methods
     public static List<String> getElastigroupInstances(String elastigroupId) {
-        List<String> instances = new LinkedList<>();
+        List<String> instances = new LinkedList<String>();
         Map<String, String> headers = buildHeaders();
 
         try {
@@ -85,7 +85,7 @@ public class SpotinstGateway {
         ScaleUpResult retVal = null;
         Map<String, String> headers = buildHeaders();
 
-        Map<String, String> queryParams = new HashMap<>();
+        Map<String, String> queryParams = new HashMap<String, String>();
         queryParams.put("adjustment", String.valueOf(adjustment));
 
         try {

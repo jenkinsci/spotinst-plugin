@@ -50,7 +50,7 @@ public class SpotinstComputersMonitor extends AsyncPeriodicWork {
     }
 
     private List<String> getNewInstances(String elastigroupId) {
-        List<String> newInstancesIds = new LinkedList<>();
+        List<String> newInstancesIds = new LinkedList<String>();
         List<String> instances = SpotinstGateway.getElastigroupInstances(elastigroupId);
 
         LOGGER.info("Got " + instances.size() + " instances from group " + elastigroupId + ", " + instances.toString());

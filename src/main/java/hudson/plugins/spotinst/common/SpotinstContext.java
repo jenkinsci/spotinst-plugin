@@ -20,9 +20,9 @@ public class SpotinstContext {
 
     //region Constructor
     private SpotinstContext() {
-        spotRequestWaiting = new HashMap<>();
-        spotRequestInitiating = new HashMap<>();
-        offlineComputers = new HashMap<>();
+        spotRequestWaiting = new HashMap<String, Map<String, Integer>>();
+        spotRequestInitiating = new HashMap<String, Map<String, Integer>>();
+        offlineComputers = new HashMap<String, List<String>>();
     }
 
     public static SpotinstContext getInstance() {
@@ -39,7 +39,7 @@ public class SpotinstContext {
                            String spotRequestId,
                            Integer numOfExecutors) {
         if (list.containsKey(label) == false) {
-            Map<String, Integer> value = new HashMap<>();
+            Map<String, Integer> value = new HashMap<String, Integer>();
             value.put(spotRequestId, numOfExecutors);
             list.put(label, value);
         } else {
@@ -84,7 +84,7 @@ public class SpotinstContext {
 
     public void addToOfflineComputers(String elastigroupId, String instanceId) {
         if (offlineComputers.containsKey(elastigroupId) == false) {
-            List<String> instances = new LinkedList<>();
+            List<String> instances = new LinkedList<String>();
             instances.add(instanceId);
             offlineComputers.put(elastigroupId, instances);
         } else {

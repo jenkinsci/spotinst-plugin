@@ -6,6 +6,7 @@ import hudson.model.Node;
 import hudson.model.Slave;
 import hudson.plugins.spotinst.common.InstanceType;
 import hudson.plugins.spotinst.common.SpotinstGateway;
+import hudson.slaves.NodeProperty;
 import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
 import org.kohsuke.stapler.StaplerRequest;
@@ -14,6 +15,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.LinkedList;
 
 /**
  * Created by ohadmuchnik on 23/05/2016.
@@ -44,7 +46,7 @@ public class SpotinstSlave extends Slave {
                 label,
                 new SpotinstComputerLauncher(),
                 new SpotinstRetentionStrategy(idleTerminationMinutes),
-                Collections.emptyList());
+                new LinkedList<NodeProperty<?>>());
 
         this.elastigroupId = elastigroupId;
         this.instanceType = instanceType;

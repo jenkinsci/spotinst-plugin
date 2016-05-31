@@ -46,13 +46,15 @@ public class SpotinstComputerListener extends ComputerListener {
     @Override
     public void onOffline(@Nonnull Computer computer, @CheckForNull OfflineCause cause) {
 
-        LOGGER.info("Computer " + computer.getName() + " is offline");
+        if (computer instanceof SpotinstComputer) {
+            LOGGER.info("Computer " + computer.getName() + " is offline");
 
-        SpotinstComputer spotinstComputer = (SpotinstComputer) computer;
-        SpotinstSlave spotinstSlave = spotinstComputer.getNode();
+            SpotinstComputer spotinstComputer = (SpotinstComputer) computer;
+            SpotinstSlave spotinstSlave = spotinstComputer.getNode();
 
-        if (spotinstSlave.getInstanceId() != null) {
-            SpotinstContext.getInstance().addToOfflineComputers(spotinstSlave.getElastigroupId(), spotinstSlave.getInstanceId());
+            if (spotinstSlave.getInstanceId() != null) {
+                SpotinstContext.getInstance().addToOfflineComputers(spotinstSlave.getElastigroupId(), spotinstSlave.getInstanceId());
+            }
         }
     }
     //endregion
