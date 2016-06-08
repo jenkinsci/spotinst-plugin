@@ -4,6 +4,14 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+    <url>https://wiki.jenkins-ci.org/display/JENKINS/Spotinst+Plugin</url>
+     <developers>
+        <developer>
+         <id>team</id>
+           <name>Spotinst Team</name>
+         <email>team@spotinst.com</email>
+       </developer>
+     </developers>
     <parent>
         <groupId>org.jenkins-ci.plugins</groupId>
         <artifactId>plugin</artifactId>
