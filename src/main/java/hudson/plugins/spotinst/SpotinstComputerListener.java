@@ -3,6 +3,7 @@ package hudson.plugins.spotinst;
 import hudson.Extension;
 import hudson.model.Computer;
 import hudson.model.TaskListener;
+import hudson.plugins.spotinst.common.ContextInstanceData;
 import hudson.plugins.spotinst.common.SpotinstContext;
 import hudson.slaves.ComputerListener;
 import hudson.slaves.OfflineCause;
@@ -31,13 +32,13 @@ public class SpotinstComputerListener extends ComputerListener {
             SpotinstComputer spotinstComputer = (SpotinstComputer) computer;
 
             String nodeName = spotinstComputer.getNode().getNodeName();
-            String label = spotinstComputer.getNode().getLabelString();
+            String elastigroupId = spotinstComputer.getNode().getElastigroupId();
 
-            Map<String, Integer> spotRequestInitiating = SpotinstContext.getInstance().getSpotRequestInitiating().get(label);
+            Map<String, ContextInstanceData> spotRequestInitiating = SpotinstContext.getInstance().getSpotRequestInitiating().get(elastigroupId);
 
             if (spotRequestInitiating != null) {
                 if (spotRequestInitiating.containsKey(nodeName)) {
-                    SpotinstContext.getInstance().removeSpotRequestFromInitiating(label, nodeName);
+                    SpotinstContext.getInstance().removeSpotRequestFromInitiating(elastigroupId, nodeName);
                 }
             }
         }

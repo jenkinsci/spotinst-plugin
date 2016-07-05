@@ -9,7 +9,7 @@
                      src="https://s3.amazonaws.com/spotinst-emails/layout/spotinst-icon.png"/>
             </td>
             <td>
-                <f:entry title="Spotinst api token" field="spotinstToken">
+                <f:entry title="Spotinst Personal Access Token" field="spotinstToken">
 
                     <f:textbox/>
                 </f:entry>

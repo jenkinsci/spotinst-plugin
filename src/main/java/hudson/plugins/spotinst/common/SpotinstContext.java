@@ -1,9 +1,6 @@
 package hudson.plugins.spotinst.common;
 
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by ohadmuchnik on 24/05/2016.
@@ -13,15 +10,15 @@ public class SpotinstContext {
     //region Members
     private static SpotinstContext instance;
     private String spotinstToken;
-    private Map<String, Map<String, Integer>> spotRequestWaiting;
-    private Map<String, Map<String, Integer>> spotRequestInitiating;
+    private Map<String, Map<String, ContextInstanceData>> spotRequestWaiting;
+    private Map<String, Map<String, ContextInstanceData>> spotRequestInitiating;
     private Map<String, List<String>> offlineComputers;
     //endregion
 
     //region Constructor
     private SpotinstContext() {
-        spotRequestWaiting = new HashMap<String, Map<String, Integer>>();
-        spotRequestInitiating = new HashMap<String, Map<String, Integer>>();
+        spotRequestWaiting = new HashMap<String, Map<String, ContextInstanceData>>();
+        spotRequestInitiating = new HashMap<String, Map<String, ContextInstanceData>>();
         offlineComputers = new HashMap<String, List<String>>();
     }
 
@@ -34,16 +31,16 @@ public class SpotinstContext {
     //endregion
 
     //region Private Methods
-    private void addToList(Map<String, Map<String, Integer>> list,
-                           String label,
+    private void addToList(Map<String, Map<String, ContextInstanceData>> list,
+                           String groupId,
                            String spotRequestId,
-                           Integer numOfExecutors) {
-        if (list.containsKey(label) == false) {
-            Map<String, Integer> value = new HashMap<String, Integer>();
-            value.put(spotRequestId, numOfExecutors);
-            list.put(label, value);
+                           ContextInstanceData contextInstanceData) {
+        if (list.containsKey(groupId) == false) {
+            Map<String, ContextInstanceData> value = new HashMap<String, ContextInstanceData>();
+            value.put(spotRequestId, contextInstanceData);
+            list.put(groupId, value);
         } else {
-            list.get(label).put(spotRequestId, numOfExecutors);
+            list.get(groupId).put(spotRequestId, contextInstanceData);
         }
     }
 
@@ -58,42 +55,48 @@ public class SpotinstContext {
         this.spotinstToken = spotinstToken;
     }
 
-    public void addSpotRequestToWaiting(String label, String spotRequestId, Integer numOfExecutors) {
-        addToList(spotRequestWaiting, label, spotRequestId, numOfExecutors);
+    public void addSpotRequestToWaiting(String groupId, String spotRequestId, Integer numOfExecutors) {
+        ContextInstanceData contextInstanceData = new ContextInstanceData();
+        contextInstanceData.setNumOfExecutors(numOfExecutors);
+        contextInstanceData.setCreatedAt(new Date());
+        addToList(spotRequestWaiting, groupId, spotRequestId, contextInstanceData);
     }
 
-    public void removeSpotRequestFromWaiting(String label, String spotRequestId) {
-        this.spotRequestWaiting.get(label).remove(spotRequestId);
+    public void removeSpotRequestFromWaiting(String groupId, String spotRequestId) {
+        this.spotRequestWaiting.get(groupId).remove(spotRequestId);
     }
 
-    public Map<String, Map<String, Integer>> getSpotRequestWaiting() {
+    public Map<String, Map<String, ContextInstanceData>> getSpotRequestWaiting() {
         return spotRequestWaiting;
     }
 
-    public Map<String, Map<String, Integer>> getSpotRequestInitiating() {
+    public Map<String, Map<String, ContextInstanceData>> getSpotRequestInitiating() {
         return spotRequestInitiating;
     }
 
-    public void addSpotRequestToInitiating(String label, String spotRequestId, Integer numOfExecutors) {
-        addToList(spotRequestInitiating, label, spotRequestId, numOfExecutors);
+    public void addSpotRequestToInitiating(String groupId, String instanceId, Integer numOfExecutors) {
+        ContextInstanceData contextInstanceData = new ContextInstanceData();
+        contextInstanceData.setNumOfExecutors(numOfExecutors);
+        contextInstanceData.setCreatedAt(new Date());
+        addToList(spotRequestInitiating, groupId, instanceId, contextInstanceData);
     }
 
-    public void removeSpotRequestFromInitiating(String label, String spotRequestId) {
-        this.spotRequestInitiating.get(label).remove(spotRequestId);
+    public void removeSpotRequestFromInitiating(String groupId, String instanceId) {
+        this.spotRequestInitiating.get(groupId).remove(instanceId);
     }
 
-    public void addToOfflineComputers(String elastigroupId, String instanceId) {
-        if (offlineComputers.containsKey(elastigroupId) == false) {
+    public void addToOfflineComputers(String groupId, String instanceId) {
+        if (offlineComputers.containsKey(groupId) == false) {
             List<String> instances = new LinkedList<String>();
             instances.add(instanceId);
-            offlineComputers.put(elastigroupId, instances);
+            offlineComputers.put(groupId, instances);
         } else {
-            offlineComputers.get(elastigroupId).add(instanceId);
+            offlineComputers.get(groupId).add(instanceId);
         }
     }
 
-    public void removeFromOfflineComputers(String elastigroupId, String instanceId) {
-        this.offlineComputers.get(elastigroupId).remove(instanceId);
+    public void removeFromOfflineComputers(String groupId, String instanceId) {
+        this.offlineComputers.get(groupId).remove(instanceId);
     }
 
     public Map<String, List<String>> getOfflineComputers() {
