@@ -124,6 +124,7 @@ public class SpotinstCloud extends Cloud {
     }
 
     private int getNumOfSlavesNeeded(int excessWorkload) {
+        //TODO - if current waiting/initiating includes the wanted label(or no label), if not it means that we need slave for this label
         int retVal = 0;
         int currentWaitingExecutors = getCurrentWaitingExecutors();
         int currentInitiatingExecutors = getCurrentInitiatingExecutors();
