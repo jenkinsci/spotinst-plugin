@@ -1,6 +1,10 @@
 <?jelly escape-by-default='true'?>
-<j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form">
-    <img style="width:32px;height:32px;border-radius:3px" src="https://s3.amazonaws.com/spotinst-emails/layout/spotinst-icon.png"/>
+<j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form" xmlns:st="jelly:stapler">
+    <f:entry>
+        <img style="width:32px;height:32px;border-radius:3px"
+             src="https://s3.amazonaws.com/spotinst-emails/layout/spotinst-icon.png"/>
+    </f:entry>
+
     <f:entry title="${%Elastigroup Id}" field="groupId">
         <f:textbox/>
     </f:entry>
@@ -10,4 +14,11 @@
     <f:entry title="${%Idle minutes before termination}" field="idleTerminationMinutes">
         <f:textbox/>
     </f:entry>
+    <f:entry title="${%Remote root directory}" field="workspaceDir">
+        <f:textbox/>
+    </f:entry>
+    <f:entry title="${%Instance type weight}" field="weight">
+        <f:repeatableProperty field="executorsForTypes"/>
+    </f:entry>
+
 </j:jelly>

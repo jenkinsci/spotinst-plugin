@@ -5,8 +5,9 @@ import java.util.Date;
 /**
  * Created by ohadmuchnik on 05/07/2016.
  */
-public class ContextInstanceData {
+public class ContextInstance {
     private Integer numOfExecutors;
+    private String label;
     private Date createdAt;
 
     public Integer getNumOfExecutors() {
@@ -23,5 +24,13 @@ public class ContextInstanceData {
 
     public void setCreatedAt(Date createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public String getLabel() {
+        return label;
+    }
+
+    public void setLabel(String label) {
+        this.label = label;
     }
 }

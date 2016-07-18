@@ -1,4 +1,4 @@
-package hudson.plugins.spotinst.common;
+package hudson.plugins.spotinst.rest;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;

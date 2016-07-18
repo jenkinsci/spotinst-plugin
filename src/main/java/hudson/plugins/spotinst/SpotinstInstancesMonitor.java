@@ -1,12 +1,12 @@
-package hudson.plugins.spotinst.spot;
+package hudson.plugins.spotinst;
 
 import hudson.Extension;
 import hudson.model.AsyncPeriodicWork;
 import hudson.model.TaskListener;
-import hudson.plugins.spotinst.SpotinstSlave;
-import hudson.plugins.spotinst.common.ContextInstanceData;
+import hudson.plugins.spotinst.common.ContextInstance;
 import hudson.plugins.spotinst.common.SpotinstContext;
 import hudson.plugins.spotinst.common.SpotinstGateway;
+import hudson.plugins.spotinst.spot.SpotRequest;
 import jenkins.model.Jenkins;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,24 +22,24 @@ import java.util.concurrent.TimeUnit;
  * Created by ohadmuchnik on 25/05/2016.
  */
 @Extension
-public class SpotRequestsMonitor extends AsyncPeriodicWork {
+public class SpotinstInstancesMonitor extends AsyncPeriodicWork {
 
     //region Members
-    private static final Logger LOGGER = LoggerFactory.getLogger(SpotRequestsMonitor.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(SpotinstInstancesMonitor.class);
     final long recurrencePeriod;
     //endregion
 
     //region Constructor
-    public SpotRequestsMonitor() {
-        super("Spot requests monitor");
+    public SpotinstInstancesMonitor() {
+        super("Instances monitor");
         recurrencePeriod = TimeUnit.SECONDS.toMillis(30);
     }
     //endregion
 
     //region Private Methods
-    private void handleGroup(Map<String, Map<String, ContextInstanceData>> spotRequestWaiting, String groupId) throws IOException {
+    private void handleGroup(Map<String, Map<String, ContextInstance>> spotRequestWaiting, String groupId) throws IOException {
 
-        Map<String, ContextInstanceData> spotRequests = spotRequestWaiting.get(groupId);
+        Map<String, ContextInstance> spotRequests = spotRequestWaiting.get(groupId);
         Set<String> spotRequestsIds = spotRequests.keySet();
         if (spotRequestsIds.size() > 0) {
             for (String spotRequestId : spotRequestsIds) {
@@ -50,12 +50,12 @@ public class SpotRequestsMonitor extends AsyncPeriodicWork {
         }
     }
 
-    private void handleSpotRequest(ContextInstanceData contextInstanceData, String spotRequestId, String groupId) throws IOException {
+    private void handleSpotRequest(ContextInstance contextInstance, String spotRequestId, String groupId) throws IOException {
 
-        boolean isSpotStuck = isTimePassed(contextInstanceData.getCreatedAt(), 15);
+        boolean isSpotStuck = isTimePassed(contextInstance.getCreatedAt(), 20);
 
         if (isSpotStuck) {
-            LOGGER.info("Spot request: " + spotRequestId + " is in waiting state for over than 15 minutes, ignoring this Spot request");
+            LOGGER.info("Spot request: " + spotRequestId + " is in waiting state for over than 20 minutes, ignoring this Spot request");
             SpotinstContext.getInstance().removeSpotRequestFromWaiting(groupId, spotRequestId);
         } else {
             SpotRequest spotRequest =
@@ -68,7 +68,7 @@ public class SpotRequestsMonitor extends AsyncPeriodicWork {
                 SpotinstSlave node = (SpotinstSlave) Jenkins.getInstance().getNode(spotRequestId);
 
                 if (node != null) {
-                    updateNodeName(contextInstanceData.getNumOfExecutors(), spotRequestId, instanceId, node);
+                    updateNodeName(contextInstance.getNumOfExecutors(), spotRequestId, instanceId, node);
                 }
             }
         }
@@ -83,7 +83,12 @@ public class SpotRequestsMonitor extends AsyncPeriodicWork {
         node.setInstanceId(instanceId);
         Jenkins.getInstance().addNode(node);
         String elastigroupId = node.getElastigroupId();
-        SpotinstContext.getInstance().addSpotRequestToInitiating(elastigroupId, instanceId, numOfExecutors);
+        String label = null;
+        ContextInstance contextInstance = SpotinstContext.getInstance().getSpotRequestWaiting().get(elastigroupId).get(spotRequestId);
+        if (contextInstance.getLabel() != null) {
+            label = contextInstance.getLabel();
+        }
+        SpotinstContext.getInstance().addSpotRequestToInitiating(elastigroupId, instanceId, numOfExecutors, label);
         SpotinstContext.getInstance().removeSpotRequestFromWaiting(elastigroupId, spotRequestId);
     }
 
@@ -103,7 +108,7 @@ public class SpotRequestsMonitor extends AsyncPeriodicWork {
     }
 
     private void removeStuckInitiatingInstances() {
-        Map<String, Map<String, ContextInstanceData>> spotRequestInitiating = SpotinstContext.getInstance().getSpotRequestInitiating();
+        Map<String, Map<String, ContextInstance>> spotRequestInitiating = SpotinstContext.getInstance().getSpotRequestInitiating();
         if (spotRequestInitiating.size() > 0) {
             Set<String> groupIds = spotRequestInitiating.keySet();
             for (String groupId : groupIds) {
@@ -112,19 +117,19 @@ public class SpotRequestsMonitor extends AsyncPeriodicWork {
         }
     }
 
-    private void handleInitiatingForGroup(Map<String, Map<String, ContextInstanceData>> spotRequestInitiating, String groupId) {
-        Map<String, ContextInstanceData> spotInitiating = spotRequestInitiating.get(groupId);
+    private void handleInitiatingForGroup(Map<String, Map<String, ContextInstance>> spotRequestInitiating, String groupId) {
+        Map<String, ContextInstance> spotInitiating = spotRequestInitiating.get(groupId);
         Set<String> instanceIds = spotInitiating.keySet();
         for (String instanceId : instanceIds) {
             handleInitiatingInstance(groupId, spotInitiating, instanceId);
         }
     }
 
-    private void handleInitiatingInstance(String groupId, Map<String, ContextInstanceData> spotInitiating, String instanceId) {
-        ContextInstanceData contextInstanceData = spotInitiating.get(instanceId);
-        boolean isInstanceStuck = isTimePassed(contextInstanceData.getCreatedAt(), 10);
+    private void handleInitiatingInstance(String groupId, Map<String, ContextInstance> spotInitiating, String instanceId) {
+        ContextInstance contextInstance = spotInitiating.get(instanceId);
+        boolean isInstanceStuck = isTimePassed(contextInstance.getCreatedAt(), 15);
         if (isInstanceStuck) {
-            LOGGER.info("Instance: " + instanceId + " is in initiating state for over than 10 minutes, ignoring this instance");
+            LOGGER.info("Instance: " + instanceId + " is in initiating state for over than 15 minutes, ignoring this instance");
             SpotinstContext.getInstance().removeSpotRequestFromInitiating(groupId, instanceId);
         }
     }
@@ -134,13 +139,17 @@ public class SpotRequestsMonitor extends AsyncPeriodicWork {
     @Override
     protected void execute(TaskListener taskListener) throws IOException, InterruptedException {
 
-        Map<String, Map<String, ContextInstanceData>> spotRequestWaiting = SpotinstContext.getInstance().getSpotRequestWaiting();
+        Map<String, Map<String, ContextInstance>> spotRequestWaiting = SpotinstContext.getInstance().getSpotRequestWaiting();
 
         if (spotRequestWaiting.size() > 0) {
             Set<String> groupIds = spotRequestWaiting.keySet();
 
             for (String groupId : groupIds) {
-                handleGroup(spotRequestWaiting, groupId);
+                try {
+                    handleGroup(spotRequestWaiting, groupId);
+                } catch (Exception e) {
+                    LOGGER.info("Waiting list is modified right now, will be handle in next iteration");
+                }
             }
 
         } else {

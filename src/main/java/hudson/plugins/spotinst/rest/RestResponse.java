@@ -1,4 +1,4 @@
-package hudson.plugins.spotinst.common;
+package hudson.plugins.spotinst.rest;
 
 public class RestResponse {
 

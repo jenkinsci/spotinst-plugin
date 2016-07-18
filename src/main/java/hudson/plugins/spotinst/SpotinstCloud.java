@@ -4,7 +4,7 @@ import hudson.Extension;
 import hudson.model.Descriptor;
 import hudson.model.Label;
 import hudson.model.labels.LabelAtom;
-import hudson.plugins.spotinst.common.ContextInstanceData;
+import hudson.plugins.spotinst.common.ContextInstance;
 import hudson.plugins.spotinst.common.InstanceType;
 import hudson.plugins.spotinst.common.SpotinstContext;
 import hudson.plugins.spotinst.common.SpotinstGateway;
@@ -24,7 +24,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
 
 /**
  * Created by ohadmuchnik on 25/05/2016.
@@ -36,17 +35,26 @@ public class SpotinstCloud extends Cloud {
     private String groupId;
     private String labelString;
     private String idleTerminationMinutes;
+    private String workspaceDir;
+    private Map<InstanceType, Integer> executorsForInstanceType;
+    private List<? extends SpotinstInstanceWeight> executorsForTypes;
     private Set<LabelAtom> labelSet;
     //endregion
 
     //region Constructor
     @DataBoundConstructor
-    public SpotinstCloud(String groupId, String labelString, String idleTerminationMinutes) {
+    public SpotinstCloud(String groupId, String labelString, String idleTerminationMinutes, String workspaceDir, List<? extends SpotinstInstanceWeight> executorsForTypes) {
         super(groupId);
         this.groupId = groupId;
         this.labelString = labelString;
         this.idleTerminationMinutes = idleTerminationMinutes;
+        this.workspaceDir = workspaceDir;
         labelSet = Label.parse(labelString);
+        this.executorsForTypes = executorsForTypes;
+        executorsForInstanceType = new HashMap<>();
+        for (SpotinstInstanceWeight executors : executorsForTypes) {
+            executorsForInstanceType.put(executors.getInstanceType(), executors.getExecutors());
+        }
 
     }
 
@@ -65,23 +73,10 @@ public class SpotinstCloud extends Cloud {
 
         if (scaleUpResult != null) {
             if (scaleUpResult.getNewInstances() != null) {
-                LOGGER.info(scaleUpResult.getNewInstances().size() + " new instances launched");
-
-                for (ScaleResultNewInstance instance : scaleUpResult.getNewInstances()) {
-                    Integer numOfExecutors = SpotinstSlave.executorsForInstanceType(InstanceType.fromValue(instance.getInstanceType()));
-                    SpotinstContext.getInstance().addSpotRequestToInitiating(groupId, instance.getInstanceId(), numOfExecutors);
-                    SpotinstSlave slave = buildSpotinstSlave(instance.getInstanceId(), groupId, instance.getInstanceType(), labelString, idleTerminationMinutes);
-                    slaves.add(slave);
-                }
+                handleOd(slaves, labelString, scaleUpResult);
             }
             if (scaleUpResult.getNewSpotRequests() != null) {
-                LOGGER.info(scaleUpResult.getNewSpotRequests().size() + " new spot requests created");
-                for (ScaleResultNewSpot spot : scaleUpResult.getNewSpotRequests()) {
-                    SpotinstSlave slave = buildSpotinstSlave(spot.getSpotInstanceRequestId(), groupId, spot.getInstanceType(), labelString, idleTerminationMinutes);
-                    slaves.add(slave);
-                    Integer numOfExecutors = SpotinstSlave.executorsForInstanceType(InstanceType.fromValue(spot.getInstanceType()));
-                    SpotinstContext.getInstance().addSpotRequestToWaiting(groupId, spot.getSpotInstanceRequestId(), numOfExecutors);
-                }
+                handleSpot(slaves, labelString, scaleUpResult);
             }
         } else {
             LOGGER.error("Failed to scale up Elastigroup: " + groupId);
@@ -90,7 +85,47 @@ public class SpotinstCloud extends Cloud {
         return slaves;
     }
 
-    private SpotinstSlave buildSpotinstSlave(String newInstanceId, String elastigroupId, String instanceType, String label, String idleTerminationMinutes) {
+    private void handleSpot(List<SpotinstSlave> slaves, String labelString, ScaleUpResult scaleUpResult) {
+        LOGGER.info(scaleUpResult.getNewSpotRequests().size() + " new spot requests created");
+        for (ScaleResultNewSpot spot : scaleUpResult.getNewSpotRequests()) {
+            Integer executors = getNumOfExecutors(spot.getInstanceType());
+            SpotinstContext.getInstance().addSpotRequestToWaiting(groupId, spot.getSpotInstanceRequestId(), executors, labelString);
+            SpotinstSlave slave = buildSpotinstSlave(spot.getSpotInstanceRequestId(), groupId, spot.getInstanceType(), labelString, idleTerminationMinutes, workspaceDir, String.valueOf(executors));
+            slaves.add(slave);
+        }
+    }
+
+    private void handleOd(List<SpotinstSlave> slaves, String labelString, ScaleUpResult scaleUpResult) {
+        LOGGER.info(scaleUpResult.getNewInstances().size() + " new instances launched");
+        for (ScaleResultNewInstance instance : scaleUpResult.getNewInstances()) {
+            Integer executors = getNumOfExecutors(instance.getInstanceType());
+            SpotinstContext.getInstance().addSpotRequestToInitiating(groupId, instance.getInstanceId(), executors, labelString);
+            SpotinstSlave slave = buildSpotinstSlave(instance.getInstanceId(), groupId, instance.getInstanceType(), labelString, idleTerminationMinutes, workspaceDir, String.valueOf(executors));
+            slaves.add(slave);
+        }
+    }
+
+    private Integer getNumOfExecutors(String instanceType) {
+        LOGGER.info("Determining the # of executors for instance type: " + instanceType);
+        Integer retVal;
+        InstanceType type = InstanceType.fromValue(instanceType);
+        if (executorsForInstanceType.containsKey(type)) {
+            retVal = executorsForInstanceType.get(type);
+            LOGGER.info("We have a weight definition for this type of " + retVal);
+        } else {
+            retVal = SpotinstSlave.executorsForInstanceType(InstanceType.fromValue(instanceType));
+            LOGGER.info("Using the default value of " + retVal);
+        }
+        return retVal;
+    }
+
+    private SpotinstSlave buildSpotinstSlave(String newInstanceId,
+                                             String elastigroupId,
+                                             String instanceType,
+                                             String label,
+                                             String idleTerminationMinutes,
+                                             String workspaceDir,
+                                             String numOfExecutors) {
         SpotinstSlave slave = null;
         try {
             slave = new SpotinstSlave(
@@ -100,7 +135,8 @@ public class SpotinstCloud extends Cloud {
                     instanceType,
                     label,
                     idleTerminationMinutes,
-                    120);
+                    workspaceDir,
+                    numOfExecutors);
 
         } catch (Descriptor.FormException e) {
             e.printStackTrace();
@@ -110,26 +146,12 @@ public class SpotinstCloud extends Cloud {
         return slave;
     }
 
-    private SpotinstSlave callSlave(SpotinstSlave slave) {
-
-        try {
-            slave.toComputer().connect(false).get();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-        }
-
-        return slave;
-    }
-
-    private int getNumOfSlavesNeeded(int excessWorkload) {
-        //TODO - if current waiting/initiating includes the wanted label(or no label), if not it means that we need slave for this label
+    private int getNumOfSlavesNeeded(int excessWorkload, Label label) {
         int retVal = 0;
-        int currentWaitingExecutors = getCurrentWaitingExecutors();
-        int currentInitiatingExecutors = getCurrentInitiatingExecutors();
+        int currentWaitingExecutors = getCurrentWaitingExecutors(label);
+        int currentInitiatingExecutors = getCurrentInitiatingExecutors(label);
 
-        LOGGER.info("Weh have " + currentWaitingExecutors + " spot executors waiting to be launch and " + currentInitiatingExecutors + " instances executors that are initiating");
+        LOGGER.info("We have " + currentWaitingExecutors + " spot executors waiting to be launch and " + currentInitiatingExecutors + " instances executors that are initiating for group: " + groupId);
         int currentExecutors = currentWaitingExecutors + currentInitiatingExecutors;
 
         if (excessWorkload > currentExecutors) {
@@ -139,28 +161,29 @@ public class SpotinstCloud extends Cloud {
         return retVal;
     }
 
-    private int getCurrentWaitingExecutors() {
-        int currentExecutors = 0;
-
-        Map<String, ContextInstanceData> waitingSpots = SpotinstContext.getInstance().getSpotRequestWaiting().get(groupId);
-        if (waitingSpots != null) {
-            Collection<ContextInstanceData> waitingExecutors = waitingSpots.values();
-            for (ContextInstanceData contextInstanceData : waitingExecutors) {
-                currentExecutors += contextInstanceData.getNumOfExecutors();
-            }
-        }
+    private int getCurrentWaitingExecutors(Label label) {
+        Map<String, ContextInstance> waitingSpots = SpotinstContext.getInstance().getSpotRequestWaiting().get(groupId);
+        int currentExecutors = getRelevantExecutors(label, waitingSpots);
         return currentExecutors;
     }
 
-    private int getCurrentInitiatingExecutors() {
+    private int getCurrentInitiatingExecutors(Label label) {
+        Map<String, ContextInstance> initiatingSpots = SpotinstContext.getInstance().getSpotRequestInitiating().get(groupId);
+        int currentExecutors = getRelevantExecutors(label, initiatingSpots);
+        return currentExecutors;
+    }
+
+    private int getRelevantExecutors(Label label, Map<String, ContextInstance> contextInstances) {
         int currentExecutors = 0;
+        if (contextInstances != null) {
+            Collection<ContextInstance> initiatingExecutors = contextInstances.values();
+            for (ContextInstance contextInstance : initiatingExecutors) {
+                if ((label != null &&
+                        label.getName().equals(contextInstance.getLabel())) ||
+                        label == null ) {
+                    currentExecutors += contextInstance.getNumOfExecutors();
+                }
 
-        Map<String, ContextInstanceData> initiatingSpots = SpotinstContext.getInstance().getSpotRequestInitiating().get(groupId);
-
-        if (initiatingSpots != null) {
-            Collection<ContextInstanceData> initiatingExecutors = initiatingSpots.values();
-            for (ContextInstanceData contextInstanceData : initiatingExecutors) {
-                currentExecutors += contextInstanceData.getNumOfExecutors();
             }
         }
         return currentExecutors;
@@ -170,8 +193,13 @@ public class SpotinstCloud extends Cloud {
     //region Public Methods
     @Override
     public Collection<PlannedNode> provision(Label label, int excessWorkload) {
-        LOGGER.info("Got provision slave request for workload: " + excessWorkload);
-        int numOfSlavesNeeded = getNumOfSlavesNeeded(excessWorkload);
+        if (label != null) {
+            LOGGER.info("Got provision slave request for workload: " + excessWorkload + " with label: " + label.getName());
+        } else {
+            LOGGER.info("Got provision slave request for workload: " + excessWorkload);
+        }
+
+        int numOfSlavesNeeded = getNumOfSlavesNeeded(excessWorkload, label);
 
         if (numOfSlavesNeeded > 0) {
             LOGGER.info("Need to scale up " + numOfSlavesNeeded);
@@ -275,6 +303,13 @@ public class SpotinstCloud extends Cloud {
         return this.name;
     }
 
+    public String getWorkspaceDir() {
+        return workspaceDir;
+    }
+
+    public List<? extends SpotinstInstanceWeight> getExecutorsForTypes() {
+        return executorsForTypes;
+    }
 
     //endregion
 }

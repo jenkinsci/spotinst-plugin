@@ -3,15 +3,12 @@ package hudson.plugins.spotinst;
 import hudson.Extension;
 import hudson.model.Computer;
 import hudson.model.TaskListener;
-import hudson.plugins.spotinst.common.ContextInstanceData;
+import hudson.plugins.spotinst.common.ContextInstance;
 import hudson.plugins.spotinst.common.SpotinstContext;
 import hudson.slaves.ComputerListener;
-import hudson.slaves.OfflineCause;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.CheckForNull;
-import javax.annotation.Nonnull;
 import java.util.Map;
 
 /**
@@ -34,7 +31,9 @@ public class SpotinstComputerListener extends ComputerListener {
             String nodeName = spotinstComputer.getNode().getNodeName();
             String elastigroupId = spotinstComputer.getNode().getElastigroupId();
 
-            Map<String, ContextInstanceData> spotRequestInitiating = SpotinstContext.getInstance().getSpotRequestInitiating().get(elastigroupId);
+            LOGGER.info("Slave: " + nodeName + " is connected to master");
+
+            Map<String, ContextInstance> spotRequestInitiating = SpotinstContext.getInstance().getSpotRequestInitiating().get(elastigroupId);
 
             if (spotRequestInitiating != null) {
                 if (spotRequestInitiating.containsKey(nodeName)) {
@@ -44,19 +43,6 @@ public class SpotinstComputerListener extends ComputerListener {
         }
     }
 
-    @Override
-    public void onOffline(@Nonnull Computer computer, @CheckForNull OfflineCause cause) {
-
-        if (computer instanceof SpotinstComputer) {
-            LOGGER.info("Computer " + computer.getName() + " is offline");
-
-            SpotinstComputer spotinstComputer = (SpotinstComputer) computer;
-            SpotinstSlave spotinstSlave = spotinstComputer.getNode();
-
-            if (spotinstSlave.getInstanceId() != null) {
-                SpotinstContext.getInstance().addToOfflineComputers(spotinstSlave.getElastigroupId(), spotinstSlave.getInstanceId());
-            }
-        }
-    }
+    //TODO - handle onOffline computer
     //endregion
 }

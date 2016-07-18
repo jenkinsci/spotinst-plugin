@@ -1,6 +1,9 @@
 package hudson.plugins.spotinst.common;
 
 import hudson.plugins.spotinst.elastigroup.*;
+import hudson.plugins.spotinst.rest.JsonMapper;
+import hudson.plugins.spotinst.rest.RestClient;
+import hudson.plugins.spotinst.rest.RestResponse;
 import hudson.plugins.spotinst.scale.ScaleUpResponse;
 import hudson.plugins.spotinst.scale.ScaleUpResult;
 import hudson.plugins.spotinst.spot.SpotRequest;

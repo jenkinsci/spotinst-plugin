@@ -10,15 +10,15 @@ public class SpotinstContext {
     //region Members
     private static SpotinstContext instance;
     private String spotinstToken;
-    private Map<String, Map<String, ContextInstanceData>> spotRequestWaiting;
-    private Map<String, Map<String, ContextInstanceData>> spotRequestInitiating;
+    private Map<String, Map<String, ContextInstance>> spotRequestWaiting;
+    private Map<String, Map<String, ContextInstance>> spotRequestInitiating;
     private Map<String, List<String>> offlineComputers;
     //endregion
 
     //region Constructor
     private SpotinstContext() {
-        spotRequestWaiting = new HashMap<String, Map<String, ContextInstanceData>>();
-        spotRequestInitiating = new HashMap<String, Map<String, ContextInstanceData>>();
+        spotRequestWaiting = new HashMap<String, Map<String, ContextInstance>>();
+        spotRequestInitiating = new HashMap<String, Map<String, ContextInstance>>();
         offlineComputers = new HashMap<String, List<String>>();
     }
 
@@ -31,16 +31,16 @@ public class SpotinstContext {
     //endregion
 
     //region Private Methods
-    private void addToList(Map<String, Map<String, ContextInstanceData>> list,
+    private void addToList(Map<String, Map<String, ContextInstance>> list,
                            String groupId,
                            String spotRequestId,
-                           ContextInstanceData contextInstanceData) {
+                           ContextInstance contextInstance) {
         if (list.containsKey(groupId) == false) {
-            Map<String, ContextInstanceData> value = new HashMap<String, ContextInstanceData>();
-            value.put(spotRequestId, contextInstanceData);
+            Map<String, ContextInstance> value = new HashMap<String, ContextInstance>();
+            value.put(spotRequestId, contextInstance);
             list.put(groupId, value);
         } else {
-            list.get(groupId).put(spotRequestId, contextInstanceData);
+            list.get(groupId).put(spotRequestId, contextInstance);
         }
     }
 
@@ -55,30 +55,36 @@ public class SpotinstContext {
         this.spotinstToken = spotinstToken;
     }
 
-    public void addSpotRequestToWaiting(String groupId, String spotRequestId, Integer numOfExecutors) {
-        ContextInstanceData contextInstanceData = new ContextInstanceData();
-        contextInstanceData.setNumOfExecutors(numOfExecutors);
-        contextInstanceData.setCreatedAt(new Date());
-        addToList(spotRequestWaiting, groupId, spotRequestId, contextInstanceData);
+    public void addSpotRequestToWaiting(String groupId, String spotRequestId, Integer numOfExecutors, String label) {
+        ContextInstance contextInstance = prepareInstanceContext(numOfExecutors, label);
+        addToList(spotRequestWaiting, groupId, spotRequestId, contextInstance);
     }
 
     public void removeSpotRequestFromWaiting(String groupId, String spotRequestId) {
         this.spotRequestWaiting.get(groupId).remove(spotRequestId);
     }
 
-    public Map<String, Map<String, ContextInstanceData>> getSpotRequestWaiting() {
+    public Map<String, Map<String, ContextInstance>> getSpotRequestWaiting() {
         return spotRequestWaiting;
     }
 
-    public Map<String, Map<String, ContextInstanceData>> getSpotRequestInitiating() {
+    public Map<String, Map<String, ContextInstance>> getSpotRequestInitiating() {
         return spotRequestInitiating;
     }
 
-    public void addSpotRequestToInitiating(String groupId, String instanceId, Integer numOfExecutors) {
-        ContextInstanceData contextInstanceData = new ContextInstanceData();
-        contextInstanceData.setNumOfExecutors(numOfExecutors);
-        contextInstanceData.setCreatedAt(new Date());
-        addToList(spotRequestInitiating, groupId, instanceId, contextInstanceData);
+    public void addSpotRequestToInitiating(String groupId, String instanceId, Integer numOfExecutors, String label) {
+        ContextInstance contextInstance = prepareInstanceContext(numOfExecutors, label);
+        addToList(spotRequestInitiating, groupId, instanceId, contextInstance);
+    }
+
+    private ContextInstance prepareInstanceContext(Integer numOfExecutors, String label) {
+        ContextInstance contextInstance = new ContextInstance();
+        contextInstance.setNumOfExecutors(numOfExecutors);
+        contextInstance.setCreatedAt(new Date());
+        if (label != null) {
+            contextInstance.setLabel(label);
+        }
+        return contextInstance;
     }
 
     public void removeSpotRequestFromInitiating(String groupId, String instanceId) {

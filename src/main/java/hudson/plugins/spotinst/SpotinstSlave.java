@@ -24,10 +24,10 @@ public class SpotinstSlave extends Slave {
 
     //region Members
     private static final Logger LOGGER = LoggerFactory.getLogger(SpotinstSlave.class);
-    protected final int launchTimeout;
     private String instanceId;
     private String instanceType;
     private String elastigroupId;
+    private String workspaceDir;
     //endregion
 
     //region Constructor
@@ -37,11 +37,12 @@ public class SpotinstSlave extends Slave {
                          String instanceType,
                          String label,
                          String idleTerminationMinutes,
-                         int launchTimeout) throws Descriptor.FormException, IOException {
+                         String workspaceDir,
+                         String numOfExecutors) throws Descriptor.FormException, IOException {
         super(name,
                 "Elastigroup Id: " + elastigroupId,
-                "",
-                String.valueOf(executorsForInstanceType(InstanceType.fromValue(instanceType))),
+                workspaceDir,
+                numOfExecutors,
                 null,
                 label,
                 new SpotinstComputerLauncher(),
@@ -50,8 +51,8 @@ public class SpotinstSlave extends Slave {
 
         this.elastigroupId = elastigroupId;
         this.instanceType = instanceType;
-        this.launchTimeout = launchTimeout;
         this.instanceId = instanceId;
+        this.workspaceDir = workspaceDir;
     }
     //endregion
 
@@ -66,6 +67,10 @@ public class SpotinstSlave extends Slave {
 
     public String getInstanceType() {
         return instanceType;
+    }
+
+    public String getWorkspaceDir() {
+        return workspaceDir;
     }
 
     public String getElastigroupId() {
