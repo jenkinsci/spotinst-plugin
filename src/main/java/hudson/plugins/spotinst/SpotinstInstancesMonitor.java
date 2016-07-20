@@ -127,9 +127,9 @@ public class SpotinstInstancesMonitor extends AsyncPeriodicWork {
 
     private void handleInitiatingInstance(String groupId, Map<String, ContextInstance> spotInitiating, String instanceId) {
         ContextInstance contextInstance = spotInitiating.get(instanceId);
-        boolean isInstanceStuck = isTimePassed(contextInstance.getCreatedAt(), 15);
+        boolean isInstanceStuck = isTimePassed(contextInstance.getCreatedAt(), 20);
         if (isInstanceStuck) {
-            LOGGER.info("Instance: " + instanceId + " is in initiating state for over than 15 minutes, ignoring this instance");
+            LOGGER.info("Instance: " + instanceId + " is in initiating state for over than 20 minutes, ignoring this instance");
             SpotinstContext.getInstance().removeSpotRequestFromInitiating(groupId, instanceId);
         }
     }

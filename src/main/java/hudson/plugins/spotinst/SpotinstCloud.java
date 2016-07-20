@@ -50,12 +50,13 @@ public class SpotinstCloud extends Cloud {
         this.idleTerminationMinutes = idleTerminationMinutes;
         this.workspaceDir = workspaceDir;
         labelSet = Label.parse(labelString);
-        this.executorsForTypes = executorsForTypes;
         executorsForInstanceType = new HashMap<>();
-        for (SpotinstInstanceWeight executors : executorsForTypes) {
-            executorsForInstanceType.put(executors.getInstanceType(), executors.getExecutors());
+        if (executorsForTypes != null) {
+            this.executorsForTypes = executorsForTypes;
+            for (SpotinstInstanceWeight executors : executorsForTypes) {
+                executorsForInstanceType.put(executors.getInstanceType(), executors.getExecutors());
+            }
         }
-
     }
 
     //endregion
@@ -180,7 +181,7 @@ public class SpotinstCloud extends Cloud {
             for (ContextInstance contextInstance : initiatingExecutors) {
                 if ((label != null &&
                         label.getName().equals(contextInstance.getLabel())) ||
-                        label == null ) {
+                        label == null) {
                     currentExecutors += contextInstance.getNumOfExecutors();
                 }
 
