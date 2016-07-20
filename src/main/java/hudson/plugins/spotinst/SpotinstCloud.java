@@ -54,7 +54,9 @@ public class SpotinstCloud extends Cloud {
         if (executorsForTypes != null) {
             this.executorsForTypes = executorsForTypes;
             for (SpotinstInstanceWeight executors : executorsForTypes) {
-                executorsForInstanceType.put(executors.getInstanceType(), executors.getExecutors());
+                if (executors.getExecutors() != null) {
+                    executorsForInstanceType.put(executors.getInstanceType(), executors.getExecutors());
+                }
             }
         }
     }
