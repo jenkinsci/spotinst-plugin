@@ -1,6 +1,7 @@
 package hudson.plugins.spotinst.common;
 
-import hudson.plugins.spotinst.elastigroup.*;
+import hudson.plugins.spotinst.elastigroup.ElastigroupInstance;
+import hudson.plugins.spotinst.elastigroup.ElastigroupInstancesResponse;
 import hudson.plugins.spotinst.rest.JsonMapper;
 import hudson.plugins.spotinst.rest.RestClient;
 import hudson.plugins.spotinst.rest.RestResponse;
@@ -36,8 +37,9 @@ public class SpotinstGateway {
     //endregion
 
     //region Public Methods
-    public static List<String> getElastigroupInstances(String elastigroupId) {
-        List<String> instances = new LinkedList<String>();
+
+    public static List<ElastigroupInstance> getElastigroupInstancesDetailed(String elastigroupId) {
+        List<ElastigroupInstance> instances = new LinkedList<ElastigroupInstance>();
         Map<String, String> headers = buildHeaders();
 
         try {
@@ -47,9 +49,7 @@ public class SpotinstGateway {
                 ElastigroupInstancesResponse elastigroupResponse = JsonMapper.fromJson(response.getBody(), ElastigroupInstancesResponse.class);
                 if (elastigroupResponse.getResponse().getItems().size() > 0) {
                     for (ElastigroupInstance instance : elastigroupResponse.getResponse().getItems()) {
-                        if (instance.getInstanceId() != null) {
-                            instances.add(instance.getInstanceId());
-                        }
+                        instances.add(instance);
                     }
                 }
             } else {

@@ -235,6 +235,10 @@ public class SpotinstCloud extends Cloud {
         return canProvision;
     }
 
+    public Map<InstanceType, Integer> getExecutorsForInstanceType() {
+        return executorsForInstanceType;
+    }
+
     @Extension
     public static class DescriptorImpl extends Descriptor<Cloud> {
 
