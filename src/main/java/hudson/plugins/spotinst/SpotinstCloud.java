@@ -43,7 +43,11 @@ public class SpotinstCloud extends Cloud {
 
     //region Constructor
     @DataBoundConstructor
-    public SpotinstCloud(String groupId, String labelString, String idleTerminationMinutes, String workspaceDir, List<? extends SpotinstInstanceWeight> executorsForTypes) {
+    public SpotinstCloud(String groupId,
+                         String labelString,
+                         String idleTerminationMinutes,
+                         String workspaceDir,
+                         List<? extends SpotinstInstanceWeight> executorsForTypes) {
         super(groupId);
         this.groupId = groupId;
         this.labelString = labelString;
@@ -107,6 +111,21 @@ public class SpotinstCloud extends Cloud {
             slaves.add(slave);
         }
     }
+
+    public SpotinstSlave buildSpotSlave(String instanceType, String spotRequestId) {
+        Integer executors = getNumOfExecutors(instanceType);
+        SpotinstContext.getInstance().addSpotRequestToWaiting(groupId, spotRequestId, executors, labelString);
+        SpotinstSlave slave = buildSpotinstSlave(spotRequestId, groupId, instanceType, labelString, idleTerminationMinutes, workspaceDir, String.valueOf(executors));
+        return slave;
+    }
+
+    public SpotinstSlave buildInstanceSlave(String instanceType, String instanceId) {
+        Integer executors = getNumOfExecutors(instanceType);
+        SpotinstContext.getInstance().addSpotRequestToInitiating(groupId, instanceId, executors, labelString);
+        SpotinstSlave slave = buildSpotinstSlave(instanceId, groupId, instanceType, labelString, idleTerminationMinutes, workspaceDir, String.valueOf(executors));
+        return slave;
+    }
+
 
     private Integer getNumOfExecutors(String instanceType) {
         LOGGER.info("Determining the # of executors for instance type: " + instanceType);

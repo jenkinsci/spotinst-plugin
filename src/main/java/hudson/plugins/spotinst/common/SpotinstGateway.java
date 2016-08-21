@@ -38,14 +38,15 @@ public class SpotinstGateway {
 
     //region Public Methods
 
-    public static List<ElastigroupInstance> getElastigroupInstancesDetailed(String elastigroupId) {
-        List<ElastigroupInstance> instances = new LinkedList<ElastigroupInstance>();
+    public static List<ElastigroupInstance> getElastigroupInstances(String elastigroupId) {
+        List<ElastigroupInstance> instances = null;
         Map<String, String> headers = buildHeaders();
 
         try {
             RestResponse response = RestClient.sendGet(SPOTINST_API_HOST + "/aws/ec2/group/" + elastigroupId + "/status", headers, null);
 
             if (response.getStatusCode() == HttpStatus.SC_OK) {
+                instances = new LinkedList<ElastigroupInstance>();
                 ElastigroupInstancesResponse elastigroupResponse = JsonMapper.fromJson(response.getBody(), ElastigroupInstancesResponse.class);
                 if (elastigroupResponse.getResponse().getItems().size() > 0) {
                     for (ElastigroupInstance instance : elastigroupResponse.getResponse().getItems()) {
