@@ -1,8 +1,9 @@
-package hudson.plugins.spotinst;
+package hudson.plugins.spotinst.jobs;
 
 import hudson.Extension;
 import hudson.model.AsyncPeriodicWork;
 import hudson.model.TaskListener;
+import hudson.plugins.spotinst.SpotinstSlave;
 import hudson.plugins.spotinst.common.ContextInstance;
 import hudson.plugins.spotinst.common.SpotinstContext;
 import hudson.plugins.spotinst.common.SpotinstGateway;
@@ -26,6 +27,7 @@ public class SpotinstInstancesMonitor extends AsyncPeriodicWork {
 
     //region Members
     private static final Logger LOGGER = LoggerFactory.getLogger(SpotinstInstancesMonitor.class);
+    private static final Integer TIMEOUT = 10;
     final long recurrencePeriod;
     //endregion
 
@@ -51,8 +53,7 @@ public class SpotinstInstancesMonitor extends AsyncPeriodicWork {
     }
 
     private void handleSpotRequest(ContextInstance contextInstance, String spotRequestId, String groupId) throws IOException {
-
-        boolean isSpotStuck = isTimePassed(contextInstance.getCreatedAt(), 20);
+        boolean isSpotStuck = isTimePassed(contextInstance.getCreatedAt(), TIMEOUT);
 
         if (isSpotStuck) {
             LOGGER.info("Spot request: " + spotRequestId + " is in waiting state for over than 20 minutes, ignoring this Spot request");
@@ -108,7 +109,8 @@ public class SpotinstInstancesMonitor extends AsyncPeriodicWork {
     }
 
     private void removeStuckInitiatingInstances() {
-        Map<String, Map<String, ContextInstance>> spotRequestInitiating = SpotinstContext.getInstance().getSpotRequestInitiating();
+        Map<String, Map<String, ContextInstance>> spotRequestInitiating =
+                SpotinstContext.getInstance().getSpotRequestInitiating();
         if (spotRequestInitiating.size() > 0) {
             Set<String> groupIds = spotRequestInitiating.keySet();
             for (String groupId : groupIds) {
@@ -127,7 +129,7 @@ public class SpotinstInstancesMonitor extends AsyncPeriodicWork {
 
     private void handleInitiatingInstance(String groupId, Map<String, ContextInstance> spotInitiating, String instanceId) {
         ContextInstance contextInstance = spotInitiating.get(instanceId);
-        boolean isInstanceStuck = isTimePassed(contextInstance.getCreatedAt(), 20);
+        boolean isInstanceStuck = isTimePassed(contextInstance.getCreatedAt(), TIMEOUT);
         if (isInstanceStuck) {
             LOGGER.info("Instance: " + instanceId + " is in initiating state for over than 20 minutes, ignoring this instance");
             SpotinstContext.getInstance().removeSpotRequestFromInitiating(groupId, instanceId);

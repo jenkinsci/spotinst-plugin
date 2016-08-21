@@ -108,5 +108,10 @@ public class SpotinstContext {
     public Map<String, List<String>> getOfflineComputers() {
         return offlineComputers;
     }
+
+    public void cleanAll() {
+        spotRequestWaiting = new HashMap<String, Map<String, ContextInstance>>();
+        spotRequestInitiating = new HashMap<String, Map<String, ContextInstance>>();
+    }
     //endregion
 }
