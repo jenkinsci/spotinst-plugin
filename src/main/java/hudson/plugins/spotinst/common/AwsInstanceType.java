@@ -3,7 +3,7 @@ package hudson.plugins.spotinst.common;
 /**
  * Created by ohadmuchnik on 26/05/2016.
  */
-public enum InstanceType {
+public enum AwsInstanceType {
 
     T1Micro("t1.micro"),
     M1Small("m1.small"),
@@ -62,7 +62,7 @@ public enum InstanceType {
 
     private String value;
 
-    private InstanceType(String value) {
+    private AwsInstanceType(String value) {
         this.value = value;
     }
 
@@ -70,7 +70,7 @@ public enum InstanceType {
         return this.value;
     }
 
-    public static InstanceType fromValue(String value) {
+    public static AwsInstanceType fromValue(String value) {
         if (value != null && !"".equals(value)) {
             if ("t1.micro".equals(value)) {
                 return T1Micro;

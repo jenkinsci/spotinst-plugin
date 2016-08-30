@@ -8,7 +8,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class ElastigroupInstance {
+public class AwsElastigroupInstance {
 
     private String instanceId;
     private String spotInstanceRequestId;

@@ -10,6 +10,7 @@ public class SpotinstContext {
     //region Members
     private static SpotinstContext instance;
     private String spotinstToken;
+    private CloudProviderEnum cloudProvider = CloudProviderEnum.AWS;
     private Map<String, Map<String, ContextInstance>> spotRequestWaiting;
     private Map<String, Map<String, ContextInstance>> spotRequestInitiating;
     private Map<String, List<String>> offlineComputers;
@@ -53,6 +54,14 @@ public class SpotinstContext {
 
     public void setSpotinstToken(String spotinstToken) {
         this.spotinstToken = spotinstToken;
+    }
+
+    public CloudProviderEnum getCloudProvider() {
+        return cloudProvider;
+    }
+
+    public void setCloudProvider(CloudProviderEnum cloudProvider) {
+        this.cloudProvider = cloudProvider;
     }
 
     public void addSpotRequestToWaiting(String groupId, String spotRequestId, Integer numOfExecutors, String label) {
