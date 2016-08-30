@@ -4,13 +4,12 @@ import hudson.Extension;
 import hudson.model.Descriptor;
 import hudson.model.Label;
 import hudson.model.labels.LabelAtom;
-import hudson.plugins.spotinst.common.ContextInstance;
-import hudson.plugins.spotinst.common.InstanceType;
-import hudson.plugins.spotinst.common.SpotinstContext;
-import hudson.plugins.spotinst.common.SpotinstGateway;
-import hudson.plugins.spotinst.scale.ScaleResultNewInstance;
-import hudson.plugins.spotinst.scale.ScaleResultNewSpot;
-import hudson.plugins.spotinst.scale.ScaleUpResult;
+import hudson.plugins.spotinst.common.*;
+import hudson.plugins.spotinst.scale.aws.ScaleResultNewInstance;
+import hudson.plugins.spotinst.scale.aws.ScaleResultNewSpot;
+import hudson.plugins.spotinst.scale.aws.ScaleUpResult;
+import hudson.plugins.spotinst.scale.gcp.GcpResultNewInstance;
+import hudson.plugins.spotinst.scale.gcp.GcpScaleUpResult;
 import hudson.slaves.Cloud;
 import hudson.slaves.NodeProvisioner.PlannedNode;
 import hudson.util.FormValidation;
@@ -36,7 +35,7 @@ public class SpotinstCloud extends Cloud {
     private String labelString;
     private String idleTerminationMinutes;
     private String workspaceDir;
-    private Map<InstanceType, Integer> executorsForInstanceType;
+    private Map<AwsInstanceType, Integer> executorsForInstanceType;
     private List<? extends SpotinstInstanceWeight> executorsForTypes;
     private Set<LabelAtom> labelSet;
     //endregion
@@ -59,7 +58,7 @@ public class SpotinstCloud extends Cloud {
             this.executorsForTypes = executorsForTypes;
             for (SpotinstInstanceWeight executors : executorsForTypes) {
                 if (executors.getExecutors() != null) {
-                    executorsForInstanceType.put(executors.getInstanceType(), executors.getExecutors());
+                    executorsForInstanceType.put(executors.getAwsInstanceType(), executors.getExecutors());
                 }
             }
         }
@@ -74,9 +73,21 @@ public class SpotinstCloud extends Cloud {
         if (label != null) {
             labelString = label.getName();
         }
+
         LOGGER.info("Scale up Elastigroup: " + groupId + " with " + excessWorkload + " workload units");
 
-        ScaleUpResult scaleUpResult = SpotinstGateway.scaleUp(groupId, excessWorkload);
+        if (SpotinstContext.getInstance().getCloudProvider().equals(CloudProviderEnum.GCP)) {
+            gcpScaleUp(excessWorkload, slaves, labelString);
+        } else {
+            awsScaleUp(excessWorkload, slaves, labelString);
+        }
+
+        return slaves;
+    }
+
+    private void awsScaleUp(int excessWorkload, List<SpotinstSlave> slaves, String labelString) {
+
+        ScaleUpResult scaleUpResult = SpotinstGateway.awsScaleUp(groupId, excessWorkload);
 
         if (scaleUpResult != null) {
             if (scaleUpResult.getNewInstances() != null) {
@@ -88,8 +99,34 @@ public class SpotinstCloud extends Cloud {
         } else {
             LOGGER.error("Failed to scale up Elastigroup: " + groupId);
         }
+    }
 
-        return slaves;
+    private void gcpScaleUp(int excessWorkload, List<SpotinstSlave> slaves, String labelString) {
+
+        GcpScaleUpResult scaleUpResult = SpotinstGateway.gcpScaleUp(groupId, excessWorkload);
+
+        if (scaleUpResult != null) {
+            if (scaleUpResult.getNewInstances() != null) {
+                for (GcpResultNewInstance newInstance : scaleUpResult.getNewInstances()) {
+                    handleNewGcpInstance(slaves, labelString, newInstance);
+                }
+            }
+
+            if (scaleUpResult.getNewPreemptibles() != null) {
+                for (GcpResultNewInstance newInstance : scaleUpResult.getNewPreemptibles()) {
+                    handleNewGcpInstance(slaves, labelString, newInstance);
+                }
+            }
+        } else {
+            LOGGER.error("Failed to scale up Elastigroup: " + groupId);
+        }
+    }
+
+    private void handleNewGcpInstance(List<SpotinstSlave> slaves, String labelString, GcpResultNewInstance newInstance) {
+        Integer executors = GcpMachineType.fromValue(newInstance.getMachineType()).getExecutors();
+        SpotinstContext.getInstance().addSpotRequestToInitiating(groupId, newInstance.getInstanceName(), executors, labelString);
+        SpotinstSlave slave = buildSpotinstSlave(newInstance.getInstanceName(), groupId, newInstance.getMachineType(), labelString, idleTerminationMinutes, workspaceDir, String.valueOf(executors));
+        slaves.add(slave);
     }
 
     private void handleSpot(List<SpotinstSlave> slaves, String labelString, ScaleUpResult scaleUpResult) {
@@ -126,16 +163,23 @@ public class SpotinstCloud extends Cloud {
         return slave;
     }
 
+    public SpotinstSlave buildGcpInstanceSlave(String machineType, String instanceName) {
+        Integer executors = GcpMachineType.fromValue(machineType).getExecutors();
+        SpotinstContext.getInstance().addSpotRequestToInitiating(groupId, instanceName, executors, labelString);
+        SpotinstSlave slave = buildSpotinstSlave(instanceName, groupId, machineType, labelString, idleTerminationMinutes, workspaceDir, String.valueOf(executors));
+        return slave;
+    }
+
 
     private Integer getNumOfExecutors(String instanceType) {
         LOGGER.info("Determining the # of executors for instance type: " + instanceType);
         Integer retVal;
-        InstanceType type = InstanceType.fromValue(instanceType);
+        AwsInstanceType type = AwsInstanceType.fromValue(instanceType);
         if (executorsForInstanceType.containsKey(type)) {
             retVal = executorsForInstanceType.get(type);
             LOGGER.info("We have a weight definition for this type of " + retVal);
         } else {
-            retVal = SpotinstSlave.executorsForInstanceType(InstanceType.fromValue(instanceType));
+            retVal = SpotinstSlave.executorsForInstanceType(AwsInstanceType.fromValue(instanceType));
             LOGGER.info("Using the default value of " + retVal);
         }
         return retVal;
@@ -254,7 +298,7 @@ public class SpotinstCloud extends Cloud {
         return canProvision;
     }
 
-    public Map<InstanceType, Integer> getExecutorsForInstanceType() {
+    public Map<AwsInstanceType, Integer> getExecutorsForInstanceType() {
         return executorsForInstanceType;
     }
 
@@ -262,10 +306,12 @@ public class SpotinstCloud extends Cloud {
     public static class DescriptorImpl extends Descriptor<Cloud> {
 
         public String spotinstToken;
+        public CloudProviderEnum cloudProvider;
 
         public DescriptorImpl() {
             load();
             SpotinstContext.getInstance().setSpotinstToken(spotinstToken);
+            setCloudProvider();
         }
 
         @Override
@@ -273,18 +319,33 @@ public class SpotinstCloud extends Cloud {
             return "Spotinst";
         }
 
+        private void setCloudProvider() {
+            if (cloudProvider != null) {
+                SpotinstContext.getInstance().setCloudProvider(cloudProvider);
+            } else {
+                SpotinstContext.getInstance().setCloudProvider(CloudProviderEnum.AWS);
+            }
+        }
+
         @Override
         public boolean configure(StaplerRequest req, JSONObject json) throws FormException {
             spotinstToken = json.getString("spotinstToken");
+            cloudProvider = CloudProviderEnum.fromValue(json.getString("cloudProvider"));
             save();
             SpotinstContext.getInstance().setSpotinstToken(spotinstToken);
-
+            setCloudProvider();
             return true;
         }
 
         public FormValidation doValidateToken(@QueryParameter String spotinstToken) {
+            int isValid;
+            if (SpotinstContext.getInstance().getCloudProvider().equals(CloudProviderEnum.GCP)) {
+                isValid = SpotinstGateway.gcpValidateToken(spotinstToken);
+            } else {
+                isValid = SpotinstGateway.awsValidateToken(spotinstToken);
+            }
+
             FormValidation result;
-            int isValid = SpotinstGateway.validateToken(spotinstToken);
             switch (isValid) {
                 case 0: {
                     result = FormValidation.okWithMarkup("<div style=\"color:green\">The token is valid</div>");

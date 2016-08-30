@@ -1,4 +1,4 @@
-package hudson.plugins.spotinst.scale;
+package hudson.plugins.spotinst.scale.aws;
 
 import hudson.plugins.spotinst.rest.BaseServiceItemsResponse;
 

@@ -9,6 +9,9 @@
                      src="https://s3.amazonaws.com/spotinst-emails/layout/spotinst-icon.png"/>
             </td>
             <td>
+                <f:entry title="Cloud Provider" field="cloudProvider">
+                    <f:enum>${it.name()}</f:enum>
+                </f:entry>
                 <f:entry title="Spotinst Personal Access Token" field="spotinstToken">
 
                     <f:textbox/>

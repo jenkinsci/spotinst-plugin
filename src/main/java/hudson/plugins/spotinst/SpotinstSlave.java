@@ -4,7 +4,9 @@ import hudson.model.Computer;
 import hudson.model.Descriptor;
 import hudson.model.Node;
 import hudson.model.Slave;
-import hudson.plugins.spotinst.common.InstanceType;
+import hudson.plugins.spotinst.common.AwsInstanceType;
+import hudson.plugins.spotinst.common.CloudProviderEnum;
+import hudson.plugins.spotinst.common.SpotinstContext;
 import hudson.plugins.spotinst.common.SpotinstGateway;
 import hudson.slaves.NodeProperty;
 import jenkins.model.Jenkins;
@@ -14,7 +16,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.LinkedList;
 
 /**
@@ -28,6 +29,7 @@ public class SpotinstSlave extends Slave {
     private String instanceType;
     private String elastigroupId;
     private String workspaceDir;
+    private String groupUrl;
     //endregion
 
     //region Constructor
@@ -53,6 +55,13 @@ public class SpotinstSlave extends Slave {
         this.instanceType = instanceType;
         this.instanceId = instanceId;
         this.workspaceDir = workspaceDir;
+
+
+        if (SpotinstContext.getInstance().getCloudProvider().equals(CloudProviderEnum.GCP)) {
+            groupUrl = "gcp/gce";
+        } else {
+            groupUrl = "aws/ec2";
+        }
     }
     //endregion
 
@@ -78,8 +87,13 @@ public class SpotinstSlave extends Slave {
     }
 
     public void terminate() {
-        boolean isTerminated =
-                SpotinstGateway.detachInstance(getInstanceId());
+        boolean isTerminated;
+        if (SpotinstContext.getInstance().getCloudProvider().equals(CloudProviderEnum.GCP)) {
+            isTerminated = SpotinstGateway.gcpDetachInstance(elastigroupId, instanceId);
+        } else {
+            isTerminated = SpotinstGateway.awsDetachInstance(getInstanceId());
+        }
+
         if (isTerminated) {
             LOGGER.info("Instance: " + getInstanceId() + " terminated successfully");
             try {
@@ -92,8 +106,12 @@ public class SpotinstSlave extends Slave {
         }
     }
 
-    public static int executorsForInstanceType(InstanceType instanceType) {
-        switch (instanceType) {
+    public String getGroupUrl() {
+        return groupUrl;
+    }
+
+    public static int executorsForInstanceType(AwsInstanceType awsInstanceType) {
+        switch (awsInstanceType) {
             case T1Micro:
                 return 1;
             case M1Small:
