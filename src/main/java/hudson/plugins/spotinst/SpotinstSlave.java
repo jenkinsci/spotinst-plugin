@@ -1,5 +1,6 @@
 package hudson.plugins.spotinst;
 
+import hudson.Extension;
 import hudson.model.Computer;
 import hudson.model.Descriptor;
 import hudson.model.Node;
@@ -11,6 +12,7 @@ import hudson.plugins.spotinst.common.SpotinstGateway;
 import hudson.slaves.NodeProperty;
 import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
+import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.StaplerRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,6 +65,7 @@ public class SpotinstSlave extends Slave {
             groupUrl = "aws/ec2";
         }
     }
+
     //endregion
 
     //region Public Methods
@@ -106,8 +109,50 @@ public class SpotinstSlave extends Slave {
         }
     }
 
+    public boolean forceTerminate() {
+        boolean isTerminated;
+        if (SpotinstContext.getInstance().getCloudProvider().equals(CloudProviderEnum.GCP)) {
+            isTerminated = SpotinstGateway.gcpDetachInstance(elastigroupId, instanceId);
+        } else {
+            isTerminated = SpotinstGateway.awsDetachInstance(getInstanceId());
+        }
+
+        if (isTerminated) {
+            LOGGER.info("Instance: " + getInstanceId() + " terminated successfully");
+        } else {
+            LOGGER.error("Failed to terminate instance: " + getInstanceId());
+        }
+
+        try {
+            Jenkins.getInstance().removeNode(this);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return isTerminated;
+    }
+
     public String getGroupUrl() {
         return groupUrl;
+    }
+
+    @Override
+    public DescriptorImpl getDescriptor() {
+        return (DescriptorImpl) super.getDescriptor();
+    }
+
+    @Extension
+    public static class DescriptorImpl extends SlaveDescriptor {
+
+        @Override
+        public String getDisplayName() {
+            return "Spotinst Slave";
+        }
+
+        @Override
+        public boolean isInstantiable() {
+            return false;
+        }
     }
 
     public static int executorsForInstanceType(AwsInstanceType awsInstanceType) {
@@ -196,8 +241,7 @@ public class SpotinstSlave extends Slave {
 
     @Override
     public Node reconfigure(StaplerRequest req, JSONObject form) throws Descriptor.FormException {
-        SpotinstSlave retVal = (SpotinstSlave) super.reconfigure(req, form);
-        return retVal;
+        return this;
     }
     //endregion
 }
