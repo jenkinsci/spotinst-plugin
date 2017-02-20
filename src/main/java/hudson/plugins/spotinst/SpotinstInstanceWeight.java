@@ -3,7 +3,7 @@ package hudson.plugins.spotinst;
 import hudson.Extension;
 import hudson.model.Describable;
 import hudson.model.Descriptor;
-import hudson.plugins.spotinst.common.AwsInstanceType;
+import hudson.plugins.spotinst.common.AwsInstanceTypeEnum;
 import jenkins.model.Jenkins;
 import org.kohsuke.stapler.DataBoundConstructor;
 
@@ -12,11 +12,11 @@ import org.kohsuke.stapler.DataBoundConstructor;
  */
 public class SpotinstInstanceWeight implements Describable<SpotinstInstanceWeight> {
 
-    private AwsInstanceType awsInstanceType;
-    private Integer executors;
+    private AwsInstanceTypeEnum awsInstanceType;
+    private Integer             executors;
 
     @DataBoundConstructor
-    public SpotinstInstanceWeight(AwsInstanceType awsInstanceType, Integer executors) {
+    public SpotinstInstanceWeight(AwsInstanceTypeEnum awsInstanceType, Integer executors) {
         this.awsInstanceType = awsInstanceType;
         this.executors = executors;
     }
@@ -40,7 +40,7 @@ public class SpotinstInstanceWeight implements Describable<SpotinstInstanceWeigh
         return executors;
     }
 
-    public AwsInstanceType getAwsInstanceType() {
+    public AwsInstanceTypeEnum getAwsInstanceType() {
         return awsInstanceType;
     }
 }

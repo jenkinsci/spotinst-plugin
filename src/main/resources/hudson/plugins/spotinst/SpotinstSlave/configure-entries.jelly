@@ -12,4 +12,7 @@
     <f:entry title="Remote root directory">
         <f:readOnlyTextbox value="${it.getWorkspaceDir()}"/>
     </f:entry>
+    <f:entry title="Usage" field="usage">
+        <f:enum>${it.name()}</f:enum>
+    </f:entry>
 </j:jelly>
