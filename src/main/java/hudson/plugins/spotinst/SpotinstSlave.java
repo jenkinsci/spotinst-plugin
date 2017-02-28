@@ -37,9 +37,9 @@ public class SpotinstSlave extends Slave {
     //region Constructor
     public SpotinstSlave(String name, String elastigroupId, String instanceId, String instanceType, String label,
                          String idleTerminationMinutes, String workspaceDir, String numOfExecutors,
-                         Mode mode) throws Descriptor.FormException, IOException {
+                         Mode mode, String tunnel, String vmargs) throws Descriptor.FormException, IOException {
         super(name, "Elastigroup Id: " + elastigroupId, workspaceDir, numOfExecutors, mode, label,
-              new SpotinstComputerLauncher(), new SpotinstRetentionStrategy(idleTerminationMinutes),
+              new SpotinstComputerLauncher(tunnel, vmargs), new SpotinstRetentionStrategy(idleTerminationMinutes),
               new LinkedList<NodeProperty<?>>());
 
         this.elastigroupId = elastigroupId;

@@ -40,12 +40,15 @@ public class SpotinstCloud extends Cloud {
     private List<? extends SpotinstInstanceWeight> executorsForTypes;
     private Set<LabelAtom>                         labelSet;
     private SlaveUsageEnum                         usage;
+    private String                                 tunnel;
+    private String                                 vmargs;
     //endregion
 
     //region Constructor
     @DataBoundConstructor
     public SpotinstCloud(String groupId, String labelString, String idleTerminationMinutes, String workspaceDir,
-                         List<? extends SpotinstInstanceWeight> executorsForTypes, SlaveUsageEnum usage) {
+                         List<? extends SpotinstInstanceWeight> executorsForTypes, SlaveUsageEnum usage, String tunnel,
+                         String vmargs) {
         super(groupId);
         this.groupId = groupId;
         this.labelString = labelString;
@@ -67,6 +70,8 @@ public class SpotinstCloud extends Cloud {
         else {
             this.usage = SlaveUsageEnum.NORMAL;
         }
+        this.tunnel = tunnel;
+        this.vmargs = vmargs;
     }
 
     //endregion
@@ -198,7 +203,7 @@ public class SpotinstCloud extends Cloud {
     private Integer getNumOfExecutors(String instanceType) {
         LOGGER.info("Determining the # of executors for instance type: " + instanceType);
         Integer             retVal = 1;
-        AwsInstanceTypeEnum type  = AwsInstanceTypeEnum.fromValue(instanceType);
+        AwsInstanceTypeEnum type   = AwsInstanceTypeEnum.fromValue(instanceType);
         if (type != null) {
             if (executorsForInstanceType.containsKey(type)) {
                 retVal = executorsForInstanceType.get(type);
@@ -217,12 +222,13 @@ public class SpotinstCloud extends Cloud {
                                              String numOfExecutors) {
         SpotinstSlave slave = null;
         Node.Mode     mode  = Node.Mode.NORMAL;
-        if (this.usage.equals(SlaveUsageEnum.EXCLUSIVE)) {
+        if (this.usage != null && this.usage.equals(SlaveUsageEnum.EXCLUSIVE)) {
             mode = Node.Mode.EXCLUSIVE;
         }
         try {
             slave = new SpotinstSlave(newInstanceId, elastigroupId, newInstanceId, instanceType, label,
-                                      idleTerminationMinutes, workspaceDir, numOfExecutors, mode);
+                                      idleTerminationMinutes, workspaceDir, numOfExecutors, mode, this.tunnel,
+                                      this.vmargs);
 
         }
         catch (Descriptor.FormException e) {
@@ -432,6 +438,14 @@ public class SpotinstCloud extends Cloud {
 
     public SlaveUsageEnum getUsage() {
         return usage;
+    }
+
+    public String getTunnel() {
+        return tunnel;
+    }
+
+    public String getVmargs() {
+        return vmargs;
     }
 
     //endregion

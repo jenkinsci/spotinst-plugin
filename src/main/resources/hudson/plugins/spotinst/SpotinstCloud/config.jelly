@@ -20,6 +20,12 @@
     <f:entry title="Usage" field="usage">
         <f:enum>${it.name()}</f:enum>
     </f:entry>
+    <f:entry title="${%Tunnel connection through}" field="tunnel">
+        <f:textbox/>
+    </f:entry>
+    <f:entry title="${%JVM options}" field="vmargs">
+        <f:textbox/>
+    </f:entry>
     <f:entry title="${%Instance type weight}" field="weight">
         <f:repeatableProperty field="executorsForTypes"/>
     </f:entry>
