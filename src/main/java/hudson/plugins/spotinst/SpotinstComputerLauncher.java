@@ -12,6 +12,10 @@ import java.io.IOException;
  */
 public class SpotinstComputerLauncher extends JNLPLauncher {
 
+    public SpotinstComputerLauncher(String tunnel, String vmargs) {
+        super(tunnel, vmargs);
+    }
+
     @Override
     public void launch(SlaveComputer computer, TaskListener listener) {
         super.launch(computer, listener);
