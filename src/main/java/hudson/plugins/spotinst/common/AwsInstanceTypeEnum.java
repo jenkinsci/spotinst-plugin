@@ -178,4 +178,8 @@ public enum AwsInstanceTypeEnum {
 
         return retVal;
     }
+
+    public String getValue() {
+        return value;
+    }
 }

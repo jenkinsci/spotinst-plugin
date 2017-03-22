@@ -24,7 +24,7 @@ public enum GcpMachineType {
     F1Micro("f1-micro", 1),
     G1Small("g1-small", 1);
 
-    private String name;
+    private String  name;
     private Integer executors;
 
     private GcpMachineType(String value, Integer executors) {
@@ -48,44 +48,63 @@ public enum GcpMachineType {
         if (value != null && !"".equals(value)) {
             if ("n1-standard-1".equals(value)) {
                 return N1Standard1;
-            } else if ("n1-standard-2".equals(value)) {
-                return N1Standard2;
-            } else if ("n1-standard-4".equals(value)) {
-                return N1Standard4;
-            } else if ("n1-standard-8".equals(value)) {
-                return N1Standard8;
-            } else if ("n1-standard-16".equals(value)) {
-                return N1Standard16;
-            } else if ("n1-standard-32".equals(value)) {
-                return N1Standard32;
-            } else if ("n1-highmem-2".equals(value)) {
-                return N1Highmem2;
-            } else if ("n1-highmem-4".equals(value)) {
-                return N1Highmem4;
-            } else if ("n1-highmem-8".equals(value)) {
-                return N1Highmem8;
-            } else if ("n1-highmem-16".equals(value)) {
-                return N1Highmem16;
-            } else if ("n1-highmem-32".equals(value)) {
-                return N1Highmem32;
-            } else if ("n1-highcpu-2".equals(value)) {
-                return N1Highcpu2;
-            } else if ("n1-highcpu-4".equals(value)) {
-                return N1Highcpu4;
-            } else if ("n1-highcpu-8".equals(value)) {
-                return N1Highcpu8;
-            } else if ("n1-highcpu-16".equals(value)) {
-                return N1Highcpu16;
-            } else if ("n1-highcpu-32".equals(value)) {
-                return N1Highcpu32;
-            } else if ("f1-micro".equals(value)) {
-                return F1Micro;
-            } else if ("g1-small".equals(value)) {
-                return G1Small;
-            } else {
-                throw new IllegalArgumentException("Cannot create enum from " + value + " name!");
             }
-        } else {
+            else if ("n1-standard-2".equals(value)) {
+                return N1Standard2;
+            }
+            else if ("n1-standard-4".equals(value)) {
+                return N1Standard4;
+            }
+            else if ("n1-standard-8".equals(value)) {
+                return N1Standard8;
+            }
+            else if ("n1-standard-16".equals(value)) {
+                return N1Standard16;
+            }
+            else if ("n1-standard-32".equals(value)) {
+                return N1Standard32;
+            }
+            else if ("n1-highmem-2".equals(value)) {
+                return N1Highmem2;
+            }
+            else if ("n1-highmem-4".equals(value)) {
+                return N1Highmem4;
+            }
+            else if ("n1-highmem-8".equals(value)) {
+                return N1Highmem8;
+            }
+            else if ("n1-highmem-16".equals(value)) {
+                return N1Highmem16;
+            }
+            else if ("n1-highmem-32".equals(value)) {
+                return N1Highmem32;
+            }
+            else if ("n1-highcpu-2".equals(value)) {
+                return N1Highcpu2;
+            }
+            else if ("n1-highcpu-4".equals(value)) {
+                return N1Highcpu4;
+            }
+            else if ("n1-highcpu-8".equals(value)) {
+                return N1Highcpu8;
+            }
+            else if ("n1-highcpu-16".equals(value)) {
+                return N1Highcpu16;
+            }
+            else if ("n1-highcpu-32".equals(value)) {
+                return N1Highcpu32;
+            }
+            else if ("f1-micro".equals(value)) {
+                return F1Micro;
+            }
+            else if ("g1-small".equals(value)) {
+                return G1Small;
+            }
+            else {
+                return null;
+            }
+        }
+        else {
             throw new IllegalArgumentException("Value cannot be null or empty!");
         }
     }
