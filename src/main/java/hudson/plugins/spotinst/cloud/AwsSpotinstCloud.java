@@ -324,7 +324,7 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
                 }
                 catch (IOException e) {
                     LOGGER.warn(
-                            String.format("can't handle pending instance %s, will be handled in next iteration", id),
+                            String.format("Failed to handle pending instance %s, will be handled in next iteration", id),
                             e);
                 }
             }
