@@ -1,11 +1,8 @@
 package hudson.plugins.spotinst.cloud;
 
 import hudson.Extension;
-import hudson.model.Descriptor;
 import hudson.plugins.spotinst.api.SpotinstApi;
-import hudson.plugins.spotinst.common.CloudProviderEnum;
 import hudson.plugins.spotinst.common.SpotinstContext;
-import hudson.slaves.Cloud;
 import hudson.util.FormValidation;
 import jenkins.model.GlobalConfiguration;
 import net.sf.json.JSONObject;
@@ -18,30 +15,33 @@ import org.kohsuke.stapler.StaplerRequest;
 @Extension
 public class SpotinstTokenConfig extends GlobalConfiguration {
     //region Members
-    public String            spotinstToken;
-    public CloudProviderEnum cloudProvider;
+    public String spotinstToken;
+    public String accountId;
     //endregion
 
     public SpotinstTokenConfig() {
         load();
         SpotinstContext.getInstance().setSpotinstToken(spotinstToken);
+        SpotinstContext.getInstance().setAccountId(accountId);
     }
 
     @Override
     public boolean configure(StaplerRequest req, JSONObject json) throws FormException {
         spotinstToken = json.getString("spotinstToken");
-        cloudProvider = CloudProviderEnum.fromValue(json.getString("cloudProvider"));
+        accountId = json.getString("accountId");
         save();
         SpotinstContext.getInstance().setSpotinstToken(spotinstToken);
+        SpotinstContext.getInstance().setAccountId(accountId);
         return true;
     }
 
-    private static int validateToken(CloudProviderEnum cloudProvider, String token) {
-        int retVal = SpotinstApi.getInstance().validateToken(cloudProvider, token);
+    private static int validateToken(String token) {
+        int retVal = SpotinstApi.getInstance().validateToken(token);
         return retVal;
     }
-    public FormValidation doValidateToken(@QueryParameter("spotinstToken") String spotinstToken, @QueryParameter("cloudProvider") CloudProviderEnum cloudProvider) {
-        int isValid = validateToken(cloudProvider, spotinstToken);
+
+    public FormValidation doValidateToken(@QueryParameter("spotinstToken") String spotinstToken) {
+        int isValid = validateToken(spotinstToken);
 
         FormValidation result;
         switch (isValid) {
@@ -63,9 +63,5 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
 
     public String getSpotinstToken() {
         return spotinstToken;
-    }
-
-    public CloudProviderEnum getCloudProvider() {
-        return cloudProvider;
     }
 }
