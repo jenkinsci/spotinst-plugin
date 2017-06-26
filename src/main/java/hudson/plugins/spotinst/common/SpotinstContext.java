@@ -8,6 +8,7 @@ public class SpotinstContext {
     //region Members
     private static SpotinstContext instance;
     private        String          spotinstToken;
+    private        String          accountId;
     //endregion
 
     public static SpotinstContext getInstance() {
@@ -24,6 +25,14 @@ public class SpotinstContext {
 
     public void setSpotinstToken(String spotinstToken) {
         this.spotinstToken = spotinstToken;
+    }
+
+    public String getAccountId() {
+        return accountId;
+    }
+
+    public void setAccountId(String accountId) {
+        this.accountId = accountId;
     }
 
     //endregion

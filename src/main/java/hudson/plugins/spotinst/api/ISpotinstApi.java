@@ -1,7 +1,7 @@
 package hudson.plugins.spotinst.api;
 
-import hudson.plugins.spotinst.common.CloudProviderEnum;
 import hudson.plugins.spotinst.model.elastigroup.aws.AwsElastigroupInstance;
+import hudson.plugins.spotinst.model.elastigroup.azure.AzureElastigroupInstance;
 import hudson.plugins.spotinst.model.elastigroup.gcp.GcpElastigroupInstance;
 import hudson.plugins.spotinst.model.scale.aws.ScaleUpResult;
 import hudson.plugins.spotinst.model.scale.gcp.GcpScaleUpResult;
@@ -22,11 +22,17 @@ public interface ISpotinstApi {
 
     boolean awsDetachInstance(String instanceId);
 
-    int validateToken(CloudProviderEnum cloudProvider, String token);
+    int validateToken(String token);
 
     GcpScaleUpResult gcpScaleUp(String elastigroupId, int adjustment);
 
     boolean gcpDetachInstance(String groupId, String instanceName);
 
     List<GcpElastigroupInstance> getGcpElastigroupInstances(String elastigroupId);
+
+    List<AzureElastigroupInstance> getAzureElastigroupInstances(String elastigroupId);
+
+    boolean azureScaleUp(String elastigroupId, int adjustment);
+
+    boolean azureDetachInstance(String elastigroupId, String instanceId);
 }
