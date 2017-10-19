@@ -38,7 +38,13 @@ public class SpotinstRecoverInstances extends AsyncPeriodicWork {
             for (Cloud cloud : cloudList) {
                 if (cloud instanceof BaseSpotinstCloud) {
                     BaseSpotinstCloud spotinstCloud = (BaseSpotinstCloud) cloud;
-                    spotinstCloud.recoverInstances();
+                    try {
+                        spotinstCloud.recoverInstances();
+                    }
+                    catch (Exception e) {
+                        LOGGER.error(String.format("Failed to handle group: %s recover", spotinstCloud.getGroupId()),
+                                     e);
+                    }
                 }
             }
         }

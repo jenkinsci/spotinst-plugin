@@ -1,5 +1,7 @@
 package hudson.plugins.spotinst.api;
 
+import hudson.Plugin;
+import hudson.PluginWrapper;
 import hudson.plugins.spotinst.api.infra.JsonMapper;
 import hudson.plugins.spotinst.api.infra.RestClient;
 import hudson.plugins.spotinst.api.infra.RestResponse;
@@ -17,6 +19,7 @@ import hudson.plugins.spotinst.model.scale.gcp.GcpScaleUpResponse;
 import hudson.plugins.spotinst.model.scale.gcp.GcpScaleUpResult;
 import hudson.plugins.spotinst.model.spot.SpotRequest;
 import hudson.plugins.spotinst.model.spot.SpotRequestResponse;
+import jenkins.model.Jenkins;
 import org.apache.commons.httpclient.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,12 +49,29 @@ public class SpotinstApi implements ISpotinstApi {
         instance = spotinstApi;
     }
 
+    private static String buildUserAgent() {
+        String retVal         = null;
+        String jenkinsVersion = Jenkins.getInstance().VERSION;
+        Plugin spotinst       = Jenkins.getInstance().getPlugin("spotinst");
+        if (spotinst != null) {
+            PluginWrapper wrapper = spotinst.getWrapper();
+            if (wrapper != null) {
+                String pluginVersion = wrapper.getVersion();
+                retVal = String.format("Jenkins/%s;spotinst-plugin/%s", jenkinsVersion, pluginVersion);
+            }
+        }
+        return retVal;
+    }
+
     //region Private Methods
     private static Map<String, String> buildHeaders() {
         Map<String, String> headers = new HashMap<String, String>();
         headers.put("Authorization", "Bearer " + SpotinstContext.getInstance().getSpotinstToken());
         headers.put("Content-Type", "application/json");
-
+        String userAgent = buildUserAgent();
+        if (userAgent != null) {
+            headers.put("User-Agent", userAgent);
+        }
         return headers;
     }
 
