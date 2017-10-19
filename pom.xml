@@ -3,13 +3,13 @@
     <modelVersion>4.0.0</modelVersion>
 
     <url>https://wiki.jenkins-ci.org/display/JENKINS/Spotinst+Plugin</url>
-     <developers>
+    <developers>
         <developer>
-         <id>team</id>
-           <name>Spotinst Team</name>
-         <email>team@spotinst.com</email>
-       </developer>
-     </developers>
+            <id>team</id>
+            <name>Spotinst Team</name>
+            <email>team@spotinst.com</email>
+        </developer>
+    </developers>
     <parent>
         <groupId>org.jenkins-ci.plugins</groupId>
         <artifactId>plugin</artifactId>
@@ -32,7 +32,7 @@
         <connection>scm:git:git://github.com/jenkinsci/spotinst-plugin.git</connection>
         <developerConnection>scm:git:git@github.com:jenkinsci/spotinst-plugin.git</developerConnection>
         <url>https://github.com/jenkinsci/spotinst-plugin</url>
-        <tag>spotinst-2.0.1</tag>
+        <tag>HEAD</tag>
     </scm>
 
     <properties>
