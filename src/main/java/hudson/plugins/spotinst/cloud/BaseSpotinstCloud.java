@@ -120,18 +120,22 @@ public abstract class BaseSpotinstCloud extends Cloud {
 
         }
         catch (Descriptor.FormException e) {
+            LOGGER.error(String.format("Failed to build spotinst slave for: %s", id));
             e.printStackTrace();
         }
         catch (IOException e) {
+            LOGGER.error(String.format("Failed to build spotinst slave for: %s", id));
             e.printStackTrace();
         }
         return slave;
     }
 
     protected List<SpotinstSlave> loadSlaves() {
+        LOGGER.info(String.format("Loading all existing nodes for group: %s", groupId));
         List<SpotinstSlave> retVal   = new LinkedList<>();
         List<Node>          allNodes = Jenkins.getInstance().getNodes();
         if (allNodes != null) {
+            LOGGER.info(String.format("Found total %s nodes in Jenkins, filtering the group nodes", allNodes.size()));
             for (Node node : allNodes) {
                 if (node instanceof SpotinstSlave) {
                     SpotinstSlave slave = (SpotinstSlave) node;

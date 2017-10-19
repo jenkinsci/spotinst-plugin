@@ -3,9 +3,11 @@ package hudson.plugins.spotinst.cloud;
 import hudson.Extension;
 import hudson.model.Node;
 import hudson.plugins.spotinst.api.SpotinstApi;
-import hudson.plugins.spotinst.common.*;
-import hudson.plugins.spotinst.model.elastigroup.aws.AwsElastigroupInstance;
 import hudson.plugins.spotinst.api.infra.JsonMapper;
+import hudson.plugins.spotinst.common.AwsInstanceTypeEnum;
+import hudson.plugins.spotinst.common.Constants;
+import hudson.plugins.spotinst.common.TimeUtils;
+import hudson.plugins.spotinst.model.elastigroup.aws.AwsElastigroupInstance;
 import hudson.plugins.spotinst.model.scale.aws.ScaleResultNewInstance;
 import hudson.plugins.spotinst.model.scale.aws.ScaleResultNewSpot;
 import hudson.plugins.spotinst.model.scale.aws.ScaleUpResult;
@@ -18,7 +20,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Created by ohadmuchnik on 20/03/2017.
@@ -113,8 +118,8 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
             for (AwsElastigroupInstance instance : elastigroupInstances) {
                 boolean isSlaveExist = isSlaveExistForInstance(instance);
                 if (isSlaveExist == false) {
-                    LOGGER.info("Instance: {} of group: {} doesn't have slave , adding new one",
-                                JsonMapper.toJson(instance), groupId);
+                    LOGGER.info(String.format("Instance: %s of group: %s doesn't have slave , adding new one",
+                                              JsonMapper.toJson(instance), groupId));
                     addSpotinstSlave(instance);
                 }
             }
@@ -126,7 +131,10 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
 
     private void removeOldSlaveInstances(List<AwsElastigroupInstance> elastigroupInstances) {
         List<SpotinstSlave> allGroupsSlaves = loadSlaves();
-        if (allGroupsSlaves != null) {
+        if (allGroupsSlaves != null && allGroupsSlaves.size() > 0) {
+
+            LOGGER.info(String.format("Found %s existing nodes for group %s", allGroupsSlaves.size(), groupId));
+
             List<String> groupInstanceAndSpotRequestIds = getGroupInstanceAndSpotIds(elastigroupInstances);
             for (SpotinstSlave slave : allGroupsSlaves) {
                 String slaveInstanceId = slave.getInstanceId();
@@ -164,14 +172,21 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
 
     private boolean isSlaveExistForInstance(AwsElastigroupInstance instance) {
         boolean retVal = false;
-
-        Node node = Jenkins.getInstance().getNode(instance.getInstanceId());
-        if (node != null) {
-            retVal = true;
+        Node    node;
+        if (instance.getInstanceId() != null) {
+            LOGGER.info(String.format("Checking if salve exist for instance id"));
+            node = Jenkins.getInstance().getNode(instance.getInstanceId());
+            if (node != null) {
+                LOGGER.info(String.format("Found slave for instance id"));
+                retVal = true;
+            }
         }
-        else {
+
+        if (retVal == false && instance.getSpotInstanceRequestId() != null) {
+            LOGGER.info(String.format("Checking if salve exist for spot request id"));
             node = Jenkins.getInstance().getNode(instance.getSpotInstanceRequestId());
             if (node != null) {
+                LOGGER.info(String.format("Found slave for spot request id"));
                 retVal = true;
             }
         }
@@ -292,15 +307,21 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
 
     @Override
     public void recoverInstances() {
+
+        LOGGER.info(String.format("Handling group %s recover", groupId));
+
         List<AwsElastigroupInstance> elastigroupInstances =
                 SpotinstApi.getInstance().getAwsElastigroupInstances(groupId);
+
         if (elastigroupInstances != null) {
-            LOGGER.info("There are {} instances in group {}", elastigroupInstances.size(), groupId);
+
+            LOGGER.info(String.format("There are %s instances in group %s", elastigroupInstances.size(), groupId));
+
             addNewSlaveInstances(elastigroupInstances);
             removeOldSlaveInstances(elastigroupInstances);
         }
         else {
-            LOGGER.error("can't recover group {}", groupId);
+            LOGGER.error(String.format("can't recover group %s", groupId));
         }
     }
 
@@ -323,9 +344,8 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
                     }
                 }
                 catch (IOException e) {
-                    LOGGER.warn(
-                            String.format("Failed to handle pending instance %s, will be handled in next iteration", id),
-                            e);
+                    LOGGER.warn(String.format("Failed to handle pending instance %s, will be handled in next iteration",
+                                              id), e);
                 }
             }
         }
