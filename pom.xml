@@ -25,6 +25,7 @@
             <name>The MIT License</name>
             <url>http://www.opensource.org/licenses/mit-license.php</url>
             <distribution>repo</distribution>
+            <distribution>repo</distribution>
         </license>
     </licenses>
 
@@ -32,7 +33,7 @@
         <connection>scm:git:git://github.com/jenkinsci/spotinst-plugin.git</connection>
         <developerConnection>scm:git:git@github.com:jenkinsci/spotinst-plugin.git</developerConnection>
         <url>https://github.com/jenkinsci/spotinst-plugin</url>
-        <tag>spotinst-2.0.2</tag>
+        <tag>spotinst-2.0.1</tag>
     </scm>
 
     <properties>
