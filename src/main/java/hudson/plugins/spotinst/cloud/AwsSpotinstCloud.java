@@ -329,18 +329,22 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
     public void monitorInstances() {
         LOGGER.info(String.format("Monitoring group %s instances", groupId));
         if (pendingInstances.size() > 0) {
-            for (String id : pendingInstances.keySet()) {
+
+            List<String> pendingInstanceIds = new LinkedList<>(pendingInstances.keySet());
+            for (String id : pendingInstanceIds) {
                 try {
                     PendingInstance pendingInstance = pendingInstances.get(id);
-                    switch (pendingInstance.getStatus()) {
-                        case SPOT_PENDING: {
-                            handlePendingSpot(pendingInstance);
+                    if (pendingInstance != null) {
+                        switch (pendingInstance.getStatus()) {
+                            case SPOT_PENDING: {
+                                handlePendingSpot(pendingInstance);
+                            }
+                            break;
+                            case INSTANCE_INITIATING: {
+                                handleInitiatingInstance(pendingInstance);
+                            }
+                            break;
                         }
-                        break;
-                        case INSTANCE_INITIATING: {
-                            handleInitiatingInstance(pendingInstance);
-                        }
-                        break;
                     }
                 }
                 catch (IOException e) {
