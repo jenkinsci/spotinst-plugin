@@ -174,7 +174,7 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
         boolean retVal = false;
         Node    node;
         if (instance.getInstanceId() != null) {
-            LOGGER.info(String.format("Checking if slave exist for instance id"));
+            LOGGER.info(String.format("Checking if slave exists for instance id"));
             node = Jenkins.getInstance().getNode(instance.getInstanceId());
             if (node != null) {
                 LOGGER.info(String.format("Found slave for instance id"));
@@ -183,7 +183,7 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
         }
 
         if (retVal == false && instance.getSpotInstanceRequestId() != null) {
-            LOGGER.info(String.format("Checking if slave exist for spot request id"));
+            LOGGER.info(String.format("Checking if slave exists for spot request id"));
             node = Jenkins.getInstance().getNode(instance.getSpotInstanceRequestId());
             if (node != null) {
                 LOGGER.info(String.format("Found slave for spot request id"));
