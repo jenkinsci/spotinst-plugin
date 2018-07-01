@@ -181,7 +181,21 @@ public enum AwsInstanceTypeEnum {
     H12xlarge("h1.2xlarge", 8),
     H14xlarge("h1.4xlarge", 16),
     H18xlarge("h1.8xlarge", 32),
-    H116xlarge("h1.16xlarge", 64);
+    H116xlarge("h1.16xlarge", 64),
+
+    C5D18xlarge("c5d.18xlarge", 72),
+    C5D2xlarge("c5d.2xlarge", 8),
+    C5D4xlarge("c5d.4xlarge", 16),
+    C5D9xlarge("c5d.9xlarge", 36),
+    C5Dlarge("c5d.large", 2),
+    C5Dxlarge("c5d.xlarge", 4),
+
+    M5D12xlarge("m5d.12xlarge", 48),
+    M5D24xlarge("m5d.24xlarge", 96),
+    M5D2xlarge("m5d.2xlarge", 8),
+    M5D4xlarge("m5d.4xlarge", 16),
+    M5Dlarge("m5d.large", 2),
+    M5Dxlarge("m5d.xlarge", 4);
 
 
     private String  value;
