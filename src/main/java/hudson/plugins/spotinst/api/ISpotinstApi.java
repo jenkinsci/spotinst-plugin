@@ -22,7 +22,7 @@ public interface ISpotinstApi {
 
     boolean awsDetachInstance(String instanceId);
 
-    int validateToken(String token);
+    int validateToken(String token, String accountId);
 
     GcpScaleUpResult gcpScaleUp(String elastigroupId, int adjustment);
 

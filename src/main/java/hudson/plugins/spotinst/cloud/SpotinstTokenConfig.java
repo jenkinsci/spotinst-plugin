@@ -35,13 +35,14 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
         return true;
     }
 
-    private static int validateToken(String token) {
-        int retVal = SpotinstApi.getInstance().validateToken(token);
+    private static int validateToken(String token, String accountId) {
+        int retVal = SpotinstApi.getInstance().validateToken(token, accountId);
         return retVal;
     }
 
-    public FormValidation doValidateToken(@QueryParameter("spotinstToken") String spotinstToken) {
-        int isValid = validateToken(spotinstToken);
+    public FormValidation doValidateToken(@QueryParameter("spotinstToken") String spotinstToken,
+                                          @QueryParameter("accountId") String accountId) {
+        int isValid = validateToken(spotinstToken, accountId);
 
         FormValidation result;
         switch (isValid) {

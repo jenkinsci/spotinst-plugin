@@ -76,9 +76,19 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
 
     private List<SpotinstSlave> handleNewAwsSpots(ScaleUpResult scaleUpResult, String label) {
         List<SpotinstSlave> retVal = new LinkedList<>();
+
         LOGGER.info(scaleUpResult.getNewSpotRequests().size() + " new spot requests created");
+
         for (ScaleResultNewSpot spot : scaleUpResult.getNewSpotRequests()) {
-            SpotinstSlave slave = handleNewAwsSpot(spot.getSpotInstanceRequestId(), spot.getInstanceType(), label);
+
+            SpotinstSlave slave;
+            if (spot.getInstanceId() != null) {
+                slave = handleNewAwsInstance(spot.getInstanceId(), spot.getInstanceType(), label);
+            }
+            else {
+                slave = handleNewAwsSpot(spot.getSpotInstanceRequestId(), spot.getInstanceType(), label);
+            }
+
             retVal.add(slave);
         }
 
@@ -174,7 +184,7 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
         boolean retVal = false;
         Node    node;
         if (instance.getInstanceId() != null) {
-            LOGGER.info(String.format("Checking if salve exist for instance id"));
+            LOGGER.info(String.format("Checking if slave exist for instance id"));
             node = Jenkins.getInstance().getNode(instance.getInstanceId());
             if (node != null) {
                 LOGGER.info(String.format("Found slave for instance id"));
@@ -183,7 +193,7 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
         }
 
         if (retVal == false && instance.getSpotInstanceRequestId() != null) {
-            LOGGER.info(String.format("Checking if salve exist for spot request id"));
+            LOGGER.info(String.format("Checking if slave exist for spot request id"));
             node = Jenkins.getInstance().getNode(instance.getSpotInstanceRequestId());
             if (node != null) {
                 LOGGER.info(String.format("Found slave for spot request id"));
