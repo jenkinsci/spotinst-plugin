@@ -7,6 +7,7 @@ public class ScaleResultNewSpot {
 
     //region Members
     private String spotInstanceRequestId;
+    private String instanceId;
     private String availabilityZone;
     private String instanceType;
     //endregion
@@ -35,5 +36,14 @@ public class ScaleResultNewSpot {
     public void setInstanceType(String instanceType) {
         this.instanceType = instanceType;
     }
+
+    public String getInstanceId() {
+        return instanceId;
+    }
+
+    public void setInstanceId(String instanceId) {
+        this.instanceId = instanceId;
+    }
+
     //endregion
 }

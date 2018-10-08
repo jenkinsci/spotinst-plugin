@@ -430,14 +430,20 @@ public class SpotinstApi implements ISpotinstApi {
     //endregion
 
     @Override
-    public int validateToken(String token) {
+    public int validateToken(String token, String accountId) {
         int                 isValid;
         Map<String, String> headers = new HashMap<String, String>();
         headers.put("Authorization", "Bearer " + token);
         headers.put("Content-Type", "application/json");
 
+        Map<String, String> queryParams = new HashMap<>();
+        if (accountId != null && accountId.isEmpty() == false) {
+            queryParams.put("accountId", accountId);
+        }
+
         try {
-            RestResponse response = RestClient.sendGet(SPOTINST_API_HOST + "/events/subscription", headers, null);
+            RestResponse response =
+                    RestClient.sendGet(SPOTINST_API_HOST + "/events/subscription", headers, queryParams);
             if (response.getStatusCode() == HttpStatus.SC_OK) {
                 isValid = 0;
             }
