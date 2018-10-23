@@ -27,7 +27,7 @@ public enum GcpMachineType {
     private String  name;
     private Integer executors;
 
-    private GcpMachineType(String value, Integer executors) {
+    GcpMachineType(String value, Integer executors) {
         this.name = value;
         this.executors = executors;
     }

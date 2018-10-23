@@ -223,7 +223,7 @@ public enum AwsInstanceTypeEnum {
     private Integer executors;
     private static final Logger LOGGER = LoggerFactory.getLogger(AwsInstanceTypeEnum.class);
 
-    private AwsInstanceTypeEnum(String value, Integer executors) {
+    AwsInstanceTypeEnum(String value, Integer executors) {
         this.value = value;
         this.executors = executors;
     }

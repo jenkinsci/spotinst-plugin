@@ -82,7 +82,7 @@ public enum AzureVmSizeEnum {
     private Integer executors;
     private static final Logger LOGGER = LoggerFactory.getLogger(AzureVmSizeEnum.class);
 
-    private AzureVmSizeEnum(String value, Integer executors) {
+    AzureVmSizeEnum(String value, Integer executors) {
         this.value = value;
         this.executors = executors;
     }
