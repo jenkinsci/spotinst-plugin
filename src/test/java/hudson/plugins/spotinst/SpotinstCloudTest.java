@@ -62,7 +62,7 @@ public class SpotinstCloudTest {
 
     //region AWS
     @Test
-    public void testAwsProvision_whenThereArePendingInsatcnesForAllExecutors_thenShouldNotSacleUp() {
+    public void testAwsProvision_whenThereArePendingInstancesForAllExecutors_thenShouldNotScaleUp() {
         String groupId = "sig-1";
         BaseSpotinstCloud spotinstCloud =
                 new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, SlaveUsageEnum.NORMAL, "", "");
@@ -75,7 +75,7 @@ public class SpotinstCloudTest {
     }
 
     @Test
-    public void testAwsProvision_whenThereArePendingInsatcnesForPartOfTheExecutors_thenShouldSacleUpTheRest() {
+    public void testAwsProvision_whenThereArePendingInstancesForPartOfTheExecutors_thenShouldScaleUpTheRest() {
         String groupId = "sig-1";
         AwsSpotinstCloud spotinstCloud =
                 new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, SlaveUsageEnum.NORMAL, "", "");
