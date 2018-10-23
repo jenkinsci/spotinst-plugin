@@ -1,6 +1,5 @@
 package hudson.plugins.spotinst.slave;
 
-import hudson.plugins.spotinst.slave.SpotinstSlave;
 import hudson.slaves.SlaveComputer;
 import org.kohsuke.stapler.HttpRedirect;
 import org.kohsuke.stapler.HttpResponse;
