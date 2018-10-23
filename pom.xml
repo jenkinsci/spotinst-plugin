@@ -2,14 +2,6 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <url>https://wiki.jenkins-ci.org/display/JENKINS/Spotinst+Plugin</url>
-    <developers>
-        <developer>
-            <id>team</id>
-            <name>Spotinst Team</name>
-            <email>team@spotinst.com</email>
-        </developer>
-    </developers>
     <parent>
         <groupId>org.jenkins-ci.plugins</groupId>
         <artifactId>plugin</artifactId>
@@ -19,7 +11,9 @@
     <artifactId>spotinst</artifactId>
     <version>2.0.11-SNAPSHOT</version>
     <packaging>hpi</packaging>
+
     <name>Spotinst plugin</name>
+    <url>https://wiki.jenkins-ci.org/display/JENKINS/Spotinst+Plugin</url>
     <licenses>
         <license>
             <name>The MIT License</name>
@@ -27,6 +21,14 @@
             <distribution>repo</distribution>
         </license>
     </licenses>
+
+    <developers>
+        <developer>
+            <id>team</id>
+            <name>Spotinst Team</name>
+            <email>team@spotinst.com</email>
+        </developer>
+    </developers>
 
     <scm>
         <connection>scm:git:git://github.com/jenkinsci/spotinst-plugin.git</connection>
@@ -73,15 +75,12 @@
         </dependency>
     </dependencies>
 
-
-
     <repositories>
         <repository>
             <id>repo.jenkins-ci.org</id>
             <url>http://repo.jenkins-ci.org/public/</url>
         </repository>
     </repositories>
-
     <pluginRepositories>
         <pluginRepository>
             <id>repo.jenkins-ci.org</id>
