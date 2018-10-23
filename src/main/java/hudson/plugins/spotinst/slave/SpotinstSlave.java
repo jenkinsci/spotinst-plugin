@@ -156,7 +156,7 @@ public class SpotinstSlave extends Slave {
     }
 
     @Override
-    public Node reconfigure(StaplerRequest req, JSONObject form) throws Descriptor.FormException {
+    public Node reconfigure(StaplerRequest req, JSONObject form) {
         String usageStr = form.getString("usage");
         this.usage = SlaveUsageEnum.fromName(usageStr);
         this.setMode(this.usage.toMode());

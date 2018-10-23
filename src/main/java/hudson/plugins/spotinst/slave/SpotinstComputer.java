@@ -5,8 +5,6 @@ import hudson.slaves.SlaveComputer;
 import org.kohsuke.stapler.HttpRedirect;
 import org.kohsuke.stapler.HttpResponse;
 
-import java.io.IOException;
-
 /**
  * Created by ohadmuchnik on 27/05/2016.
  */
@@ -42,7 +40,7 @@ public class SpotinstComputer extends SlaveComputer {
     }
 
     @Override
-    public HttpResponse doDoDelete() throws IOException {
+    public HttpResponse doDoDelete() {
         checkPermission(DELETE);
         if (getNode() != null) {
             getNode().forceTerminate();

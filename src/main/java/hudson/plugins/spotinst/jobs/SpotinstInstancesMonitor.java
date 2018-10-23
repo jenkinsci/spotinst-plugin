@@ -7,7 +7,6 @@ import hudson.plugins.spotinst.cloud.BaseSpotinstCloud;
 import hudson.slaves.Cloud;
 import jenkins.model.Jenkins;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
