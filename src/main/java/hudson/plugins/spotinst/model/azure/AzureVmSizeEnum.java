@@ -78,8 +78,8 @@ public enum AzureVmSizeEnum {
     STANDARD_A10("standard_a10", 8),
     STANDARD_A11("standard_a11", 16);
 
-    private String  value;
-    private Integer executors;
+    private final String  value;
+    private final Integer executors;
     private static final Logger LOGGER = LoggerFactory.getLogger(AzureVmSizeEnum.class);
 
     AzureVmSizeEnum(String value, Integer executors) {

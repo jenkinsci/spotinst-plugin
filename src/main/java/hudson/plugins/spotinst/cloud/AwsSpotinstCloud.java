@@ -31,8 +31,8 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
 
     //region Members
     private static final Logger LOGGER = LoggerFactory.getLogger(AwsSpotinstCloud.class);
-    private Map<AwsInstanceTypeEnum, Integer>      executorsForInstanceType;
-    private List<? extends SpotinstInstanceWeight> executorsForTypes;
+    private final Map<AwsInstanceTypeEnum, Integer>      executorsForInstanceType;
+    private final List<? extends SpotinstInstanceWeight> executorsForTypes;
     private static final String CLOUD_URL = "aws/ec2";
     //endregion
 
@@ -42,10 +42,11 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
                             List<? extends SpotinstInstanceWeight> executorsForTypes, SlaveUsageEnum usage,
                             String tunnel, String vmargs) {
         super(groupId, labelString, idleTerminationMinutes, workspaceDir, usage, tunnel, vmargs);
-        this.executorsForTypes = new LinkedList<>();
         executorsForInstanceType = new HashMap<>();
 
-        if (executorsForTypes != null) {
+        if (executorsForTypes == null) {
+            this.executorsForTypes = new LinkedList<>();
+        } else {
             this.executorsForTypes = executorsForTypes;
 
             for (SpotinstInstanceWeight executors : executorsForTypes) {

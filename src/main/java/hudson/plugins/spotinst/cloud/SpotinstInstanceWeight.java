@@ -11,9 +11,10 @@ import org.kohsuke.stapler.DataBoundConstructor;
  * Created by ohadmuchnik on 18/07/2016.
  */
 public class SpotinstInstanceWeight implements Describable<SpotinstInstanceWeight> {
+
     //region Members
-    private AwsInstanceTypeEnum awsInstanceType;
-    private Integer             executors;
+    private final AwsInstanceTypeEnum awsInstanceType;
+    private final Integer             executors;
     //endregion
 
     //region Constructors

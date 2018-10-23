@@ -219,8 +219,8 @@ public enum AwsInstanceTypeEnum {
     R5D24xlarge("r5d.24xlarge", 96);
 
 
-    private String  value;
-    private Integer executors;
+    private final String  value;
+    private final Integer executors;
     private static final Logger LOGGER = LoggerFactory.getLogger(AwsInstanceTypeEnum.class);
 
     AwsInstanceTypeEnum(String value, Integer executors) {

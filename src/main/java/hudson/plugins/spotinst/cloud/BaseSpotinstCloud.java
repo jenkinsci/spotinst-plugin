@@ -25,16 +25,15 @@ public abstract class BaseSpotinstCloud extends Cloud {
 
     //region Members
     private static final Logger LOGGER = LoggerFactory.getLogger(BaseSpotinstCloud.class);
-    protected String                       groupId;
+    protected final String                 groupId;
     protected Map<String, PendingInstance> pendingInstances;
-    private   String                       labelString;
-    private   String                       idleTerminationMinutes;
-    private   String                       workspaceDir;
-    private   Set<LabelAtom>               labelSet;
-    private   SlaveUsageEnum               usage;
-    private   String                       tunnel;
-    private   String                       vmargs;
-
+    private final String                   labelString;
+    private final String                   idleTerminationMinutes;
+    private final String                   workspaceDir;
+    private final Set<LabelAtom>           labelSet;
+    private final SlaveUsageEnum           usage;
+    private final String                   tunnel;
+    private final String                   vmargs;
     //endregion
 
     //region Constructor

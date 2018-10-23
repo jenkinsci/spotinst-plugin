@@ -24,8 +24,8 @@ public enum GcpMachineType {
     F1Micro("f1-micro", 1),
     G1Small("g1-small", 1);
 
-    private String  name;
-    private Integer executors;
+    private final String  name;
+    private final Integer executors;
 
     GcpMachineType(String value, Integer executors) {
         this.name = value;

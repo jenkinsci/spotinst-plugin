@@ -9,7 +9,7 @@ public enum SlaveUsageEnum {
     NORMAL("NORMAL"),
     EXCLUSIVE("EXCLUSIVE");
 
-    private String name;
+    private final String name;
 
     SlaveUsageEnum(String name) {
         this.name = name;

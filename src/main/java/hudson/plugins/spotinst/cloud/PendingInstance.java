@@ -56,7 +56,7 @@ public class PendingInstance {
         PENDING("PENDING"),
         INSTANCE_INITIATING("INSTANCE_INITIATING");
 
-        private String name;
+        private final String name;
 
         StatusEnum(String name) {
             this.name = name;

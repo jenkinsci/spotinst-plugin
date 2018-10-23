@@ -11,7 +11,7 @@ public class JsonMapper {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JsonMapper.class);
 
-    private static ObjectMapper jsonMapper = new ObjectMapper();
+    private static final ObjectMapper jsonMapper = new ObjectMapper();
 
     public static <T> T fromJson(String content, Class<T> contentClass) {
         T retVal = null;
