@@ -1,5 +1,6 @@
 package hudson.plugins.spotinst.api.infra;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.*;
@@ -9,9 +10,7 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -115,17 +114,9 @@ public class RestClient {
     }
 
     private static RestResponse buildRestResponse(HttpResponse response) throws ApiException {
-        BufferedReader rd;
         try {
-            rd = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
-
-            StringBuffer result = new StringBuffer();
-            String       line   = "";
-            while ((line = rd.readLine()) != null) {
-                result.append(line);
-            }
-
-            return new RestResponse(response.getStatusLine().getStatusCode(), result.toString());
+            String body = IOUtils.toString(response.getEntity().getContent());
+            return new RestResponse(response.getStatusLine().getStatusCode(), body);
         }
         catch (IOException e) {
             LOGGER.error("Exception when building Rest response.", e);
