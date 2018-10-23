@@ -21,7 +21,7 @@ public class SpotinstSyncInstances extends AsyncPeriodicWork {
     //region Members
     private static final Logger  LOGGER                  = LoggerFactory.getLogger(SpotinstSyncInstances.class);
     public static final  Integer JOB_INTERVAL_IN_MINUTES = 5;
-    final long recurrencePeriod;
+    private final long recurrencePeriod;
     //endregion
 
     //region Constructor

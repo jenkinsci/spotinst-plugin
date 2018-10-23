@@ -14,6 +14,7 @@ import org.kohsuke.stapler.StaplerRequest;
  */
 @Extension
 public class SpotinstTokenConfig extends GlobalConfiguration {
+
     //region Members
     private String spotinstToken;
     private String accountId;

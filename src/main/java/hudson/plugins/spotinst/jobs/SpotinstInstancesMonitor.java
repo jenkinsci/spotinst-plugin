@@ -18,7 +18,7 @@ public class SpotinstInstancesMonitor extends AsyncPeriodicWork {
 
     //region Members
     public static final Integer JOB_INTERVAL_IN_SECONDS = 30;
-    final long recurrencePeriod;
+    private final long recurrencePeriod;
     //endregion
 
     //region Constructor

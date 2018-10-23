@@ -10,8 +10,8 @@ import java.util.List;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class GcpScaleUpResult {
 
-    List<GcpResultNewInstance> newPreemptibles;
-    List<GcpResultNewInstance> newInstances;
+    private List<GcpResultNewInstance> newPreemptibles;
+    private List<GcpResultNewInstance> newInstances;
 
     public List<GcpResultNewInstance> getNewPreemptibles() {
         return newPreemptibles;
