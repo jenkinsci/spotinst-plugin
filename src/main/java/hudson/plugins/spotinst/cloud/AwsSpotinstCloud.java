@@ -190,9 +190,8 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
     private SpotinstSlave handleNewAwsInstance(String instanceId, String instanceType, String label) {
         Integer executors = getNumOfExecutors(instanceType);
         addToPending(instanceId, executors, PendingInstance.StatusEnum.INSTANCE_INITIATING, label);
-        SpotinstSlave retVal = buildSpotinstSlave(instanceId, instanceType, String.valueOf(executors));
 
-        return retVal;
+        return buildSpotinstSlave(instanceId, instanceType, String.valueOf(executors));
     }
 
     private void addNewSlaveInstances(List<AwsGroupInstance> elastigroupInstances) {

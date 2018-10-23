@@ -30,9 +30,8 @@ public class RestClient {
         HttpGet getRequest = new HttpGet(url);
         addQueryParams(getRequest, queryParams);
         addHeaders(getRequest, headers);
-        RestResponse retVal = sendRequest(getRequest);
 
-        return retVal;
+        return sendRequest(getRequest);
     }
 
     public static RestResponse sendPut(String url, String body, Map<String, String> headers,
@@ -53,9 +52,8 @@ public class RestClient {
 
         addQueryParams(putRequest, queryParams);
         addHeaders(putRequest, headers);
-        RestResponse retVal = sendRequest(putRequest);
 
-        return retVal;
+        return sendRequest(putRequest);
     }
     //endregion
 
@@ -117,7 +115,6 @@ public class RestClient {
     }
 
     private static RestResponse buildRestResponse(HttpResponse response) throws ApiException {
-        RestResponse   retVal;
         BufferedReader rd;
         try {
             rd = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
@@ -128,15 +125,12 @@ public class RestClient {
                 result.append(line);
             }
 
-            retVal = new RestResponse(response.getStatusLine().getStatusCode(), result.toString());
-
+            return new RestResponse(response.getStatusLine().getStatusCode(), result.toString());
         }
         catch (IOException e) {
             LOGGER.error("Exception when building Rest response.", e);
             throw new ApiException("Exception when building Rest response.", e);
         }
-
-        return retVal;
     }
     //endregion
 }

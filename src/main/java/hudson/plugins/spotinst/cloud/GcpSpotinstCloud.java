@@ -134,8 +134,7 @@ public class GcpSpotinstCloud extends BaseSpotinstCloud {
     private SpotinstSlave handleNewGcpInstance(String instanceName, String machineType, String label) {
         Integer executors = GcpMachineType.fromValue(machineType).getExecutors();
         addToPending(instanceName, executors, PendingInstance.StatusEnum.INSTANCE_INITIATING, label);
-        SpotinstSlave retVal = buildSpotinstSlave(instanceName, machineType, String.valueOf(executors));
-        return retVal;
+        return buildSpotinstSlave(instanceName, machineType, String.valueOf(executors));
     }
 
     private void addNewGcpSlaveInstances(List<GcpGroupInstance> gcpGroupInstances) {

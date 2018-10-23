@@ -37,8 +37,7 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
     }
 
     private static int validateToken(String token, String accountId) {
-        int retVal = SpotinstApi.validateToken(token, accountId);
-        return retVal;
+        return SpotinstApi.validateToken(token, accountId);
     }
 
     public FormValidation doValidateToken(@QueryParameter("spotinstToken") String spotinstToken,

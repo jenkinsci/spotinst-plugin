@@ -121,8 +121,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
     }
 
     public Boolean isInstancePending(String id) {
-        Boolean retVal = pendingInstances.containsKey(id);
-        return retVal;
+        return pendingInstances.containsKey(id);
     }
 
     public void onInstanceReady(String instanceId) {
@@ -134,8 +133,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
     private synchronized List<SpotinstSlave> provisionSlaves(ProvisionRequest request) {
         LOGGER.info(String.format("Scale up group: %s with %s workload units", groupId, request.getExecutors()));
 
-        List<SpotinstSlave> slaves = scaleUp(request);
-        return slaves;
+        return scaleUp(request);
     }
 
     private void setNumOfNeededExecutors(ProvisionRequest request) {

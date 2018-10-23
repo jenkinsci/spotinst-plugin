@@ -157,17 +157,15 @@ public class SpotinstSlave extends Slave {
 
     @Override
     public Node reconfigure(StaplerRequest req, JSONObject form) throws Descriptor.FormException {
-        String         usageStr  = form.getString("usage");
-        SlaveUsageEnum usageEnum = SlaveUsageEnum.fromName(usageStr);
-        this.usage = usageEnum;
+        String usageStr = form.getString("usage");
+        this.usage = SlaveUsageEnum.fromName(usageStr);
         this.setMode(this.usage.toMode());
 
         return this;
     }
 
     public boolean isSlavePending() {
-        boolean retVal = this.spotinstCloud.isInstancePending(getNodeName());
-        return retVal;
+        return this.spotinstCloud.isInstancePending(getNodeName());
     }
 
     public void onSlaveConnected() {
