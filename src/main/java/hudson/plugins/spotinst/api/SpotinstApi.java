@@ -2,23 +2,13 @@ package hudson.plugins.spotinst.api;
 
 import hudson.Plugin;
 import hudson.PluginWrapper;
-import hudson.plugins.spotinst.api.infra.JsonMapper;
-import hudson.plugins.spotinst.api.infra.RestClient;
-import hudson.plugins.spotinst.api.infra.RestResponse;
+import hudson.plugins.spotinst.api.infra.*;
 import hudson.plugins.spotinst.common.SpotinstContext;
-import hudson.plugins.spotinst.model.elastigroup.aws.AwsElastigroupInstance;
-import hudson.plugins.spotinst.model.elastigroup.aws.AwsElastigroupInstancesResponse;
-import hudson.plugins.spotinst.model.elastigroup.azure.AzureDetachNodeRequest;
-import hudson.plugins.spotinst.model.elastigroup.azure.AzureElastigroupInstance;
-import hudson.plugins.spotinst.model.elastigroup.azure.AzureElastigroupInstancesResponse;
-import hudson.plugins.spotinst.model.elastigroup.gcp.GcpElastigroupInstance;
-import hudson.plugins.spotinst.model.elastigroup.gcp.GcpElastigroupInstancesResponse;
-import hudson.plugins.spotinst.model.scale.aws.ScaleUpResponse;
-import hudson.plugins.spotinst.model.scale.aws.ScaleUpResult;
-import hudson.plugins.spotinst.model.scale.gcp.GcpScaleUpResponse;
-import hudson.plugins.spotinst.model.scale.gcp.GcpScaleUpResult;
-import hudson.plugins.spotinst.model.spot.SpotRequest;
-import hudson.plugins.spotinst.model.spot.SpotRequestResponse;
+import hudson.plugins.spotinst.model.aws.*;
+import hudson.plugins.spotinst.model.azure.AzureDetachInstancesRequest;
+import hudson.plugins.spotinst.model.azure.AzureGroupInstance;
+import hudson.plugins.spotinst.model.azure.AzureGroupInstancesResponse;
+import hudson.plugins.spotinst.model.gcp.*;
 import jenkins.model.Jenkins;
 import org.apache.commons.httpclient.HttpStatus;
 import org.slf4j.Logger;
@@ -27,418 +17,34 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 
 
-public class SpotinstApi implements ISpotinstApi {
+public class SpotinstApi {
 
     //region Members
-    private static final Logger LOGGER = LoggerFactory.getLogger(SpotinstApi.class);
-    private static SpotinstApi instance;
-    final static String SPOTINST_API_HOST = "https://api.spotinst.io";
-    //endregion
-
-    private SpotinstApi() {
-    }
-
-    public static SpotinstApi getInstance() {
-        if (instance == null) {
-            instance = new SpotinstApi();
-        }
-        return instance;
-    }
-
-    public static void setInstance(SpotinstApi spotinstApi) {
-        instance = spotinstApi;
-    }
-
-    private static String buildUserAgent() {
-        String retVal         = null;
-        String jenkinsVersion = Jenkins.getInstance().VERSION;
-        Plugin spotinst       = Jenkins.getInstance().getPlugin("spotinst");
-        if (spotinst != null) {
-            PluginWrapper wrapper = spotinst.getWrapper();
-            if (wrapper != null) {
-                String pluginVersion = wrapper.getVersion();
-                retVal = String.format("Jenkins/%s;spotinst-plugin/%s", jenkinsVersion, pluginVersion);
-            }
-        }
-        return retVal;
-    }
-
-    //region Private Methods
-    private static Map<String, String> buildHeaders() {
-        Map<String, String> headers = new HashMap<String, String>();
-        headers.put("Authorization", "Bearer " + SpotinstContext.getInstance().getSpotinstToken());
-        headers.put("Content-Type", "application/json");
-        String userAgent = buildUserAgent();
-        if (userAgent != null) {
-            headers.put("User-Agent", userAgent);
-        }
-        return headers;
-    }
-
-    private static Map<String, String> buildQueryParams() {
-        Map<String, String> queryParams = new HashMap<String, String>();
-        String              accountId   = SpotinstContext.getInstance().getAccountId();
-        if (accountId != null && accountId.isEmpty() == false) {
-            queryParams.put("accountId", accountId);
-        }
-
-        return queryParams;
-    }
-
-    private int gcpValidateToken(String token) {
-        int                 isValid;
-        Map<String, String> headers = new HashMap<String, String>();
-        headers.put("Authorization", "Bearer " + token);
-        headers.put("Content-Type", "application/json");
-
-        try {
-            RestResponse response = RestClient.sendGet(SPOTINST_API_HOST + "/gcp/gce/group", headers, null);
-            if (response.getStatusCode() == HttpStatus.SC_OK) {
-                isValid = 0;
-            }
-            else if (response.getStatusCode() == HttpStatus.SC_UNAUTHORIZED) {
-                isValid = 1;
-            }
-            else {
-                isValid = 2;
-            }
-        }
-        catch (Exception e) {
-            isValid = 2;
-        }
-        return isValid;
-    }
-
-    private int awsValidateToken(String token) {
-        int                 isValid;
-        Map<String, String> headers = new HashMap<String, String>();
-        headers.put("Authorization", "Bearer " + token);
-        headers.put("Content-Type", "application/json");
-
-        try {
-            RestResponse response = RestClient.sendGet(SPOTINST_API_HOST + "/aws/ec2/group", headers, null);
-            if (response.getStatusCode() == HttpStatus.SC_OK) {
-                isValid = 0;
-            }
-            else if (response.getStatusCode() == HttpStatus.SC_UNAUTHORIZED) {
-                isValid = 1;
-            }
-            else {
-                isValid = 2;
-            }
-        }
-        catch (Exception e) {
-            isValid = 2;
-        }
-        return isValid;
-    }
+    private static final Logger LOGGER                 = LoggerFactory.getLogger(SpotinstApi.class);
+    private final static String SPOTINST_API_HOST      = "https://api.spotinst.io";
+    private final static String HEADER_AUTH            = "Authorization";
+    private final static String AUTH_PREFIX            = "Bearer ";
+    private final static String HEADER_CONTENT_TYPE    = "Content-Type";
+    private final static String CONTENT_TYPE           = "application/json";
+    private final static String QUERY_PARAM_ACCOUNT_ID = "accountId";
+    private final static String USER_AGENT_FORMAT      = "Jenkins/%s;spotinst-plugin/%s";
+    private final static String PLUGIN_NAME            = "spotinst";
+    private final static String HEADER_USER_AGENT      = "User-Agent";
+    private final static String QUERY_PARAM_ADJUSTMENT = "adjustment";
     //endregion
 
     //region Public Methods
 
-    //region AWS
-    public List<AwsElastigroupInstance> getAwsElastigroupInstances(String elastigroupId) {
-        List<AwsElastigroupInstance> instances   = null;
-        Map<String, String>          headers     = buildHeaders();
-        Map<String, String>          queryParams = buildQueryParams();
-        try {
-            RestResponse response = RestClient
-                    .sendGet(SPOTINST_API_HOST + "/aws/ec2/group/" + elastigroupId + "/status", headers, queryParams);
-
-            if (response.getStatusCode() == HttpStatus.SC_OK) {
-                instances = new LinkedList<AwsElastigroupInstance>();
-                AwsElastigroupInstancesResponse elastigroupResponse =
-                        JsonMapper.fromJson(response.getBody(), AwsElastigroupInstancesResponse.class);
-                if (elastigroupResponse.getResponse().getItems().size() > 0) {
-                    for (AwsElastigroupInstance instance : elastigroupResponse.getResponse().getItems()) {
-                        instances.add(instance);
-                    }
-                }
-            }
-            else {
-                LOGGER.error("Failed to get Elastigroup instances, error code: " + response.getStatusCode() +
-                             ", error message: " + response.getBody());
-            }
-        }
-        catch (Exception e) {
-            LOGGER.error("Failed to get Elastigroup instances, error: " + e.getMessage());
-        }
-
-        return instances;
-    }
-
-    public ScaleUpResult awsScaleUp(String elastigroupId, int adjustment) {
-        ScaleUpResult       retVal  = null;
-        Map<String, String> headers = buildHeaders();
-
-        Map<String, String> queryParams = buildQueryParams();
-        queryParams.put("adjustment", String.valueOf(adjustment));
-
-        try {
-            RestResponse response = RestClient
-                    .sendPut(SPOTINST_API_HOST + "/aws/ec2/group/" + elastigroupId + "/scale/up", null, headers,
-                             queryParams);
-            if (response.getStatusCode() == HttpStatus.SC_OK) {
-                ScaleUpResponse scaleResponse = JsonMapper.fromJson(response.getBody(), ScaleUpResponse.class);
-                if (scaleResponse.getResponse().getItems().size() > 0) {
-                    retVal = scaleResponse.getResponse().getItems().get(0);
-                }
-            }
-            else {
-                LOGGER.error("Failed to scale up Elastigroup: " + elastigroupId + ", error code: " +
-                             response.getStatusCode() + ", error message: " + response.getBody());
-            }
-        }
-        catch (Exception e) {
-            LOGGER.error("Failed to scale up Elastigroup: " + elastigroupId + ", error: " + e.getMessage());
-        }
-        return retVal;
-    }
-
-    public SpotRequest getSpotRequest(String spotRequestId) {
-
-        Map<String, String> headers     = buildHeaders();
-        Map<String, String> queryParams = buildQueryParams();
-
-        SpotRequest spotRequest = null;
-        try {
-            RestResponse response =
-                    RestClient.sendGet(SPOTINST_API_HOST + "/aws/ec2/spot/" + spotRequestId, headers, queryParams);
-            if (response.getStatusCode() == HttpStatus.SC_OK) {
-                SpotRequestResponse spotRequestResponse =
-                        JsonMapper.fromJson(response.getBody(), SpotRequestResponse.class);
-                if (spotRequestResponse.getResponse().getItems().size() > 0) {
-                    spotRequest = spotRequestResponse.getResponse().getItems().get(0);
-                }
-            }
-            else {
-                LOGGER.error(
-                        "Failed to get spot request: " + spotRequestId + ", error code: " + response.getStatusCode() +
-                        ", error message: " + response.getBody());
-            }
-        }
-        catch (Exception e) {
-            LOGGER.error("Failed to get spot request: " + spotRequestId + ", error: " + e.getMessage());
-        }
-        return spotRequest;
-    }
-
-    public boolean awsDetachInstance(String instanceId) {
-        boolean             retVal      = false;
-        Map<String, String> headers     = buildHeaders();
-        Map<String, String> queryParams = buildQueryParams();
-
-        String detachRequest =
-                "{\"instancesToDetach\" :[\"{INSTANCE_ID}\"],\"shouldTerminateInstances\" : true, \"shouldDecrementTargetCapacity\" : true}";
-        String body = detachRequest.replace("{INSTANCE_ID}", instanceId);
-        try {
-            RestResponse response =
-                    RestClient.sendPut(SPOTINST_API_HOST + "/aws/ec2/instance/detach", body, headers, queryParams);
-
-            if (response.getStatusCode() == HttpStatus.SC_OK) {
-                retVal = true;
-            }
-            else {
-                LOGGER.error("Failed to detach instance:  " + instanceId + ", error code: " + response.getStatusCode() +
-                             ", error message: " + response.getBody());
-            }
-        }
-        catch (Exception e) {
-            LOGGER.error("Failed to detach instance:  " + instanceId + ", error: " + e.getMessage());
-        }
-        return retVal;
-    }
-    //endregion
-
-    //region GCP
-    public GcpScaleUpResult gcpScaleUp(String elastigroupId, int adjustment) {
-
-        GcpScaleUpResult    retVal  = null;
-        Map<String, String> headers = buildHeaders();
-
-        Map<String, String> queryParams = buildQueryParams();
-        queryParams.put("adjustment", String.valueOf(adjustment));
-
-        try {
-            RestResponse response = RestClient
-                    .sendPut(SPOTINST_API_HOST + "/gcp/gce/group/" + elastigroupId + "/scale/up", null, headers,
-                             queryParams);
-            if (response.getStatusCode() == HttpStatus.SC_OK) {
-                GcpScaleUpResponse scaleResponse = JsonMapper.fromJson(response.getBody(), GcpScaleUpResponse.class);
-                if (scaleResponse.getResponse().getItems().size() > 0) {
-                    retVal = scaleResponse.getResponse().getItems().get(0);
-                }
-            }
-            else {
-                LOGGER.error("Failed to scale up Elastigroup: " + elastigroupId + ", error code: " +
-                             response.getStatusCode() + ", error message: " + response.getBody());
-            }
-        }
-        catch (Exception e) {
-            LOGGER.error("Failed to scale up Elastigroup: " + elastigroupId + ", error: " + e.getMessage());
-        }
-        return retVal;
-    }
-
-    public boolean gcpDetachInstance(String groupId, String instanceName) {
-        boolean             retVal      = false;
-        Map<String, String> headers     = buildHeaders();
-        Map<String, String> queryParams = buildQueryParams();
-
-        String detachRequest =
-                "{\"instancesToDetach\" :[\"{INSTANCE_ID}\"],\"shouldTerminateInstances\" : true, \"shouldDecrementTargetCapacity\" : true}";
-        String body = detachRequest.replace("{INSTANCE_ID}", instanceName);
-        try {
-            RestResponse response = RestClient
-                    .sendPut(SPOTINST_API_HOST + "/gcp/gce/group/" + groupId + "/detachInstances", body, headers,
-                             queryParams);
-
-            if (response.getStatusCode() == HttpStatus.SC_OK) {
-                retVal = true;
-            }
-            else {
-                LOGGER.error(
-                        "Failed to detach instance:  " + instanceName + ", error code: " + response.getStatusCode() +
-                        ", error message: " + response.getBody());
-            }
-        }
-        catch (Exception e) {
-            LOGGER.error("Failed to detach instance:  " + instanceName + ", error: " + e.getMessage());
-        }
-        return retVal;
-    }
-
-    public List<GcpElastigroupInstance> getGcpElastigroupInstances(String elastigroupId) {
-        List<GcpElastigroupInstance> instances   = null;
-        Map<String, String>          headers     = buildHeaders();
-        Map<String, String>          queryParams = buildQueryParams();
-
-        try {
-            RestResponse response = RestClient
-                    .sendGet(SPOTINST_API_HOST + "/gcp/gce/group/" + elastigroupId + "/status", headers, queryParams);
-
-            if (response.getStatusCode() == HttpStatus.SC_OK) {
-                instances = new LinkedList<GcpElastigroupInstance>();
-                GcpElastigroupInstancesResponse elastigroupResponse =
-                        JsonMapper.fromJson(response.getBody(), GcpElastigroupInstancesResponse.class);
-                if (elastigroupResponse.getResponse().getItems().size() > 0) {
-                    for (GcpElastigroupInstance instance : elastigroupResponse.getResponse().getItems()) {
-                        instances.add(instance);
-                    }
-                }
-            }
-            else {
-                LOGGER.error("Failed to get Elastigroup instances, error code: " + response.getStatusCode() +
-                             ", error message: " + response.getBody());
-            }
-        }
-        catch (Exception e) {
-            LOGGER.error("Failed to get Elastigroup instances, error: " + e.getMessage());
-        }
-
-        return instances;
-    }
-    //endregion
-
-    //region Azure
-    @Override
-    public List<AzureElastigroupInstance> getAzureElastigroupInstances(String elastigroupId) {
-        List<AzureElastigroupInstance> instances   = null;
-        Map<String, String>            headers     = buildHeaders();
-        Map<String, String>            queryParams = buildQueryParams();
-        try {
-            RestResponse response = RestClient
-                    .sendGet(SPOTINST_API_HOST + "/compute/azure/group/" + elastigroupId + "/status", headers,
-                             queryParams);
-
-            if (response.getStatusCode() == HttpStatus.SC_OK) {
-                instances = new LinkedList<>();
-                AzureElastigroupInstancesResponse azureElastigroupInstancesResponse =
-                        JsonMapper.fromJson(response.getBody(), AzureElastigroupInstancesResponse.class);
-                if (azureElastigroupInstancesResponse.getResponse().getItems().size() > 0) {
-                    instances = azureElastigroupInstancesResponse.getResponse().getItems();
-                }
-            }
-            else {
-                LOGGER.error("Failed to get Elastigroup instances, error code: " + response.getStatusCode() +
-                             ", error message: " + response.getBody());
-            }
-        }
-        catch (Exception e) {
-            LOGGER.error("Failed to get Elastigroup instances, error: " + e.getMessage());
-        }
-
-        return instances;
-    }
-
-    @Override
-    public boolean azureScaleUp(String elastigroupId, int adjustment) {
-        boolean             retVal  = false;
-        Map<String, String> headers = buildHeaders();
-
-        Map<String, String> queryParams = buildQueryParams();
-        queryParams.put("adjustment", String.valueOf(adjustment));
-
-        try {
-            RestResponse response = RestClient
-                    .sendPut(SPOTINST_API_HOST + "/compute/azure/group/" + elastigroupId + "/scale/up", null, headers,
-                             queryParams);
-            if (response.getStatusCode() == HttpStatus.SC_OK) {
-                retVal = true;
-            }
-            else {
-                LOGGER.error("Failed to scale up Elastigroup: " + elastigroupId + ", error code: " +
-                             response.getStatusCode() + ", error message: " + response.getBody());
-            }
-        }
-        catch (Exception e) {
-            LOGGER.error("Failed to scale up Elastigroup: " + elastigroupId + ", error: " + e.getMessage());
-        }
-
-        return retVal;
-    }
-
-    @Override
-    public boolean azureDetachInstance(String elastigroupId, String instanceId) {
-        boolean             retVal      = false;
-        Map<String, String> headers     = buildHeaders();
-        Map<String, String> queryParams = buildQueryParams();
-
-        AzureDetachNodeRequest request = new AzureDetachNodeRequest();
-        request.setNodesToDetach(Arrays.asList(instanceId));
-        request.setShouldDecrementTargetCapacity(true);
-        String body = JsonMapper.toJson(request);
-
-        try {
-            RestResponse response = RestClient
-                    .sendPut(SPOTINST_API_HOST + "/compute/azure/group/" + elastigroupId + "/detachNodes", body,
-                             headers, queryParams);
-
-            if (response.getStatusCode() == HttpStatus.SC_OK) {
-                retVal = true;
-            }
-            else {
-                LOGGER.error("Failed to detach instance:  " + instanceId + ", error code: " + response.getStatusCode() +
-                             ", error message: " + response.getBody());
-            }
-        }
-        catch (Exception e) {
-            LOGGER.error("Failed to detach instance:  " + instanceId + ", error: " + e.getMessage());
-        }
-        return retVal;
-    }
-    //endregion
-
-    @Override
-    public int validateToken(String token, String accountId) {
+    public static int validateToken(String token, String accountId) {
         int                 isValid;
-        Map<String, String> headers = new HashMap<String, String>();
-        headers.put("Authorization", "Bearer " + token);
-        headers.put("Content-Type", "application/json");
+        Map<String, String> headers = new HashMap<>();
+        headers.put(HEADER_AUTH, AUTH_PREFIX + token);
+        headers.put(HEADER_CONTENT_TYPE, CONTENT_TYPE);
 
         Map<String, String> queryParams = new HashMap<>();
+
         if (accountId != null && accountId.isEmpty() == false) {
-            queryParams.put("accountId", accountId);
+            queryParams.put(QUERY_PARAM_ACCOUNT_ID, accountId);
         }
 
         try {
@@ -458,6 +64,247 @@ public class SpotinstApi implements ISpotinstApi {
             isValid = 2;
         }
         return isValid;
+    }
+
+    //region AWS
+    public static List<AwsGroupInstance> getAwsGroupInstances(String groupId) throws ApiException {
+        List<AwsGroupInstance> retVal      = new LinkedList<>();
+        Map<String, String>    headers     = buildHeaders();
+        Map<String, String>    queryParams = buildQueryParams();
+
+        RestResponse response =
+                RestClient.sendGet(SPOTINST_API_HOST + "/aws/ec2/group/" + groupId + "/status", headers, queryParams);
+
+        AwsGroupInstancesResponse instancesResponse = getCastedResponse(response, AwsGroupInstancesResponse.class);
+
+        if (instancesResponse.getResponse().getItems().size() > 0) {
+            retVal = instancesResponse.getResponse().getItems();
+        }
+
+        return retVal;
+    }
+
+    public static AwsScaleUpResult awsScaleUp(String groupId, int adjustment) throws ApiException {
+        AwsScaleUpResult    retVal      = null;
+        Map<String, String> headers     = buildHeaders();
+        Map<String, String> queryParams = buildQueryParams();
+        queryParams.put(QUERY_PARAM_ADJUSTMENT, String.valueOf(adjustment));
+
+        RestResponse response = RestClient
+                .sendPut(SPOTINST_API_HOST + "/aws/ec2/group/" + groupId + "/scale/up", null, headers, queryParams);
+
+        AwsScaleUpResponse scaleUpResponse = getCastedResponse(response, AwsScaleUpResponse.class);
+
+        if (scaleUpResponse.getResponse().getItems().size() > 0) {
+            retVal = scaleUpResponse.getResponse().getItems().get(0);
+        }
+
+        return retVal;
+    }
+
+    public static Boolean awsDetachInstance(String instanceId) throws ApiException {
+        Map<String, String> headers     = buildHeaders();
+        Map<String, String> queryParams = buildQueryParams();
+
+        AwsDetachInstancesRequest request = new AwsDetachInstancesRequest();
+        request.setInstancesToDetach(Arrays.asList(instanceId));
+        request.setShouldDecrementTargetCapacity(true);
+        request.setShouldTerminateInstances(true);
+
+        String body = JsonMapper.toJson(request);
+
+        RestResponse response =
+                RestClient.sendPut(SPOTINST_API_HOST + "/aws/ec2/instance/detach", body, headers, queryParams);
+
+        getCastedResponse(response, ApiEmptyResponse.class);
+        Boolean retVal = true;
+
+        return retVal;
+    }
+    //endregion
+
+    //region GCP
+    public static GcpScaleUpResult gcpScaleUp(String groupId, int adjustment) throws ApiException {
+
+        GcpScaleUpResult    retVal  = null;
+        Map<String, String> headers = buildHeaders();
+
+        Map<String, String> queryParams = buildQueryParams();
+        queryParams.put(QUERY_PARAM_ADJUSTMENT, String.valueOf(adjustment));
+
+        RestResponse response = RestClient
+                .sendPut(SPOTINST_API_HOST + "/gcp/gce/group/" + groupId + "/scale/up", null, headers, queryParams);
+
+        GcpScaleUpResponse scaleUpResponse = getCastedResponse(response, GcpScaleUpResponse.class);
+
+        if (scaleUpResponse.getResponse().getItems().size() > 0) {
+            retVal = scaleUpResponse.getResponse().getItems().get(0);
+        }
+
+        return retVal;
+    }
+
+    public static Boolean gcpDetachInstance(String groupId, String instanceName) throws ApiException {
+        Map<String, String> headers     = buildHeaders();
+        Map<String, String> queryParams = buildQueryParams();
+
+        GcpDetachInstancesRequest request = new GcpDetachInstancesRequest();
+        request.setInstancesToDetach(Arrays.asList(instanceName));
+        request.setShouldDecrementTargetCapacity(true);
+        request.setShouldTerminateInstances(true);
+        String body = JsonMapper.toJson(request);
+
+        RestResponse response = RestClient
+                .sendPut(SPOTINST_API_HOST + "/gcp/gce/group/" + groupId + "/detachInstances", body, headers,
+                         queryParams);
+
+        getCastedResponse(response, ApiEmptyResponse.class);
+        Boolean retVal = true;
+
+        return retVal;
+    }
+
+    public static List<GcpGroupInstance> getGcpGroupInstances(String groupId) throws ApiException {
+        List<GcpGroupInstance> retVal      = new LinkedList<>();
+        Map<String, String>    headers     = buildHeaders();
+        Map<String, String>    queryParams = buildQueryParams();
+
+        RestResponse response =
+                RestClient.sendGet(SPOTINST_API_HOST + "/gcp/gce/group/" + groupId + "/status", headers, queryParams);
+
+        GcpGroupInstancesResponse instancesResponse = getCastedResponse(response, GcpGroupInstancesResponse.class);
+
+        if (instancesResponse.getResponse().getItems().size() > 0) {
+            retVal = instancesResponse.getResponse().getItems();
+        }
+
+        return retVal;
+    }
+    //endregion
+
+    //region Azure
+    public static List<AzureGroupInstance> getAzureGroupInstances(String groupId) throws ApiException {
+        List<AzureGroupInstance> retVal      = new LinkedList<>();
+        Map<String, String>      headers     = buildHeaders();
+        Map<String, String>      queryParams = buildQueryParams();
+
+        RestResponse response = RestClient
+                .sendGet(SPOTINST_API_HOST + "/compute/azure/group/" + groupId + "/status", headers, queryParams);
+
+        AzureGroupInstancesResponse instancesResponse = getCastedResponse(response, AzureGroupInstancesResponse.class);
+
+        if (instancesResponse.getResponse().getItems().size() > 0) {
+            retVal = instancesResponse.getResponse().getItems();
+        }
+
+        return retVal;
+    }
+
+    public static Boolean azureScaleUp(String groupId, int adjustment) throws ApiException {
+        Map<String, String> headers = buildHeaders();
+
+        Map<String, String> queryParams = buildQueryParams();
+        queryParams.put("adjustment", String.valueOf(adjustment));
+
+        RestResponse response = RestClient
+                .sendPut(SPOTINST_API_HOST + "/compute/azure/group/" + groupId + "/scale/up", null, headers,
+                         queryParams);
+
+        getCastedResponse(response, ApiEmptyResponse.class);
+        Boolean retVal = true;
+
+        return retVal;
+    }
+
+    public static Boolean azureDetachInstance(String groupId, String instanceId) throws ApiException {
+        Map<String, String> headers     = buildHeaders();
+        Map<String, String> queryParams = buildQueryParams();
+
+        AzureDetachInstancesRequest request = new AzureDetachInstancesRequest();
+        request.setInstancesToDetach(Arrays.asList(instanceId));
+        request.setShouldDecrementTargetCapacity(true);
+        String body = JsonMapper.toJson(request);
+
+        RestResponse response = RestClient
+                .sendPut(SPOTINST_API_HOST + "/compute/azure/group/" + groupId + "/detachInstances", body, headers,
+                         queryParams);
+
+        getCastedResponse(response, ApiEmptyResponse.class);
+        Boolean retVal = true;
+
+        return retVal;
+    }
+    //endregion
+
+    //endregion
+
+    //region Private Methods
+    private static String buildUserAgent() {
+        String retVal         = null;
+        String jenkinsVersion = Jenkins.getInstance().VERSION;
+        Plugin spotinst       = Jenkins.getInstance().getPlugin(PLUGIN_NAME);
+
+        if (spotinst != null) {
+            PluginWrapper wrapper = spotinst.getWrapper();
+            if (wrapper != null) {
+                String pluginVersion = wrapper.getVersion();
+                retVal = String.format(USER_AGENT_FORMAT, jenkinsVersion, pluginVersion);
+            }
+        }
+
+        return retVal;
+    }
+
+    private static Map<String, String> buildHeaders() {
+        Map<String, String> headers = new HashMap<>();
+        headers.put(HEADER_AUTH, AUTH_PREFIX + SpotinstContext.getInstance().getSpotinstToken());
+        headers.put(HEADER_CONTENT_TYPE, CONTENT_TYPE);
+        String userAgent = buildUserAgent();
+
+        if (userAgent != null) {
+            headers.put(HEADER_USER_AGENT, userAgent);
+        }
+
+        return headers;
+    }
+
+    private static Map<String, String> buildQueryParams() {
+        Map<String, String> queryParams = new HashMap<>();
+        String              accountId   = SpotinstContext.getInstance().getAccountId();
+
+        if (accountId != null && accountId.isEmpty() == false) {
+            queryParams.put(QUERY_PARAM_ACCOUNT_ID, accountId);
+        }
+
+        return queryParams;
+    }
+
+    private static <T> T getCastedResponse(RestResponse response, Class<T> contentClass) throws ApiException {
+        T retVal;
+
+        if (response.getStatusCode() == org.apache.http.HttpStatus.SC_OK) {
+            retVal = JsonMapper.fromJson(response.getBody(), contentClass);
+            if (retVal == null) {
+                throw new ApiException(String.format("Can't parse response to class: %s", contentClass.toString()));
+            }
+
+        }
+        else {
+            String message =
+                    String.format("Got status code different then SC_OK : %s. Body: %s", response.getStatusCode(),
+                                  response.getBody());
+            LOGGER.error(message);
+
+            ApiErrorsResponse apiErrorsResponse = JsonMapper.fromJson(response.getBody(), ApiErrorsResponse.class);
+            if (apiErrorsResponse != null) {
+                throw new ApiErrorsException(message, apiErrorsResponse.getResponse().getErrors());
+            }
+            else {
+                throw new ApiException(message);
+            }
+        }
+
+        return retVal;
     }
     //endregion
 }

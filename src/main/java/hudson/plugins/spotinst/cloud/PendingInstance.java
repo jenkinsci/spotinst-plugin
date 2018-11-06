@@ -53,7 +53,7 @@ public class PendingInstance {
     }
 
     public enum StatusEnum {
-        SPOT_PENDING("SPOT_PENDING"),
+        PENDING("PENDING"),
         INSTANCE_INITIATING("INSTANCE_INITIATING");
 
         private String name;
