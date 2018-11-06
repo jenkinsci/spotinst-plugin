@@ -3,13 +3,16 @@ package hudson.plugins.spotinst.cloud;
 import hudson.Extension;
 import hudson.model.Node;
 import hudson.plugins.spotinst.api.SpotinstApi;
+import hudson.plugins.spotinst.api.infra.ApiResponse;
 import hudson.plugins.spotinst.api.infra.JsonMapper;
 import hudson.plugins.spotinst.common.Constants;
-import hudson.plugins.spotinst.common.GcpMachineType;
+import hudson.plugins.spotinst.model.gcp.GcpMachineType;
 import hudson.plugins.spotinst.common.TimeUtils;
-import hudson.plugins.spotinst.model.elastigroup.gcp.GcpElastigroupInstance;
-import hudson.plugins.spotinst.model.scale.gcp.GcpResultNewInstance;
-import hudson.plugins.spotinst.model.scale.gcp.GcpScaleUpResult;
+import hudson.plugins.spotinst.model.gcp.GcpGroupInstance;
+import hudson.plugins.spotinst.model.gcp.GcpResultNewInstance;
+import hudson.plugins.spotinst.model.gcp.GcpScaleUpResult;
+import hudson.plugins.spotinst.repos.IGcpGroupRepo;
+import hudson.plugins.spotinst.repos.RepoManager;
 import hudson.plugins.spotinst.slave.SlaveUsageEnum;
 import hudson.plugins.spotinst.slave.SpotinstSlave;
 import jenkins.model.Jenkins;
@@ -27,7 +30,8 @@ import java.util.List;
 public class GcpSpotinstCloud extends BaseSpotinstCloud {
 
     //region Members
-    private static final Logger LOGGER = LoggerFactory.getLogger(GcpSpotinstCloud.class);
+    private static final Logger LOGGER    = LoggerFactory.getLogger(GcpSpotinstCloud.class);
+    private static final String CLOUD_URL = "gcp/gce";
     //endregion
 
     //region Constructors
@@ -38,6 +42,95 @@ public class GcpSpotinstCloud extends BaseSpotinstCloud {
     }
     //endregion
 
+    //region Overrides
+    @Override
+    List<SpotinstSlave> scaleUp(ProvisionRequest request) {
+        List<SpotinstSlave>           retVal          = new LinkedList<>();
+        IGcpGroupRepo                 gcpGroupRepo    = RepoManager.getInstance().getGcpGroupRepo();
+        ApiResponse<GcpScaleUpResult> scaleUpResponse = gcpGroupRepo.scaleUp(groupId, request.getExecutors());
+
+        if (scaleUpResponse.isRequestSucceed()) {
+            GcpScaleUpResult scaleUpResult = scaleUpResponse.getValue();
+
+            if (scaleUpResult != null) {
+                LOGGER.info(String.format("Scale up group %s succeeded", groupId));
+
+                if (scaleUpResult.getNewInstances() != null) {
+                    for (GcpResultNewInstance newInstance : scaleUpResult.getNewInstances()) {
+                        SpotinstSlave newInstanceSlave =
+                                handleNewGcpInstance(newInstance.getInstanceName(), newInstance.getMachineType(),
+                                                     request.getLabel());
+                        retVal.add(newInstanceSlave);
+                    }
+                }
+
+                if (scaleUpResult.getNewPreemptibles() != null) {
+                    for (GcpResultNewInstance newInstance : scaleUpResult.getNewPreemptibles()) {
+                        SpotinstSlave newPreemptibleSlave =
+                                handleNewGcpInstance(newInstance.getInstanceName(), newInstance.getMachineType(),
+                                                     request.getLabel());
+                        retVal.add(newPreemptibleSlave);
+                    }
+                }
+            }
+            else {
+                LOGGER.error(String.format("Failed to scale up group: %s", groupId));
+            }
+        }
+        else {
+            LOGGER.error(
+                    String.format("Failed to scale up group %s. Errors: %s ", groupId, scaleUpResponse.getErrors()));
+        }
+
+        return retVal;
+    }
+
+    @Override
+    public Boolean detachInstance(String instanceId) {
+        Boolean              retVal                 = false;
+        IGcpGroupRepo        gcpGroupRepo           = RepoManager.getInstance().getGcpGroupRepo();
+        ApiResponse<Boolean> detachInstanceResponse = gcpGroupRepo.detachInstance(groupId, instanceId);
+
+        if (detachInstanceResponse.isRequestSucceed()) {
+            LOGGER.info(String.format("Instance %s detached", instanceId));
+            retVal = true;
+        }
+        else {
+            LOGGER.error(String.format("Failed to detach instance %s. Errors: %s", instanceId,
+                                       detachInstanceResponse.getErrors()));
+        }
+
+        return retVal;
+    }
+
+    @Override
+    public void syncGroupInstances() {
+        IGcpGroupRepo                       gcpGroupRepo      = RepoManager.getInstance().getGcpGroupRepo();
+        ApiResponse<List<GcpGroupInstance>> instancesResponse = gcpGroupRepo.getGroupInstances(groupId);
+
+        if (instancesResponse.isRequestSucceed()) {
+
+            List<GcpGroupInstance> instances = instancesResponse.getValue();
+
+            LOGGER.info(String.format("There are %s instances in group %s", instances.size(), groupId));
+
+            addNewGcpSlaveInstances(instances);
+            removeOldGcpSlaveInstances(instances);
+
+        }
+        else {
+            LOGGER.error(String.format("Failed to get group %s instances. Errors: %s", groupId,
+                                       instancesResponse.getErrors()));
+        }
+    }
+
+    @Override
+    public String getCloudUrl() {
+        return CLOUD_URL;
+    }
+
+    //endregion
+
     //region Private Methods
     private SpotinstSlave handleNewGcpInstance(String instanceName, String machineType, String label) {
         Integer executors = GcpMachineType.fromValue(machineType).getExecutors();
@@ -46,163 +139,83 @@ public class GcpSpotinstCloud extends BaseSpotinstCloud {
         return retVal;
     }
 
-    //region Recover
-    private void addNewGcpSlaveInstances(List<GcpElastigroupInstance> gcpElastigroupInstances) {
-        if (gcpElastigroupInstances.size() > 0) {
-            for (GcpElastigroupInstance instance : gcpElastigroupInstances) {
-                boolean isSlaveExist = isSlaveExistForGcpInstance(instance);
+    private void addNewGcpSlaveInstances(List<GcpGroupInstance> gcpGroupInstances) {
+        if (gcpGroupInstances.size() > 0) {
+
+            for (GcpGroupInstance instance : gcpGroupInstances) {
+                Boolean isSlaveExist = isSlaveExistForGcpInstance(instance);
+
                 if (isSlaveExist == false) {
-                    LOGGER.info("Instance: {} of group: {} doesn't have slave , adding new one",
-                                JsonMapper.toJson(instance), groupId);
+                    LOGGER.info(String.format("Instance: %s of group: %s doesn't have slave , adding new one",
+                                              JsonMapper.toJson(instance), groupId));
                     addSpotinstGcpSlave(instance);
                 }
             }
         }
         else {
-            LOGGER.info("There are no new instances to add for group: {}", groupId);
+            LOGGER.info(String.format("There are no new instances to add for group: %s", groupId));
         }
     }
 
-    private void removeOldGcpSlaveInstances(List<GcpElastigroupInstance> gcpElastigroupInstances) {
+    private void removeOldGcpSlaveInstances(List<GcpGroupInstance> gcpGroupInstances) {
+        List<SpotinstSlave> allGroupsSlaves = getAllSpotinstSlaves();
 
-        List<SpotinstSlave> allGroupsSlaves = loadSlaves();
-        LOGGER.info("There are {} slaves for group: {}", allGroupsSlaves.size(), groupId);
-        List<String> instanceNames = getGcpInstanceNames(gcpElastigroupInstances);
+        LOGGER.info(String.format("There are %s slaves for group: %s", allGroupsSlaves.size(), groupId));
+
+        List<String> instanceNames = getGcpInstanceNames(gcpGroupInstances);
+
         for (SpotinstSlave slave : allGroupsSlaves) {
             String  slaveInstanceId      = slave.getInstanceId();
-            boolean isInstanceInitiating = isInstancePending(slaveInstanceId);
+            Boolean isInstanceInitiating = isInstancePending(slaveInstanceId);
 
-            if (slaveInstanceId != null &&
-                instanceNames.contains(slaveInstanceId) == false &&
+            if (slaveInstanceId != null && instanceNames.contains(slaveInstanceId) == false &&
                 isInstanceInitiating == false) {
-                LOGGER.info("Slave for instance: {} is no longer running in group: {}, removing it", slaveInstanceId,
-                            groupId);
+
+                LOGGER.info(String.format("Slave for instance: %s is no longer running in group: %s, removing it",
+                                          slaveInstanceId, groupId));
                 try {
                     Jenkins.getInstance().removeNode(slave);
-                    LOGGER.info("Slave: {} removed successfully", slaveInstanceId);
+                    LOGGER.info(String.format("Slave: %s removed successfully", slaveInstanceId));
                 }
                 catch (IOException e) {
-                    LOGGER.error("Failed to remove slave from group: {}", groupId, e);
+                    LOGGER.error(String.format("Failed to remove slave from group: %s", groupId), e);
                 }
             }
         }
     }
 
-    private List<String> getGcpInstanceNames(List<GcpElastigroupInstance> gcpElastigroupInstances) {
+    private List<String> getGcpInstanceNames(List<GcpGroupInstance> gcpGroupInstances) {
         List<String> retVal = new LinkedList<>();
-        for (GcpElastigroupInstance gcpElastigroupInstance : gcpElastigroupInstances) {
-            retVal.add(gcpElastigroupInstance.getInstanceName());
+
+        for (GcpGroupInstance gcpGroupInstance : gcpGroupInstances) {
+            retVal.add(gcpGroupInstance.getInstanceName());
         }
+
         return retVal;
     }
 
-    private boolean isSlaveExistForGcpInstance(GcpElastigroupInstance instance) {
-        boolean retVal = false;
+    private Boolean isSlaveExistForGcpInstance(GcpGroupInstance instance) {
+        Boolean retVal = false;
 
         Node node = Jenkins.getInstance().getNode(instance.getInstanceName());
+
         if (node != null) {
             retVal = true;
         }
+
         return retVal;
     }
 
-    private void addSpotinstGcpSlave(GcpElastigroupInstance instance) {
+    private void addSpotinstGcpSlave(GcpGroupInstance instance) {
         if (instance.getInstanceName() != null) {
             SpotinstSlave slave = handleNewGcpInstance(instance.getInstanceName(), instance.getMachineType(), null);
+
             try {
                 Jenkins.getInstance().addNode(slave);
             }
             catch (IOException e) {
                 LOGGER.error(String.format("Failed to create node for slave: %s", slave.getInstanceId()), e);
             }
-        }
-    }
-
-    //endregion
-
-    //region Monitor
-    private void handleInitiatingInstance(PendingInstance pendingInstance) {
-        boolean isInstanceStuck =
-                TimeUtils.isTimePassed(pendingInstance.getCreatedAt(), Constants.PENDING_INSTANCE_TIMEOUT_IN_MINUTES);
-        if (isInstanceStuck) {
-            LOGGER.info(
-                    String.format("Instance %s is in initiating state for over than %s minutes, ignoring this instance",
-                                  pendingInstance.getId(), Constants.PENDING_INSTANCE_TIMEOUT_IN_MINUTES));
-            pendingInstances.remove(pendingInstance.getId());
-        }
-    }
-    //endregion
-    //endregion
-
-    //region Overrides
-    @Override
-    List<SpotinstSlave> scaleUp(ProvisionRequest request) {
-        List<SpotinstSlave> retVal        = new LinkedList<>();
-        GcpScaleUpResult    scaleUpResult = SpotinstApi.getInstance().gcpScaleUp(groupId, request.getExecutors());
-
-        if (scaleUpResult != null) {
-            if (scaleUpResult.getNewInstances() != null) {
-                for (GcpResultNewInstance newInstance : scaleUpResult.getNewInstances()) {
-                    SpotinstSlave newInstanceSlave =
-                            handleNewGcpInstance(newInstance.getInstanceName(), newInstance.getMachineType(),
-                                                 request.getLabel());
-                    retVal.add(newInstanceSlave);
-                }
-            }
-
-            if (scaleUpResult.getNewPreemptibles() != null) {
-                for (GcpResultNewInstance newInstance : scaleUpResult.getNewPreemptibles()) {
-                    SpotinstSlave newPreemptibleSlave =
-                            handleNewGcpInstance(newInstance.getInstanceName(), newInstance.getMachineType(),
-                                                 request.getLabel());
-                    retVal.add(newPreemptibleSlave);
-                }
-            }
-        }
-        else {
-            LOGGER.error("Failed to scale up Elastigroup: " + groupId);
-        }
-
-        return retVal;
-    }
-
-    @Override
-    public boolean detachInstance(String instanceId) {
-        boolean retVal = SpotinstApi.getInstance().gcpDetachInstance(groupId, instanceId);
-        return retVal;
-    }
-
-    @Override
-    public String getCloudUrl() {
-        return "gcp/gce";
-    }
-
-    @Override
-    public void recoverInstances() {
-        List<GcpElastigroupInstance> gcpElastigroupInstances =
-                SpotinstApi.getInstance().getGcpElastigroupInstances(groupId);
-        if (gcpElastigroupInstances != null) {
-            LOGGER.info("There are {} instances in group {}", gcpElastigroupInstances.size(), groupId);
-            addNewGcpSlaveInstances(gcpElastigroupInstances);
-            removeOldGcpSlaveInstances(gcpElastigroupInstances);
-        }
-        else {
-            LOGGER.error("can't recover group {}", groupId);
-        }
-
-    }
-
-    @Override
-    public void monitorInstances() {
-        LOGGER.info(String.format("Monitoring group %s instances", groupId));
-        if (pendingInstances.size() > 0) {
-            for (String id : pendingInstances.keySet()) {
-                PendingInstance pendingInstance = pendingInstances.get(id);
-                handleInitiatingInstance(pendingInstance);
-            }
-        }
-        else {
-            LOGGER.info(String.format("There are no instances to handle for group %s", groupId));
         }
     }
 

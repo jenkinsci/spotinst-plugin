@@ -26,7 +26,8 @@ public class SpotinstComputerListener extends ComputerListener {
 
             SpotinstSlave slave = spotinstComputer.getNode();
             slave.onSlaveConnected();
-            LOGGER.info("Slave: " + slave.getNodeName() + " is connected to master");
+
+            LOGGER.info(String.format("Slave: %s is connected to master", slave.getNodeName()));
         }
     }
 

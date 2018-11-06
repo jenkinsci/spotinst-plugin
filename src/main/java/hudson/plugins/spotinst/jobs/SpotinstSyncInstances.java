@@ -6,8 +6,9 @@ import hudson.model.TaskListener;
 import hudson.plugins.spotinst.cloud.BaseSpotinstCloud;
 import hudson.slaves.Cloud;
 import jenkins.model.Jenkins;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -15,17 +16,18 @@ import java.util.concurrent.TimeUnit;
  * Created by ohadmuchnik on 25/05/2016.
  */
 @Extension
-public class SpotinstInstancesMonitor extends AsyncPeriodicWork {
+public class SpotinstSyncInstances extends AsyncPeriodicWork {
 
     //region Members
-    public static final Integer JOB_INTERVAL_IN_SECONDS = 30;
+    private static final Logger  LOGGER                  = LoggerFactory.getLogger(SpotinstSyncInstances.class);
+    public static final  Integer JOB_INTERVAL_IN_MINUTES = 5;
     final long recurrencePeriod;
     //endregion
 
     //region Constructor
-    public SpotinstInstancesMonitor() {
-        super("Instances monitor");
-        recurrencePeriod = TimeUnit.SECONDS.toMillis(JOB_INTERVAL_IN_SECONDS);
+    public SpotinstSyncInstances() {
+        super("Sync Instances");
+        recurrencePeriod = TimeUnit.MINUTES.toMillis(JOB_INTERVAL_IN_MINUTES);
     }
     //endregion
 
@@ -38,9 +40,18 @@ public class SpotinstInstancesMonitor extends AsyncPeriodicWork {
             for (Cloud cloud : cloudList) {
                 if (cloud instanceof BaseSpotinstCloud) {
                     BaseSpotinstCloud spotinstCloud = (BaseSpotinstCloud) cloud;
-                    spotinstCloud.monitorInstances();
+                    try {
+                        spotinstCloud.syncGroupInstances();
+                    }
+                    catch (Exception e) {
+                        LOGGER.error(String.format("Failed to sync group: %s instances", spotinstCloud.getGroupId()),
+                                     e);
+                    }
                 }
             }
+        }
+        else {
+            LOGGER.info("There are no groups to handle");
         }
     }
 

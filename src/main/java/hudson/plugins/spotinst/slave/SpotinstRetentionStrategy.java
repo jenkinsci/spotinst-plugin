@@ -27,16 +27,18 @@ public class SpotinstRetentionStrategy extends RetentionStrategy<SpotinstCompute
     @DataBoundConstructor
     public SpotinstRetentionStrategy(String idleTerminationMinutes) {
         readResolve();
+
         if (idleTerminationMinutes == null || idleTerminationMinutes.trim().isEmpty()) {
             this.idleTerminationMinutes = 0;
         }
         else {
             int value = STARTUP_TIME_DEFAULT_VALUE;
+
             try {
                 value = Integer.parseInt(idleTerminationMinutes);
             }
             catch (NumberFormatException nfe) {
-                LOGGER.info("Malformed default idleTermination value: " + idleTerminationMinutes);
+                LOGGER.info(String.format("Malformed default idleTermination value: %s", idleTerminationMinutes));
             }
 
             this.idleTerminationMinutes = value;
@@ -44,54 +46,9 @@ public class SpotinstRetentionStrategy extends RetentionStrategy<SpotinstCompute
     }
     //endregion
 
-    //region Private Methods
-    private long CheckComputer(SpotinstComputer computer) {
-
-        if (idleTerminationMinutes == 0 || computer.getNode() == null) {
-            return 1;
-        }
-
-        SpotinstSlave slave = computer.getNode();
-        if (slave.isSlavePending()) {
-            return 1;
-        }
-
-        if (computer.isIdle() && !DISABLED) {
-
-            final long idleMilliseconds = System.currentTimeMillis() - computer.getIdleStartMilliseconds();
-
-            if (idleTerminationMinutes > 0) {
-                if (idleMilliseconds > TimeUnit2.MINUTES.toMillis(idleTerminationMinutes)) {
-
-                    LOGGER.info(computer.getName() +
-                                " is idle for " +
-                                TimeUnit2.MILLISECONDS.toMinutes(idleMilliseconds) +
-                                " minutes, terminating..");
-                    slave.terminate();
-                }
-            }
-            else {
-                long upTime = System.currentTimeMillis() - slave.getCreatedAt().getTime();
-                final int freeSecondsLeft =
-                        (60 * 60) - (int) (TimeUnit2.SECONDS.convert(upTime, TimeUnit2.MILLISECONDS) % (60 * 60));
-                if (freeSecondsLeft <= TimeUnit.MINUTES.toSeconds(Math.abs(idleTerminationMinutes))) {
-                    LOGGER.info("Idle timeout of " + computer.getName() + " after " +
-                                TimeUnit2.MILLISECONDS.toMinutes(idleMilliseconds) + " idle minutes, with " +
-                                TimeUnit2.SECONDS.toMinutes(freeSecondsLeft) +
-                                " minutes remaining in billing period");
-                    slave.terminate();
-                }
-            }
-        }
-
-        return 1;
-    }
-    //endregion
-
     //region Public Methods
     @Override
     public void start(SpotinstComputer c) {
-        LOGGER.info("Start requested for " + c.getName());
         c.connect(false);
     }
 
@@ -120,6 +77,49 @@ public class SpotinstRetentionStrategy extends RetentionStrategy<SpotinstCompute
     protected Object readResolve() {
         checkLock = new ReentrantLock(false);
         return this;
+    }
+    //endregion
+
+    //region Private Methods
+    private long CheckComputer(SpotinstComputer computer) {
+
+        if (idleTerminationMinutes == 0 || computer.getNode() == null) {
+            return 1;
+        }
+
+        SpotinstSlave slave = computer.getNode();
+        if (slave.isSlavePending()) {
+            return 1;
+        }
+
+        if (computer.isIdle() && !DISABLED) {
+
+            final long idleMilliseconds = System.currentTimeMillis() - computer.getIdleStartMilliseconds();
+
+            if (idleTerminationMinutes > 0) {
+                if (idleMilliseconds > TimeUnit2.MINUTES.toMillis(idleTerminationMinutes)) {
+
+                    LOGGER.info(String.format("%s is idle for %s minutes, terminating..", computer.getName(),
+                                              TimeUnit2.MILLISECONDS.toMinutes(idleMilliseconds)));
+                    slave.terminate();
+                }
+            }
+            else {
+                long upTime = System.currentTimeMillis() - slave.getCreatedAt().getTime();
+                final int freeSecondsLeft =
+                        (60 * 60) - (int) (TimeUnit2.SECONDS.convert(upTime, TimeUnit2.MILLISECONDS) % (60 * 60));
+
+                if (freeSecondsLeft <= TimeUnit.MINUTES.toSeconds(Math.abs(idleTerminationMinutes))) {
+                    LOGGER.info(String.format(
+                            "Idle timeout of %s after %s idle minutes, with %s minutes remaining in billing period",
+                            computer.getName(), TimeUnit2.MILLISECONDS.toMinutes(idleMilliseconds),
+                            TimeUnit2.SECONDS.toMinutes(freeSecondsLeft)));
+                    slave.terminate();
+                }
+            }
+        }
+
+        return 1;
     }
     //endregion
 }

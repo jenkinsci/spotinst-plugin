@@ -15,8 +15,8 @@ import org.kohsuke.stapler.StaplerRequest;
 @Extension
 public class SpotinstTokenConfig extends GlobalConfiguration {
     //region Members
-    public String spotinstToken;
-    public String accountId;
+    private String spotinstToken;
+    private String accountId;
     //endregion
 
     public SpotinstTokenConfig() {
@@ -26,17 +26,18 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
     }
 
     @Override
-    public boolean configure(StaplerRequest req, JSONObject json) throws FormException {
+    public boolean configure(StaplerRequest req, JSONObject json) {
         spotinstToken = json.getString("spotinstToken");
         accountId = json.getString("accountId");
         save();
         SpotinstContext.getInstance().setSpotinstToken(spotinstToken);
         SpotinstContext.getInstance().setAccountId(accountId);
+
         return true;
     }
 
     private static int validateToken(String token, String accountId) {
-        int retVal = SpotinstApi.getInstance().validateToken(token, accountId);
+        int retVal = SpotinstApi.validateToken(token, accountId);
         return retVal;
     }
 
@@ -64,5 +65,9 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
 
     public String getSpotinstToken() {
         return spotinstToken;
+    }
+
+    public String getAccountId() {
+        return accountId;
     }
 }

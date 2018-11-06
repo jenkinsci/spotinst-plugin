@@ -23,26 +23,64 @@ public class RestClient {
     private static final Logger LOGGER = LoggerFactory.getLogger(RestClient.class);
     //endregion
 
+    //region Public Methods
+    public static RestResponse sendGet(String url, Map<String, String> headers,
+                                       Map<String, String> queryParams) throws ApiException {
+
+        HttpGet getRequest = new HttpGet(url);
+        addQueryParams(getRequest, queryParams);
+        addHeaders(getRequest, headers);
+        RestResponse retVal = sendRequest(getRequest);
+
+        return retVal;
+    }
+
+    public static RestResponse sendPut(String url, String body, Map<String, String> headers,
+                                       Map<String, String> queryParams) throws ApiException {
+
+        HttpPut putRequest = new HttpPut(url);
+
+        if (body != null) {
+            StringEntity entity = null;
+            try {
+                entity = new StringEntity(body);
+            }
+            catch (UnsupportedEncodingException e) {
+                LOGGER.error("Exception when building put body", e);
+            }
+            putRequest.setEntity(entity);
+        }
+
+        addQueryParams(putRequest, queryParams);
+        addHeaders(putRequest, headers);
+        RestResponse retVal = sendRequest(putRequest);
+
+        return retVal;
+    }
+    //endregion
+
     //region Private Methods
-    private static RestResponse sendRequest(HttpUriRequest urlRequest) throws Exception {
+    private static RestResponse sendRequest(HttpUriRequest urlRequest) throws ApiException {
         RestResponse retVal = null;
 
-        HttpClient httpclient =
-                HttpClientBuilder.create().build();
+        HttpClient httpclient = HttpClientBuilder.create().build();
 
         CloseableHttpResponse response = null;
         try {
             response = (CloseableHttpResponse) httpclient.execute(urlRequest);
             retVal = buildRestResponse(response);
 
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             LOGGER.error("Exception when executing http request", e);
-            throw new Exception("Exception in http request", e);
-        } finally {
+            throw new ApiException("Exception in http request", e);
+        }
+        finally {
             if (response != null) {
                 try {
                     response.close();
-                } catch (IOException e) {
+                }
+                catch (IOException e) {
                     LOGGER.error("Exception when closing http response", e);
                 }
             }
@@ -61,7 +99,8 @@ public class RestClient {
             URI newUri = null;
             try {
                 newUri = builder.build();
-            } catch (URISyntaxException e) {
+            }
+            catch (URISyntaxException e) {
                 LOGGER.error("Exception when building get url", e);
             }
 
@@ -77,65 +116,25 @@ public class RestClient {
         }
     }
 
-    private static RestResponse buildRestResponse(HttpResponse response) throws Exception {
-        RestResponse retVal = null;
-        BufferedReader rd = null;
+    private static RestResponse buildRestResponse(HttpResponse response) throws ApiException {
+        RestResponse   retVal;
+        BufferedReader rd;
         try {
-            rd = new BufferedReader(
-                    new InputStreamReader(response.getEntity().getContent()));
+            rd = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
 
             StringBuffer result = new StringBuffer();
-            String line = "";
+            String       line   = "";
             while ((line = rd.readLine()) != null) {
                 result.append(line);
             }
 
             retVal = new RestResponse(response.getStatusLine().getStatusCode(), result.toString());
 
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             LOGGER.error("Exception when building Rest response.", e);
-            throw new Exception("Exception when building Rest response.", e);
+            throw new ApiException("Exception when building Rest response.", e);
         }
-
-        return retVal;
-    }
-    //endregion
-
-    //region Public Methods
-    public static RestResponse sendGet(
-            String url,
-            Map<String, String> headers,
-            Map<String, String> queryParams) throws Exception {
-
-        HttpGet getRequest = new HttpGet(url);
-        addQueryParams(getRequest, queryParams);
-        addHeaders(getRequest, headers);
-        RestResponse retVal = sendRequest(getRequest);
-
-        return retVal;
-    }
-
-    public static RestResponse sendPut(
-            String url,
-            String body,
-            Map<String, String> headers,
-            Map<String, String> queryParams) throws Exception {
-
-        HttpPut putRequest = new HttpPut(url);
-
-        if (body != null) {
-            StringEntity entity = null;
-            try {
-                entity = new StringEntity(body);
-            } catch (UnsupportedEncodingException e) {
-                LOGGER.error("Exception when building put body", e);
-            }
-            putRequest.setEntity(entity);
-        }
-
-        addQueryParams(putRequest, queryParams);
-        addHeaders(putRequest, headers);
-        RestResponse retVal = sendRequest(putRequest);
 
         return retVal;
     }

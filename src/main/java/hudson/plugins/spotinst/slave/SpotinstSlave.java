@@ -82,10 +82,10 @@ public class SpotinstSlave extends Slave {
     }
 
     public void terminate() {
-        boolean isTerminated = spotinstCloud.detachInstance(instanceId);
+        Boolean isTerminated = spotinstCloud.detachInstance(instanceId);
 
         if (isTerminated) {
-            LOGGER.info("Instance: " + getInstanceId() + " terminated successfully");
+            LOGGER.info(String.format("Instance: %s terminated successfully", getInstanceId()));
             try {
                 Jenkins.getInstance().removeNode(this);
             }
@@ -94,7 +94,7 @@ public class SpotinstSlave extends Slave {
             }
         }
         else {
-            LOGGER.error("Failed to terminate instance: " + getInstanceId());
+            LOGGER.error(String.format("Failed to terminate instance: %s", getInstanceId()));
         }
     }
 
@@ -102,14 +102,14 @@ public class SpotinstSlave extends Slave {
         return usage;
     }
 
-    public boolean forceTerminate() {
-        boolean isTerminated = spotinstCloud.detachInstance(instanceId);
+    public Boolean forceTerminate() {
+        Boolean isTerminated = spotinstCloud.detachInstance(instanceId);
 
         if (isTerminated) {
-            LOGGER.info("Instance: " + getInstanceId() + " terminated successfully");
+            LOGGER.info(String.format("Instance: %s terminated successfully", getInstanceId()));
         }
         else {
-            LOGGER.error("Failed to terminate instance: " + getInstanceId());
+            LOGGER.error(String.format("Failed to terminate instance: %s", getInstanceId()));
         }
 
         try {
