@@ -31,7 +31,6 @@ public class GcpSpotinstCloud extends BaseSpotinstCloud {
 
     //region Members
     private static final Logger LOGGER    = LoggerFactory.getLogger(GcpSpotinstCloud.class);
-    private static final String CLOUD_URL = "gcp/gce";
     //endregion
 
     //region Constructors
@@ -126,7 +125,7 @@ public class GcpSpotinstCloud extends BaseSpotinstCloud {
 
     @Override
     public String getCloudUrl() {
-        return CLOUD_URL;
+        return "gcp/gce";
     }
 
     //endregion

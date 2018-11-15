@@ -26,7 +26,6 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
 
     //region Members
     private static final Logger LOGGER    = LoggerFactory.getLogger(AzureSpotinstCloud.class);
-    private static final String CLOUD_URL = "/azure/compute";
     //endregion
 
     //region Constructor
@@ -129,7 +128,7 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
 
     @Override
     public String getCloudUrl() {
-        return CLOUD_URL;
+        return "/azure/compute";
     }
     //endregion
 

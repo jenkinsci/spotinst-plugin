@@ -1,10 +1,9 @@
 package hudson.plugins.spotinst;
 
-import hudson.plugins.spotinst.api.SpotinstApi;
 import hudson.plugins.spotinst.api.infra.ApiResponse;
 import hudson.plugins.spotinst.cloud.*;
 import hudson.plugins.spotinst.common.*;
-import hudson.plugins.spotinst.model.aws.AwsInstanceTypeEnum;
+import hudson.plugins.spotinst.common.AwsInstanceTypeEnum;
 import hudson.plugins.spotinst.model.aws.AwsScaleResultNewSpot;
 import hudson.plugins.spotinst.model.aws.AwsScaleUpResult;
 import hudson.plugins.spotinst.model.gcp.GcpMachineType;

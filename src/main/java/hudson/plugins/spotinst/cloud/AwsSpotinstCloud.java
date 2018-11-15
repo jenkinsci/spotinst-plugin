@@ -2,16 +2,14 @@ package hudson.plugins.spotinst.cloud;
 
 import hudson.Extension;
 import hudson.model.Node;
-import hudson.plugins.spotinst.repos.IAwsGroupRepo;
 import hudson.plugins.spotinst.api.infra.ApiResponse;
 import hudson.plugins.spotinst.api.infra.JsonMapper;
-import hudson.plugins.spotinst.model.aws.AwsInstanceTypeEnum;
-import hudson.plugins.spotinst.common.Constants;
-import hudson.plugins.spotinst.common.TimeUtils;
+import hudson.plugins.spotinst.common.AwsInstanceTypeEnum;
 import hudson.plugins.spotinst.model.aws.AwsGroupInstance;
 import hudson.plugins.spotinst.model.aws.AwsScaleResultNewInstance;
 import hudson.plugins.spotinst.model.aws.AwsScaleResultNewSpot;
 import hudson.plugins.spotinst.model.aws.AwsScaleUpResult;
+import hudson.plugins.spotinst.repos.IAwsGroupRepo;
 import hudson.plugins.spotinst.repos.RepoManager;
 import hudson.plugins.spotinst.slave.SlaveUsageEnum;
 import hudson.plugins.spotinst.slave.SpotinstSlave;
