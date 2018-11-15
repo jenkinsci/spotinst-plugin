@@ -1,6 +1,5 @@
 package hudson.plugins.spotinst.cloud;
 
-import hudson.model.Computer;
 import hudson.model.Descriptor;
 import hudson.model.Label;
 import hudson.model.Node;
@@ -13,15 +12,11 @@ import hudson.plugins.spotinst.slave.SpotinstSlave;
 import hudson.slaves.Cloud;
 import hudson.slaves.NodeProvisioner.PlannedNode;
 import jenkins.model.Jenkins;
-import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.Callable;
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
 
 /**
  * Created by ohadmuchnik on 25/05/2016.
