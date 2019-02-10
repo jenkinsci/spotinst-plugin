@@ -70,4 +70,12 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
     public String getAccountId() {
         return accountId;
     }
+
+    public void setSpotinstToken(String spotinstToken) {
+        this.spotinstToken = spotinstToken;
+    }
+
+    public void setAccountId(String accountId) {
+        this.accountId = accountId;
+    }
 }
