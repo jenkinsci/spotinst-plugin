@@ -247,7 +247,15 @@ public enum AwsInstanceTypeEnum {
     C5Nxlarge("c5n.xlarge", 4),
     A12xlarge("a1.2xlarge", 8),
     A14xlarge("a1.4xlarge", 16),
-    A1large("a1.large", 2);
+    A1large("a1.large", 2),
+
+    T3A2xlarge("t3a.2xlarge", 8),
+    T3Alarge("t3a.large", 2),
+    T3Amedium("t3a.medium", 2),
+    T3Amicro("t3a.micro", 2),
+    T3Anano("t3a.nano", 2),
+    T3Asmall("t3a.small", 2),
+    T3Axlarge("t3a.xlarge", 4);
 
 
     private String  value;
