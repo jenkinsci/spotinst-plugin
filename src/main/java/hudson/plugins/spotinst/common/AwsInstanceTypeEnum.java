@@ -255,7 +255,27 @@ public enum AwsInstanceTypeEnum {
     T3Amicro("t3a.micro", 2),
     T3Anano("t3a.nano", 2),
     T3Asmall("t3a.small", 2),
-    T3Axlarge("t3a.xlarge", 4);
+    T3Axlarge("t3a.xlarge", 4),
+
+    I3EN12xlarge("i3en.12xlarge", 48),
+    I3EN24xlarge("i3en.24xlarge", 96),
+    I3EN2xlarge("i3en.2xlarge", 8),
+    I3EN3xlarge("i3en.3xlarge", 12),
+    I3EN6xlarge("i3en.6xlarge", 24),
+    I3ENlarge("i3en.large", 2),
+    I3ENxlarge("i3en.xlarge", 4),
+    R5AD12xlarge("r5ad.12xlarge", 48),
+    R5AD24xlarge("r5ad.24xlarge", 96),
+    R5AD2xlarge("r5ad.2xlarge", 8),
+    R5AD4xlarge("r5ad.4xlarge", 16),
+    R5ADlarge("r5ad.large", 2),
+    R5ADxlarge("r5ad.xlarge", 4),
+    M5AD12xlarge("m5ad.12xlarge", 48),
+    M5AD24xlarge("m5ad.24xlarge", 96),
+    M5AD2xlarge("m5ad.2xlarge", 8),
+    M5AD4xlarge("m5ad.4xlarge", 16),
+    M5ADlarge("m5ad.large", 2),
+    M5ADxlarge("m5ad.xlarge", 4);
 
 
     private String  value;
