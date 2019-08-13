@@ -223,6 +223,7 @@ public enum AwsInstanceTypeEnum {
     R524xlarge("r5.24xlarge", 96),
     R52xlarge("r5.2xlarge", 8),
     R54xlarge("r5.4xlarge", 16),
+    R58xlarge("r5.8xlarge", 32),
     R5large("r5.large", 2),
     R5xlarge("r5.xlarge", 4),
     Z1D12xlarge("z1d.12xlarge", 48),

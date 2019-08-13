@@ -1,5 +1,6 @@
 package hudson.plugins.spotinst.cloud;
 
+import hudson.DescriptorExtensionList;
 import hudson.model.Descriptor;
 import hudson.model.Label;
 import hudson.model.Node;
@@ -10,7 +11,12 @@ import hudson.plugins.spotinst.common.TimeUtils;
 import hudson.plugins.spotinst.slave.SlaveUsageEnum;
 import hudson.plugins.spotinst.slave.SpotinstSlave;
 import hudson.slaves.Cloud;
+import hudson.slaves.EnvironmentVariablesNodeProperty;
+import hudson.slaves.NodeProperty;
 import hudson.slaves.NodeProvisioner.PlannedNode;
+import hudson.tools.ToolDescriptor;
+import hudson.tools.ToolInstallation;
+import hudson.tools.ToolLocationNodeProperty;
 import jenkins.model.Jenkins;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,23 +31,29 @@ public abstract class BaseSpotinstCloud extends Cloud {
 
     //region Members
     private static final Logger LOGGER = LoggerFactory.getLogger(BaseSpotinstCloud.class);
-    protected String                       groupId;
-    protected Map<String, PendingInstance> pendingInstances;
-    private   String                       labelString;
-    private   String                       idleTerminationMinutes;
-    private   String                       workspaceDir;
-    private   Set<LabelAtom>               labelSet;
-    private   SlaveUsageEnum               usage;
-    private   String                       tunnel;
-    private   String                       vmargs;
+    protected String                           accountId;
+    protected String                           groupId;
+    protected Map<String, PendingInstance>     pendingInstances;
+    private   String                           labelString;
+    private   String                           idleTerminationMinutes;
+    private   String                           workspaceDir;
+    private   Set<LabelAtom>                   labelSet;
+    private   SlaveUsageEnum                   usage;
+    private   String                           tunnel;
+    private   String                           vmargs;
+    private   EnvironmentVariablesNodeProperty environmentVariables;
+    private   ToolLocationNodeProperty         toolLocations;
 
     //endregion
 
     //region Constructor
     public BaseSpotinstCloud(String groupId, String labelString, String idleTerminationMinutes, String workspaceDir,
-                             SlaveUsageEnum usage, String tunnel, String vmargs) {
+                             SlaveUsageEnum usage, String tunnel, String vmargs,
+                             EnvironmentVariablesNodeProperty environmentVariables,
+                             ToolLocationNodeProperty toolLocations, String accountId) {
         super(groupId);
         this.groupId = groupId;
+        this.accountId = accountId;
         this.labelString = labelString;
         this.idleTerminationMinutes = idleTerminationMinutes;
         this.workspaceDir = workspaceDir;
@@ -57,7 +69,10 @@ public abstract class BaseSpotinstCloud extends Cloud {
 
         this.tunnel = tunnel;
         this.vmargs = vmargs;
+        this.environmentVariables = environmentVariables;
+        this.toolLocations = toolLocations;
     }
+
 
     //endregion
 
@@ -158,6 +173,20 @@ public abstract class BaseSpotinstCloud extends Cloud {
             request.setExecutors(0);
         }
     }
+
+    private List<NodeProperty<?>> buildNodeProperties() {
+        List<NodeProperty<?>> retVal = new LinkedList<>();
+
+        if (this.environmentVariables != null && this.environmentVariables.getEnvVars() != null) {
+            retVal.add(this.environmentVariables);
+        }
+
+        if (this.toolLocations != null && this.toolLocations.getLocations() != null) {
+            retVal.add(this.toolLocations);
+        }
+
+        return retVal;
+    }
     //endregion
 
     //region Protected Methods
@@ -179,10 +208,11 @@ public abstract class BaseSpotinstCloud extends Cloud {
             mode = Node.Mode.EXCLUSIVE;
         }
 
+        List<NodeProperty<?>> nodeProperties = buildNodeProperties();
+
         try {
             slave = new SpotinstSlave(this, id, groupId, id, instanceType, labelString, idleTerminationMinutes,
-                                      workspaceDir, numOfExecutors, mode, this.tunnel, this.vmargs);
-
+                                      workspaceDir, numOfExecutors, mode, this.tunnel, this.vmargs, nodeProperties);
         }
         catch (Descriptor.FormException | IOException e) {
             LOGGER.error(String.format("Failed to build Spotinst slave for: %s", id));
@@ -191,6 +221,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
 
         return slave;
     }
+
 
     protected List<SpotinstSlave> getAllSpotinstSlaves() {
         LOGGER.info(String.format("Getting all existing slaves for group: %s", groupId));
@@ -248,6 +279,13 @@ public abstract class BaseSpotinstCloud extends Cloud {
 
     //region Classes
     public static abstract class DescriptorImpl extends Descriptor<Cloud> {
+        public DescriptorExtensionList<ToolInstallation, ToolDescriptor<?>> getToolDescriptors() {
+            return ToolInstallation.all();
+        }
+
+        public String getKey(ToolInstallation installation) {
+            return installation.getDescriptor().getClass().getName() + "@" + installation.getName();
+        }
     }
     //endregion
 
@@ -270,6 +308,18 @@ public abstract class BaseSpotinstCloud extends Cloud {
 
     public String getVmargs() {
         return vmargs;
+    }
+
+    public String getAccountId() {
+        return accountId;
+    }
+
+    public EnvironmentVariablesNodeProperty getEnvironmentVariables() {
+        return environmentVariables;
+    }
+
+    public ToolLocationNodeProperty getToolLocations() {
+        return toolLocations;
     }
 
     public String getLabelString() {

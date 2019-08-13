@@ -4,20 +4,24 @@ import hudson.Extension;
 import hudson.model.Node;
 import hudson.plugins.spotinst.api.infra.ApiResponse;
 import hudson.plugins.spotinst.api.infra.JsonMapper;
-import hudson.plugins.spotinst.model.azure.AzureVmSizeEnum;
 import hudson.plugins.spotinst.common.Constants;
 import hudson.plugins.spotinst.model.azure.AzureGroupInstance;
+import hudson.plugins.spotinst.model.azure.AzureVmSizeEnum;
 import hudson.plugins.spotinst.repos.IAzureGroupRepo;
 import hudson.plugins.spotinst.repos.RepoManager;
-import hudson.plugins.spotinst.slave.SlaveUsageEnum;
-import hudson.plugins.spotinst.slave.SpotinstSlave;
+import hudson.plugins.spotinst.slave.*;
+import hudson.slaves.EnvironmentVariablesNodeProperty;
+import hudson.tools.ToolLocationNodeProperty;
 import jenkins.model.Jenkins;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.Date;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.UUID;
 
 /**
  * Created by ohadmuchnik on 19/06/2017.
@@ -25,14 +29,17 @@ import java.util.*;
 public class AzureSpotinstCloud extends BaseSpotinstCloud {
 
     //region Members
-    private static final Logger LOGGER    = LoggerFactory.getLogger(AzureSpotinstCloud.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(AzureSpotinstCloud.class);
     //endregion
 
     //region Constructor
     @DataBoundConstructor
     public AzureSpotinstCloud(String groupId, String labelString, String idleTerminationMinutes, String workspaceDir,
-                              SlaveUsageEnum usage, String tunnel, String vmargs) {
-        super(groupId, labelString, idleTerminationMinutes, workspaceDir, usage, tunnel, vmargs);
+                              SlaveUsageEnum usage, String tunnel, String vmargs,
+                              EnvironmentVariablesNodeProperty environmentVariables,
+                              ToolLocationNodeProperty         toolLocations, String accountId) {
+        super(groupId, labelString, idleTerminationMinutes, workspaceDir, usage, tunnel, vmargs, environmentVariables,
+              toolLocations, accountId);
     }
     //endregion
 
@@ -42,7 +49,7 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
         List<SpotinstSlave> retVal = new LinkedList<>();
 
         IAzureGroupRepo      azureGroupRepo  = RepoManager.getInstance().getAzureGroupRepo();
-        ApiResponse<Boolean> scaleUpResponse = azureGroupRepo.scaleUp(groupId, request.getExecutors());
+        ApiResponse<Boolean> scaleUpResponse = azureGroupRepo.scaleUp(groupId, request.getExecutors(), this.accountId);
 
         if (scaleUpResponse.isRequestSucceed()) {
             LOGGER.info(String.format("Scale up group %s succeeded", groupId));
@@ -60,7 +67,7 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
     public Boolean detachInstance(String instanceId) {
         Boolean              retVal                 = false;
         IAzureGroupRepo      azureGroupRepo         = RepoManager.getInstance().getAzureGroupRepo();
-        ApiResponse<Boolean> detachInstanceResponse = azureGroupRepo.detachInstance(groupId, instanceId);
+        ApiResponse<Boolean> detachInstanceResponse = azureGroupRepo.detachInstance(groupId, instanceId, this.accountId);
 
         if (detachInstanceResponse.isRequestSucceed()) {
             LOGGER.info(String.format("Instance %s detached", instanceId));
@@ -82,7 +89,7 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
     @Override
     public void monitorInstances() {
         IAzureGroupRepo                       azureGroupRepo    = RepoManager.getInstance().getAzureGroupRepo();
-        ApiResponse<List<AzureGroupInstance>> instancesResponse = azureGroupRepo.getGroupInstances(groupId);
+        ApiResponse<List<AzureGroupInstance>> instancesResponse = azureGroupRepo.getGroupInstances(groupId, this.accountId);
 
         if (instancesResponse.isRequestSucceed()) {
             List<AzureGroupInstance> instances = instancesResponse.getValue();

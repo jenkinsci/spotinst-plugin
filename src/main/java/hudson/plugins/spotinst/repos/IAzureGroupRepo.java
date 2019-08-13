@@ -9,9 +9,9 @@ import java.util.List;
  * Created by ohadmuchnik on 05/11/2018.
  */
 public interface IAzureGroupRepo {
-    ApiResponse<List<AzureGroupInstance>> getGroupInstances(String groupId);
+    ApiResponse<List<AzureGroupInstance>> getGroupInstances(String groupId, String accountId);
 
-    ApiResponse<Boolean> detachInstance(String groupId, String instanceId);
+    ApiResponse<Boolean> detachInstance(String groupId, String instanceId, String accountId);
 
-    ApiResponse<Boolean> scaleUp(String groupId, Integer adjustment);
+    ApiResponse<Boolean> scaleUp(String groupId, Integer adjustment, String accountId);
 }

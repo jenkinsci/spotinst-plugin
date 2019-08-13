@@ -13,11 +13,11 @@ import java.util.List;
  */
 public class AzureGroupRepo implements IAzureGroupRepo {
     @Override
-    public ApiResponse<List<AzureGroupInstance>> getGroupInstances(String groupId) {
+    public ApiResponse<List<AzureGroupInstance>> getGroupInstances(String groupId, String accountId) {
         ApiResponse<List<AzureGroupInstance>> retVal;
 
         try {
-            List<AzureGroupInstance> instances = SpotinstApi.getAzureGroupInstances(groupId);
+            List<AzureGroupInstance> instances = SpotinstApi.getAzureGroupInstances(groupId, accountId);
 
             retVal = new ApiResponse<>(instances);
 
@@ -30,11 +30,11 @@ public class AzureGroupRepo implements IAzureGroupRepo {
     }
 
     @Override
-    public ApiResponse<Boolean> detachInstance(String groupId, String instanceId) {
+    public ApiResponse<Boolean> detachInstance(String groupId, String instanceId, String accountId) {
         ApiResponse<Boolean> retVal;
 
         try {
-            Boolean isDetached = SpotinstApi.azureDetachInstance(groupId, instanceId);
+            Boolean isDetached = SpotinstApi.azureDetachInstance(groupId, instanceId, accountId);
 
             retVal = new ApiResponse<>(isDetached);
 
@@ -47,11 +47,11 @@ public class AzureGroupRepo implements IAzureGroupRepo {
     }
 
     @Override
-    public ApiResponse<Boolean> scaleUp(String groupId, Integer adjustment) {
+    public ApiResponse<Boolean> scaleUp(String groupId, Integer adjustment, String accountId) {
         ApiResponse<Boolean> retVal;
 
         try {
-            Boolean isSccueed = SpotinstApi.azureScaleUp(groupId, adjustment);
+            Boolean isSccueed = SpotinstApi.azureScaleUp(groupId, adjustment, accountId);
 
             retVal = new ApiResponse<>(isSccueed);
 

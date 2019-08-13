@@ -15,11 +15,11 @@ import java.util.List;
 public class AwsGroupRepo implements IAwsGroupRepo {
 
     @Override
-    public ApiResponse<List<AwsGroupInstance>> getGroupInstances(String groupId) {
+    public ApiResponse<List<AwsGroupInstance>> getGroupInstances(String groupId, String accountId) {
         ApiResponse<List<AwsGroupInstance>> retVal;
 
         try {
-            List<AwsGroupInstance> instances = SpotinstApi.getAwsGroupInstances(groupId);
+            List<AwsGroupInstance> instances = SpotinstApi.getAwsGroupInstances(groupId, accountId);
 
             retVal = new ApiResponse<>(instances);
 
@@ -32,11 +32,11 @@ public class AwsGroupRepo implements IAwsGroupRepo {
     }
 
     @Override
-    public ApiResponse<Boolean> detachInstance(String instanceId) {
+    public ApiResponse<Boolean> detachInstance(String instanceId, String accountId) {
         ApiResponse<Boolean> retVal;
 
         try {
-            Boolean isDetached = SpotinstApi.awsDetachInstance(instanceId);
+            Boolean isDetached = SpotinstApi.awsDetachInstance(instanceId, accountId);
 
             retVal = new ApiResponse<>(isDetached);
 
@@ -49,11 +49,11 @@ public class AwsGroupRepo implements IAwsGroupRepo {
     }
 
     @Override
-    public ApiResponse<AwsScaleUpResult> scaleUp(String groupId, Integer adjustment) {
+    public ApiResponse<AwsScaleUpResult> scaleUp(String groupId, Integer adjustment, String accountId) {
         ApiResponse<AwsScaleUpResult> retVal;
 
         try {
-            AwsScaleUpResult scaleUpResult = SpotinstApi.awsScaleUp(groupId, adjustment);
+            AwsScaleUpResult scaleUpResult = SpotinstApi.awsScaleUp(groupId, adjustment, accountId);
             retVal = new ApiResponse<>(scaleUpResult);
         }
         catch (ApiException e) {

@@ -13,6 +13,8 @@ import hudson.plugins.spotinst.repos.IAwsGroupRepo;
 import hudson.plugins.spotinst.repos.RepoManager;
 import hudson.plugins.spotinst.slave.SlaveUsageEnum;
 import hudson.plugins.spotinst.slave.SpotinstSlave;
+import hudson.slaves.EnvironmentVariablesNodeProperty;
+import hudson.tools.ToolLocationNodeProperty;
 import jenkins.model.Jenkins;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.slf4j.Logger;
@@ -40,8 +42,10 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
     @DataBoundConstructor
     public AwsSpotinstCloud(String groupId, String labelString, String idleTerminationMinutes, String workspaceDir,
                             List<? extends SpotinstInstanceWeight> executorsForTypes, SlaveUsageEnum usage,
-                            String tunnel, String vmargs) {
-        super(groupId, labelString, idleTerminationMinutes, workspaceDir, usage, tunnel, vmargs);
+                            String tunnel, String vmargs, EnvironmentVariablesNodeProperty environmentVariables,
+                            ToolLocationNodeProperty toolLocations, String accountId) {
+        super(groupId, labelString, idleTerminationMinutes, workspaceDir, usage, tunnel, vmargs, environmentVariables,
+              toolLocations, accountId);
         this.executorsForTypes = new LinkedList<>();
         executorsForInstanceType = new HashMap<>();
 
@@ -63,8 +67,9 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
     List<SpotinstSlave> scaleUp(ProvisionRequest request) {
         List<SpotinstSlave> retVal = new LinkedList<>();
 
-        IAwsGroupRepo                 awsGroupRepo    = RepoManager.getInstance().getAwsGroupRepo();
-        ApiResponse<AwsScaleUpResult> scaleUpResponse = awsGroupRepo.scaleUp(groupId, request.getExecutors());
+        IAwsGroupRepo awsGroupRepo = RepoManager.getInstance().getAwsGroupRepo();
+        ApiResponse<AwsScaleUpResult> scaleUpResponse =
+                awsGroupRepo.scaleUp(groupId, request.getExecutors(), this.accountId);
 
         if (scaleUpResponse.isRequestSucceed()) {
             AwsScaleUpResult scaleUpResult = scaleUpResponse.getValue();
@@ -99,7 +104,7 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
         Boolean retVal = false;
 
         IAwsGroupRepo        awsGroupRepo           = RepoManager.getInstance().getAwsGroupRepo();
-        ApiResponse<Boolean> detachInstanceResponse = awsGroupRepo.detachInstance(instanceId);
+        ApiResponse<Boolean> detachInstanceResponse = awsGroupRepo.detachInstance(instanceId, this.accountId);
 
         if (detachInstanceResponse.isRequestSucceed()) {
             LOGGER.info(String.format("Instance %s detached", instanceId));
@@ -116,7 +121,7 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
     @Override
     public void syncGroupInstances() {
         IAwsGroupRepo                       awsGroupRepo      = RepoManager.getInstance().getAwsGroupRepo();
-        ApiResponse<List<AwsGroupInstance>> instancesResponse = awsGroupRepo.getGroupInstances(groupId);
+        ApiResponse<List<AwsGroupInstance>> instancesResponse = awsGroupRepo.getGroupInstances(groupId, this.accountId);
 
         if (instancesResponse.isRequestSucceed()) {
             List<AwsGroupInstance> instances = instancesResponse.getValue();
@@ -309,6 +314,8 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
         public String getDisplayName() {
             return "Spotinst AWS Elastigroup";
         }
+
+
     }
     //endregion
 

@@ -4,7 +4,9 @@
         <img style="width:32px;height:32px;border-radius:3px"
              src="https://s3.amazonaws.com/spotinst-emails/layout/spotinst-icon.png"/>
     </f:entry>
-
+ <f:entry title="${%Account Id}" field="accountId">
+        <f:textbox/>
+    </f:entry>
     <f:entry title="${%Elastigroup Id}" field="groupId">
         <f:textbox/>
     </f:entry>
@@ -27,4 +29,52 @@
         <f:textbox/>
     </f:entry>
     <st:include class="${descriptor.clazz}" page="config-entries.jelly" />
+
+    <f:optionalBlock name="environmentVariables" title ="Environment variables" checked="${instance.environmentVariables != null}">
+      <f:entry title="${%List of key-value pairs}" field="envVar">
+          <f:repeatable var="env" items="${instance.environmentVariables.envVars.entrySet()}">
+            <table width="100%">
+              <f:entry title="${%name}">
+                <f:textbox name="env.key" value="${env.key}" />
+              </f:entry>
+              <f:entry title="${%value}">
+                <f:textbox name="env.value" value="${env.value}" />
+              </f:entry>
+            	<f:entry title="">
+                <div align="right">
+                  <f:repeatableDeleteButton />
+                </div>
+              </f:entry>
+            </table>
+          </f:repeatable>
+        </f:entry>
+
+      </f:optionalBlock>
+
+      <f:optionalBlock name="toolLocations" title ="Tool Locations" checked="${instance.toolLocations != null}">
+<f:entry title="${%List of tool locations}" field="toolLoc">
+		<f:repeatable var="location" name="locations" items="${instance.toolLocations.getLocations()}">
+			<table width="100%">
+				<f:entry title="${%Name}">
+                  <select class="setting-input" name="locations.key">
+                    <j:forEach var="toolDescriptor" items="${descriptor.getToolDescriptors()}">
+                        <j:forEach var="toolInstallation" items="${toolDescriptor.getInstallations()}">
+                            <f:option selected="${descriptor.getKey(toolInstallation)==location.key}" value="${descriptor.getKey(toolInstallation)}">(${toolDescriptor.displayName}) ${toolInstallation.name}</f:option>
+                        </j:forEach>
+                    </j:forEach>
+                  </select>
+				</f:entry>
+				<f:entry title="${%Home}">
+					<f:textbox name="locations.home" value="${location.home}" />
+				</f:entry>
+				<f:entry title="">
+					<div align="right">
+						<f:repeatableDeleteButton />
+					</div>
+				</f:entry>
+			</table>
+		</f:repeatable>
+	</f:entry>
+      	 </f:optionalBlock>
+
 </j:jelly>

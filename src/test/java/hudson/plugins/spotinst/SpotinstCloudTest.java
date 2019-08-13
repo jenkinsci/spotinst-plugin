@@ -21,10 +21,7 @@ import org.jvnet.hudson.test.JenkinsRule;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 import static org.junit.Assert.assertEquals;
 
@@ -65,20 +62,20 @@ public class SpotinstCloudTest {
     public void testAwsProvision_whenThereArePendingInsatcnesForAllExecutors_thenShouldNotSacleUp() {
         String groupId = "sig-1";
         BaseSpotinstCloud spotinstCloud =
-                new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, SlaveUsageEnum.NORMAL, "", "");
+                new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, SlaveUsageEnum.NORMAL, "", "", null, null, null);
         Map<String, PendingInstance> pendingInstances = new HashMap<>();
         pendingInstances.put("sir-1", buildPendingInstance("sir-1", PendingInstance.StatusEnum.PENDING, 2));
         spotinstCloud.setPendingInstances(pendingInstances);
         spotinstCloud.provision(null, 2);
         Mockito.verify(RepoManager.getInstance().getAwsGroupRepo(), Mockito.never())
-               .scaleUp(Mockito.anyString(), Mockito.anyInt());
+               .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString());
     }
 
     @Test
     public void testAwsProvision_whenThereArePendingInsatcnesForPartOfTheExecutors_thenShouldSacleUpTheRest() {
         String groupId = "sig-1";
         AwsSpotinstCloud spotinstCloud =
-                new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, SlaveUsageEnum.NORMAL, "", "");
+                new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, SlaveUsageEnum.NORMAL, "", "" ,null, null, null);
         Map<String, PendingInstance> pendingInstances = new HashMap<>();
         pendingInstances.put("sir-1", buildPendingInstance("sir-1", PendingInstance.StatusEnum.PENDING, 2));
         spotinstCloud.setPendingInstances(pendingInstances);
@@ -89,16 +86,17 @@ public class SpotinstCloudTest {
         newSpot.setAvailabilityZone("us-east-1a");
         newSpot.setInstanceType(AwsInstanceTypeEnum.C4Large.getValue());
         result.setNewSpotRequests(Arrays.asList(newSpot));
-        Mockito.when(RepoManager.getInstance().getAwsGroupRepo().scaleUp(Mockito.anyString(), Mockito.anyInt()))
+        Mockito.when(RepoManager.getInstance().getAwsGroupRepo().scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString()))
                .thenReturn(new ApiResponse<>(result));
 
         spotinstCloud.provision(null, 4);
 
         ArgumentCaptor<String>  groupCapture = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Integer> unitsCapture = ArgumentCaptor.forClass(Integer.class);
+        ArgumentCaptor<String>  accountIdCapture = ArgumentCaptor.forClass(String.class);
 
         Mockito.verify(RepoManager.getInstance().getAwsGroupRepo(), Mockito.times(1))
-               .scaleUp(groupCapture.capture(), unitsCapture.capture());
+               .scaleUp(groupCapture.capture(), unitsCapture.capture(), accountIdCapture.capture());
         assertEquals(unitsCapture.getValue().intValue(), 2);
     }
     //endregion
@@ -107,19 +105,19 @@ public class SpotinstCloudTest {
     @Test
     public void testGcpProvision_whenThereArePendingInsatcnesForAllExecutors_thenShouldNotSacleUp() {
         String                       groupId          = "sig-1";
-        BaseSpotinstCloud            spotinstCloud    = new GcpSpotinstCloud(groupId, "", "20", "/tmp", null, "", "");
+        BaseSpotinstCloud            spotinstCloud    = new GcpSpotinstCloud(groupId, "", "20", "/tmp", null, "", "", null, null, null);
         Map<String, PendingInstance> pendingInstances = new HashMap<>();
         pendingInstances.put("sin-1", buildPendingInstance("sin-1", PendingInstance.StatusEnum.PENDING, 2));
         spotinstCloud.setPendingInstances(pendingInstances);
         spotinstCloud.provision(null, 2);
         Mockito.verify(RepoManager.getInstance().getGcpGroupRepo(), Mockito.never())
-               .scaleUp(Mockito.anyString(), Mockito.anyInt());
+               .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString());
     }
 
     @Test
     public void testGcpProvision_whenThereArePendingInsatcnesForPartOfTheExecutors_thenShouldSacleUpTheRest() {
         String                       groupId          = "sig-1";
-        GcpSpotinstCloud             spotinstCloud    = new GcpSpotinstCloud(groupId, "", "20", "/tmp", null, "", "");
+        GcpSpotinstCloud             spotinstCloud    = new GcpSpotinstCloud(groupId, "", "20", "/tmp", null, "", "", null, null, null);
         Map<String, PendingInstance> pendingInstances = new HashMap<>();
         pendingInstances.put("sin-1", buildPendingInstance("sin-1", PendingInstance.StatusEnum.PENDING, 2));
         spotinstCloud.setPendingInstances(pendingInstances);
@@ -130,7 +128,7 @@ public class SpotinstCloudTest {
         newInstance.setZone("us-east-1a");
         newInstance.setMachineType(GcpMachineType.F1Micro.getName());
         result.setNewInstances(Arrays.asList(newInstance));
-        Mockito.when(RepoManager.getInstance().getGcpGroupRepo().scaleUp(Mockito.anyString(), Mockito.anyInt()))
+        Mockito.when(RepoManager.getInstance().getGcpGroupRepo().scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString()))
                .thenReturn(new ApiResponse<>(result));
 
         spotinstCloud.provision(null, 4);
@@ -138,8 +136,9 @@ public class SpotinstCloudTest {
         ArgumentCaptor<String>  groupCapture = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Integer> unitsCapture = ArgumentCaptor.forClass(Integer.class);
 
+        ArgumentCaptor<String>  accountIdCapture = ArgumentCaptor.forClass(String.class);
         Mockito.verify(RepoManager.getInstance().getGcpGroupRepo(), Mockito.times(1))
-               .scaleUp(groupCapture.capture(), unitsCapture.capture());
+               .scaleUp(groupCapture.capture(), unitsCapture.capture(), accountIdCapture.capture());
         assertEquals(unitsCapture.getValue().intValue(), 2);
     }
     //endregion
@@ -148,35 +147,36 @@ public class SpotinstCloudTest {
     @Test
     public void testAzureProvision_whenThereArePendingInsatcnesForAllExecutors_thenShouldNotSacleUp() {
         String                       groupId          = "sig-1";
-        BaseSpotinstCloud            spotinstCloud    = new AzureSpotinstCloud(groupId, "", "20", "/tmp", null, "", "");
+        BaseSpotinstCloud            spotinstCloud    = new AzureSpotinstCloud(groupId, "", "20", "/tmp", null, "", "", null, null, null);
         Map<String, PendingInstance> pendingInstances = new HashMap<>();
         pendingInstances.put("q3213", buildPendingInstance(groupId, PendingInstance.StatusEnum.PENDING, 1));
         pendingInstances.put("41234", buildPendingInstance(groupId, PendingInstance.StatusEnum.PENDING, 1));
         spotinstCloud.setPendingInstances(pendingInstances);
         spotinstCloud.provision(null, 2);
         Mockito.verify(RepoManager.getInstance().getAzureGroupRepo(), Mockito.never())
-               .scaleUp(Mockito.anyString(), Mockito.anyInt());
+               .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString());
     }
 
     @Test
     public void testAzureProvision_whenThereArePendingInsatcnesForPartOfTheExecutors_thenShouldSacleUpTheRest() {
         String                       groupId          = "sig-1";
-        AzureSpotinstCloud           spotinstCloud    = new AzureSpotinstCloud(groupId, "", "20", "/tmp", null, "", "");
+        AzureSpotinstCloud           spotinstCloud    = new AzureSpotinstCloud(groupId, "", "20", "/tmp", null, "", "", null, null, null);
         Map<String, PendingInstance> pendingInstances = new HashMap<>();
         pendingInstances.put("asda", buildPendingInstance(groupId, PendingInstance.StatusEnum.PENDING, 1));
         pendingInstances.put("ada", buildPendingInstance(groupId, PendingInstance.StatusEnum.PENDING, 1));
         spotinstCloud.setPendingInstances(pendingInstances);
 
-        Mockito.when(RepoManager.getInstance().getAzureGroupRepo().scaleUp(Mockito.anyString(), Mockito.anyInt()))
+        Mockito.when(RepoManager.getInstance().getAzureGroupRepo().scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString()))
                .thenReturn(new ApiResponse<Boolean>(new Boolean(true)));
 
         spotinstCloud.provision(null, 4);
 
         ArgumentCaptor<String>  groupCapture = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Integer> unitsCapture = ArgumentCaptor.forClass(Integer.class);
+        ArgumentCaptor<String>  accountIdCapture = ArgumentCaptor.forClass(String.class);
 
         Mockito.verify(RepoManager.getInstance().getAzureGroupRepo(), Mockito.times(1))
-               .scaleUp(groupCapture.capture(), unitsCapture.capture());
+               .scaleUp(groupCapture.capture(), unitsCapture.capture(), accountIdCapture.capture());
         assertEquals(unitsCapture.getValue().intValue(), 2);
     }
     //endregion
