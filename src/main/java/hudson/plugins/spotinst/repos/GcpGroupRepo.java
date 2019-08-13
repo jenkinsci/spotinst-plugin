@@ -14,11 +14,11 @@ import java.util.List;
  */
 public class GcpGroupRepo implements IGcpGroupRepo {
     @Override
-    public ApiResponse<List<GcpGroupInstance>> getGroupInstances(String groupId) {
+    public ApiResponse<List<GcpGroupInstance>> getGroupInstances(String groupId, String accountId) {
         ApiResponse<List<GcpGroupInstance>> retVal;
 
         try {
-            List<GcpGroupInstance> instances = SpotinstApi.getGcpGroupInstances(groupId);
+            List<GcpGroupInstance> instances = SpotinstApi.getGcpGroupInstances(groupId, accountId);
 
             retVal = new ApiResponse<>(instances);
 
@@ -31,11 +31,11 @@ public class GcpGroupRepo implements IGcpGroupRepo {
     }
 
     @Override
-    public ApiResponse<Boolean> detachInstance(String groupId, String instanceId) {
+    public ApiResponse<Boolean> detachInstance(String groupId, String instanceId, String accountId) {
         ApiResponse<Boolean> retVal;
 
         try {
-            Boolean isDetached = SpotinstApi.gcpDetachInstance(groupId, instanceId);
+            Boolean isDetached = SpotinstApi.gcpDetachInstance(groupId, instanceId, accountId);
 
             retVal = new ApiResponse<>(isDetached);
 
@@ -48,11 +48,11 @@ public class GcpGroupRepo implements IGcpGroupRepo {
     }
 
     @Override
-    public ApiResponse<GcpScaleUpResult> scaleUp(String groupId, Integer adjustment) {
+    public ApiResponse<GcpScaleUpResult> scaleUp(String groupId, Integer adjustment, String accountId) {
         ApiResponse<GcpScaleUpResult> retVal;
 
         try {
-            GcpScaleUpResult scaleUpResult = SpotinstApi.gcpScaleUp(groupId, adjustment);
+            GcpScaleUpResult scaleUpResult = SpotinstApi.gcpScaleUp(groupId, adjustment, accountId);
 
             retVal = new ApiResponse<>(scaleUpResult);
 

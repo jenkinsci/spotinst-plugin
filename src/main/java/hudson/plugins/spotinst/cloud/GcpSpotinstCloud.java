@@ -2,19 +2,17 @@ package hudson.plugins.spotinst.cloud;
 
 import hudson.Extension;
 import hudson.model.Node;
-import hudson.plugins.spotinst.api.SpotinstApi;
 import hudson.plugins.spotinst.api.infra.ApiResponse;
 import hudson.plugins.spotinst.api.infra.JsonMapper;
-import hudson.plugins.spotinst.common.Constants;
-import hudson.plugins.spotinst.model.gcp.GcpMachineType;
-import hudson.plugins.spotinst.common.TimeUtils;
 import hudson.plugins.spotinst.model.gcp.GcpGroupInstance;
+import hudson.plugins.spotinst.model.gcp.GcpMachineType;
 import hudson.plugins.spotinst.model.gcp.GcpResultNewInstance;
 import hudson.plugins.spotinst.model.gcp.GcpScaleUpResult;
 import hudson.plugins.spotinst.repos.IGcpGroupRepo;
 import hudson.plugins.spotinst.repos.RepoManager;
-import hudson.plugins.spotinst.slave.SlaveUsageEnum;
-import hudson.plugins.spotinst.slave.SpotinstSlave;
+import hudson.plugins.spotinst.slave.*;
+import hudson.slaves.EnvironmentVariablesNodeProperty;
+import hudson.tools.ToolLocationNodeProperty;
 import jenkins.model.Jenkins;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.slf4j.Logger;
@@ -30,14 +28,16 @@ import java.util.List;
 public class GcpSpotinstCloud extends BaseSpotinstCloud {
 
     //region Members
-    private static final Logger LOGGER    = LoggerFactory.getLogger(GcpSpotinstCloud.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(GcpSpotinstCloud.class);
     //endregion
 
     //region Constructors
     @DataBoundConstructor
     public GcpSpotinstCloud(String groupId, String labelString, String idleTerminationMinutes, String workspaceDir,
-                            SlaveUsageEnum usage, String tunnel, String vmargs) {
-        super(groupId, labelString, idleTerminationMinutes, workspaceDir, usage, tunnel, vmargs);
+                            SlaveUsageEnum usage, String tunnel, String vmargs, EnvironmentVariablesNodeProperty environmentVariables,
+                            ToolLocationNodeProperty         toolLocations, String accountId) {
+        super(groupId, labelString, idleTerminationMinutes, workspaceDir, usage, tunnel, vmargs, environmentVariables,
+              toolLocations, accountId);
     }
     //endregion
 
@@ -46,7 +46,7 @@ public class GcpSpotinstCloud extends BaseSpotinstCloud {
     List<SpotinstSlave> scaleUp(ProvisionRequest request) {
         List<SpotinstSlave>           retVal          = new LinkedList<>();
         IGcpGroupRepo                 gcpGroupRepo    = RepoManager.getInstance().getGcpGroupRepo();
-        ApiResponse<GcpScaleUpResult> scaleUpResponse = gcpGroupRepo.scaleUp(groupId, request.getExecutors());
+        ApiResponse<GcpScaleUpResult> scaleUpResponse = gcpGroupRepo.scaleUp(groupId, request.getExecutors(), this.accountId);
 
         if (scaleUpResponse.isRequestSucceed()) {
             GcpScaleUpResult scaleUpResult = scaleUpResponse.getValue();
@@ -88,7 +88,7 @@ public class GcpSpotinstCloud extends BaseSpotinstCloud {
     public Boolean detachInstance(String instanceId) {
         Boolean              retVal                 = false;
         IGcpGroupRepo        gcpGroupRepo           = RepoManager.getInstance().getGcpGroupRepo();
-        ApiResponse<Boolean> detachInstanceResponse = gcpGroupRepo.detachInstance(groupId, instanceId);
+        ApiResponse<Boolean> detachInstanceResponse = gcpGroupRepo.detachInstance(groupId, instanceId, this.accountId);
 
         if (detachInstanceResponse.isRequestSucceed()) {
             LOGGER.info(String.format("Instance %s detached", instanceId));
@@ -105,7 +105,7 @@ public class GcpSpotinstCloud extends BaseSpotinstCloud {
     @Override
     public void syncGroupInstances() {
         IGcpGroupRepo                       gcpGroupRepo      = RepoManager.getInstance().getGcpGroupRepo();
-        ApiResponse<List<GcpGroupInstance>> instancesResponse = gcpGroupRepo.getGroupInstances(groupId);
+        ApiResponse<List<GcpGroupInstance>> instancesResponse = gcpGroupRepo.getGroupInstances(groupId,  this.accountId);
 
         if (instancesResponse.isRequestSucceed()) {
 

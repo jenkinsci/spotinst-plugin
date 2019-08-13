@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Date;
-import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Created by ohadmuchnik on 23/05/2016.
@@ -37,11 +37,12 @@ public class SpotinstSlave extends Slave {
     //region Constructor
     public SpotinstSlave(BaseSpotinstCloud spotinstCloud, String name, String elastigroupId, String instanceId,
                          String instanceType, String label, String idleTerminationMinutes, String workspaceDir,
-                         String numOfExecutors, Mode mode, String tunnel,
-                         String vmargs) throws Descriptor.FormException, IOException {
+                         String numOfExecutors, Mode mode, String tunnel, String vmargs,
+                         List<NodeProperty<?>> nodeProperties) throws Descriptor.FormException, IOException {
+
         super(name, "Elastigroup Id: " + elastigroupId, workspaceDir, numOfExecutors, mode, label,
               new SpotinstComputerLauncher(tunnel, vmargs), new SpotinstRetentionStrategy(idleTerminationMinutes),
-              new LinkedList<NodeProperty<?>>());
+              nodeProperties);
 
         this.elastigroupId = elastigroupId;
         this.instanceType = instanceType;
