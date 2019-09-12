@@ -176,6 +176,7 @@ public enum AwsInstanceTypeEnum {
     M5xlarge("m5.xlarge", 4),
     M52xlarge("m5.2xlarge", 8),
     M54xlarge("m5.4xlarge", 16),
+    M58xlarge("m5.8xlarge", 32),
     M512xlarge("m5.12xlarge", 48),
     M524xlarge("m5.24xlarge", 96),
     H12xlarge("h1.2xlarge", 8),
