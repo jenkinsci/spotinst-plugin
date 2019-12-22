@@ -5,6 +5,7 @@ import hudson.model.Node;
 import hudson.plugins.spotinst.api.infra.ApiResponse;
 import hudson.plugins.spotinst.api.infra.JsonMapper;
 import hudson.plugins.spotinst.common.AwsInstanceTypeEnum;
+import hudson.plugins.spotinst.common.TimeUtils;
 import hudson.plugins.spotinst.model.aws.AwsGroupInstance;
 import hudson.plugins.spotinst.model.aws.AwsScaleResultNewInstance;
 import hudson.plugins.spotinst.model.aws.AwsScaleResultNewSpot;
@@ -14,6 +15,7 @@ import hudson.plugins.spotinst.repos.RepoManager;
 import hudson.plugins.spotinst.slave.SlaveUsageEnum;
 import hudson.plugins.spotinst.slave.SpotinstSlave;
 import hudson.slaves.EnvironmentVariablesNodeProperty;
+import hudson.slaves.SlaveComputer;
 import hudson.tools.ToolLocationNodeProperty;
 import jenkins.model.Jenkins;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -21,10 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by ohadmuchnik on 20/03/2017.
@@ -32,10 +31,11 @@ import java.util.Map;
 public class AwsSpotinstCloud extends BaseSpotinstCloud {
 
     //region Members
-    private static final Logger LOGGER = LoggerFactory.getLogger(AwsSpotinstCloud.class);
-    private Map<AwsInstanceTypeEnum, Integer>      executorsForInstanceType;
-    private List<? extends SpotinstInstanceWeight> executorsForTypes;
-    private static final String CLOUD_URL = "aws/ec2";
+    private static final Logger                                 LOGGER    =
+            LoggerFactory.getLogger(AwsSpotinstCloud.class);
+    private              Map<AwsInstanceTypeEnum, Integer>      executorsForInstanceType;
+    private              List<? extends SpotinstInstanceWeight> executorsForTypes;
+    private static final String                                 CLOUD_URL = "aws/ec2";
     //endregion
 
     //region Constructor
@@ -227,21 +227,55 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
             for (SpotinstSlave slave : allGroupsSlaves) {
                 String slaveInstanceId = slave.getInstanceId();
 
-                if (slaveInstanceId != null && groupInstanceAndSpotRequestIds.contains(slaveInstanceId) == false) {
-                    LOGGER.info(String.format("Slave for instance: %s is no longer running in group: %s, removing it",
+                if (slaveInstanceId != null) {
+                    if (groupInstanceAndSpotRequestIds.contains(slaveInstanceId) == false) {
+                        LOGGER.info(
+                                String.format("Slave for instance: %s is no longer running in group: %s, removing it",
                                               slaveInstanceId, groupId));
-                    try {
-                        Jenkins.getInstance().removeNode(slave);
-                        LOGGER.info(String.format("Slave: %s removed successfully", slaveInstanceId));
+                        try {
+                            Jenkins.getInstance().removeNode(slave);
+                            LOGGER.info(String.format("Slave: %s removed successfully", slaveInstanceId));
+                        }
+                        catch (IOException e) {
+                            LOGGER.error(String.format("Failed to remove slave from group: %s", groupId), e);
+                        }
                     }
-                    catch (IOException e) {
-                        LOGGER.error(String.format("Failed to remove slave from group: %s", groupId), e);
+                    else {
+                        // looking for zombie slave instances which meet the following conditions and clearing them from the EG when 'SLAVE_OFFLINE_THRESHOLD_IN_MINUTES' is meet
+                        // 1.is a group slave for this slave id; - trivial here
+                        // 2.slave is offline
+                        // 3.slave is not connecting
+                        // 4.slave is pending
+                        // 5.zombie threshold passed
+
+                        terminateOfflineSlaves(slave, slaveInstanceId);
                     }
                 }
             }
         }
         else {
             LOGGER.info(String.format("There are no slaves for group: %s", groupId));
+        }
+    }
+
+    private void terminateOfflineSlaves(SpotinstSlave slave, String slaveInstanceId) {
+        SlaveComputer computer = slave.getComputer();
+
+        if (computer != null) {
+            Boolean isSlaveConnecting = computer.isConnecting();
+            Boolean isSlaveOffline    = computer.isOffline();
+
+            Integer offlineThreshold       = getSlaveOfflineThreshold();
+            Date    slaveCreatedAt         = slave.getCreatedAt();
+            Boolean isOverOfflineThreshold = TimeUtils.isTimePassed(slaveCreatedAt, offlineThreshold);
+
+            if (isSlaveOffline && isSlaveConnecting == false && isOverOfflineThreshold) {
+                LOGGER.info(String.format(
+                        "Slave for instance: %s running in group: %s is offline and created more than %d minutes ago (slave creation time: %s), terminating",
+                        slaveInstanceId, groupId, offlineThreshold, slaveCreatedAt));
+
+                slave.terminate();
+            }
         }
     }
 
