@@ -371,5 +371,9 @@ public abstract class BaseSpotinstCloud extends Cloud {
     protected Integer getPendingThreshold() {
         return Constants.PENDING_INSTANCE_TIMEOUT_IN_MINUTES;
     }
+
+    protected Integer getSlaveOfflineThreshold() {
+        return Constants.SLAVE_OFFLINE_THRESHOLD_IN_MINUTES;
+    }
     //endregion
 }
