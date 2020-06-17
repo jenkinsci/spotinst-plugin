@@ -41,6 +41,10 @@ termination"
 
 # Version history
 
+=== Version 2.0.24 (Jun 17, 2020)
+
+* Add AWS instance types
+
 === Version 2.0.21 (May 31, 2020)
 
 * Add AWS instance types
