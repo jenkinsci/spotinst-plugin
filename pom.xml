@@ -2,14 +2,6 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <url>https://github.com/jenkinsci/spotinst-plugin/blob/master/JenkinsWiki.adoc</url>
-    <developers>
-        <developer>
-            <id>team</id>
-            <name>Spotinst Team</name>
-            <email>team@spotinst.com</email>
-        </developer>
-    </developers>
     <parent>
         <groupId>org.jenkins-ci.plugins</groupId>
         <artifactId>plugin</artifactId>
@@ -17,9 +9,12 @@
     </parent>
 
     <artifactId>spotinst</artifactId>
-    <version>2.0.23-SNAPSHOT</version>
+    <version>2.0.26-SNAPSHOT</version>
     <packaging>hpi</packaging>
+
     <name>Spotinst plugin</name>
+    <description>This plugin to Allow Jenkins to start slaves with Spot framework, and kill them as they get unused.</description>
+    <url>https://github.com/jenkinsci/spotinst-plugin/blob/master/JenkinsWiki.adoc</url>
     <licenses>
         <license>
             <name>The MIT License</name>
@@ -27,6 +22,14 @@
             <distribution>repo</distribution>
         </license>
     </licenses>
+
+    <developers>
+        <developer>
+            <id>team</id>
+            <name>Spotinst Team</name>
+            <email>team@spotinst.com</email>
+        </developer>
+    </developers>
 
     <scm>
         <connection>scm:git:git://github.com/jenkinsci/spotinst-plugin.git</connection>
@@ -72,8 +75,6 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-
-
 
     <repositories>
         <repository>
