@@ -290,7 +290,16 @@ public enum AwsInstanceTypeEnum {
     M6G4xlarge("m6g.4xlarge", 16),
     M6G8xlarge("m6g.8xlarge", 32),
     M6G12xlarge("m6g.12xlarge", 48),
-    M6G16xlarge("m6g.16xlarge", 64);
+    M6G16xlarge("m6g.16xlarge", 64),
+
+    C5ALarge("c5a.large", 2),
+    C5AXlarge("c5a.xlarge", 4),
+    C5A2xlarge("c5a.2xlarge", 8),
+    C5A4xlarge("c5a.4xlarge", 16),
+    C5A8xlarge("c5a.8xlarge", 32),
+    C5A12xlarge("c5a.12xlarge", 48),
+    C5A16xlarge("c5a.16xlarge", 64),
+    C5A24xlarge("c5a.24xlarge", 96);
 
     private String  value;
     private Integer executors;
