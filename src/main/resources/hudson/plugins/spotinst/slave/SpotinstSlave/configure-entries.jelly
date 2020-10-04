@@ -15,4 +15,10 @@
     <f:entry title="Usage" field="usage">
         <f:enum>${it.name()}</f:enum>
     </f:entry>
+    <f:entry title="Public IP">
+        <f:readOnlyTextbox value="${it.getPublicIp()}"/>
+    </f:entry>
+    <f:entry title="Private IP">
+        <f:readOnlyTextbox value="${it.getPrivateIp()}"/>
+    </f:entry>
 </j:jelly>

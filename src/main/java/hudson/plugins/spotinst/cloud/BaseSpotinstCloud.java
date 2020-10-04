@@ -18,6 +18,7 @@ import hudson.tools.ToolDescriptor;
 import hudson.tools.ToolInstallation;
 import hudson.tools.ToolLocationNodeProperty;
 import jenkins.model.Jenkins;
+import org.apache.commons.collections.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,6 +32,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
 
     //region Members
     private static final Logger LOGGER = LoggerFactory.getLogger(BaseSpotinstCloud.class);
+
     protected String                           accountId;
     protected String                           groupId;
     protected Map<String, PendingInstance>     pendingInstances;
@@ -43,7 +45,6 @@ public abstract class BaseSpotinstCloud extends Cloud {
     private   String                           vmargs;
     private   EnvironmentVariablesNodeProperty environmentVariables;
     private   ToolLocationNodeProperty         toolLocations;
-
     //endregion
 
     //region Constructor
@@ -76,7 +77,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
 
     //endregion
 
-    //region Public Methods
+    //region Overriden Public Methods
     @Override
     public Collection<PlannedNode> provision(Label label, int excessWorkload) {
         ProvisionRequest request = new ProvisionRequest(label, excessWorkload);
@@ -139,9 +140,35 @@ public abstract class BaseSpotinstCloud extends Cloud {
         Boolean retVal = pendingInstances.containsKey(id);
         return retVal;
     }
+    //endregion
 
+    //region Public Methods
     public void onInstanceReady(String instanceId) {
         pendingInstances.remove(instanceId);
+    }
+
+    public void monitorInstances() {
+        if (pendingInstances.size() > 0) {
+            List<String> keys = new LinkedList<>(pendingInstances.keySet());
+
+            for (String key : keys) {
+                PendingInstance pendingInstance = pendingInstances.get(key);
+
+                if (pendingInstance != null) {
+
+                    Integer pendingThreshold = getPendingThreshold();
+                    Boolean isPendingOverThreshold =
+                            TimeUtils.isTimePassed(pendingInstance.getCreatedAt(), pendingThreshold);
+
+                    if (isPendingOverThreshold) {
+                        LOGGER.info(String.format(
+                                "Instance %s is in initiating state for over than %s minutes, ignoring this instance",
+                                pendingInstance.getId(), pendingThreshold));
+                        pendingInstances.remove(key);
+                    }
+                }
+            }
+        }
     }
     //endregion
 
@@ -200,7 +227,8 @@ public abstract class BaseSpotinstCloud extends Cloud {
         pendingInstances.put(id, pendingInstance);
     }
 
-    protected SpotinstSlave buildSpotinstSlave(String id, String instanceType, String numOfExecutors) {
+    protected SpotinstSlave buildSpotinstSlave(String id, String instanceType, String numOfExecutors, String privateIp,
+                                               String publicIp) {
         SpotinstSlave slave = null;
         Node.Mode     mode  = Node.Mode.NORMAL;
 
@@ -211,8 +239,9 @@ public abstract class BaseSpotinstCloud extends Cloud {
         List<NodeProperty<?>> nodeProperties = buildNodeProperties();
 
         try {
-            slave = new SpotinstSlave(this, id, groupId, id, instanceType, labelString, idleTerminationMinutes,
-                                      workspaceDir, numOfExecutors, mode, this.tunnel, this.vmargs, nodeProperties);
+            slave = new SpotinstSlave(this, id, groupId, id, instanceType, privateIp, publicIp, labelString,
+                                      idleTerminationMinutes, workspaceDir, numOfExecutors, mode, this.tunnel,
+                                      this.vmargs, nodeProperties);
         }
         catch (Descriptor.FormException | IOException e) {
             LOGGER.error(String.format("Failed to build Spotinst slave for: %s", id));
@@ -221,7 +250,6 @@ public abstract class BaseSpotinstCloud extends Cloud {
 
         return slave;
     }
-
 
     protected List<SpotinstSlave> getAllSpotinstSlaves() {
         LOGGER.info(String.format("Getting all existing slaves for group: %s", groupId));
@@ -261,6 +289,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
                     }
                     break;
 
+
                     case INSTANCE_INITIATING: {
                         initiatingExecutors += pendingInstance.getNumOfExecutors();
                     }
@@ -275,17 +304,12 @@ public abstract class BaseSpotinstCloud extends Cloud {
         return retVal;
     }
 
-    //endregion
+    protected Integer getPendingThreshold() {
+        return Constants.PENDING_INSTANCE_TIMEOUT_IN_MINUTES;
+    }
 
-    //region Classes
-    public static abstract class DescriptorImpl extends Descriptor<Cloud> {
-        public DescriptorExtensionList<ToolInstallation, ToolDescriptor<?>> getToolDescriptors() {
-            return ToolInstallation.all();
-        }
-
-        public String getKey(ToolInstallation installation) {
-            return installation.getDescriptor().getClass().getName() + "@" + installation.getName();
-        }
+    protected Integer getSlaveOfflineThreshold() {
+        return Constants.SLAVE_OFFLINE_THRESHOLD_IN_MINUTES;
     }
     //endregion
 
@@ -344,36 +368,64 @@ public abstract class BaseSpotinstCloud extends Cloud {
 
     public abstract void syncGroupInstances();
 
-    public void monitorInstances() {
-        if (pendingInstances.size() > 0) {
-            List<String> keys = new LinkedList<>(pendingInstances.keySet());
+    protected void updateSlaveNodes(List<SpotinstSlave> slavesToUpdate) {
+        if (CollectionUtils.isNotEmpty(slavesToUpdate)) {
+            List<Node> nodes = Jenkins.getInstance().getNodes();
 
-            for (String key : keys) {
-                PendingInstance pendingInstance = pendingInstances.get(key);
+            if (CollectionUtils.isNotEmpty(nodes)) {
+                Map<String, Node> nodesByName = new HashMap<>();
 
-                if (pendingInstance != null) {
+                for (Node node : nodes) {
+                    nodesByName.put(node.getNodeName(), node);
+                }
 
-                    Integer pendingThreshold = getPendingThreshold();
-                    Boolean isPendingOverThreshold =
-                            TimeUtils.isTimePassed(pendingInstance.getCreatedAt(), pendingThreshold);
+                boolean shouldUpdateNodes = false;
 
-                    if (isPendingOverThreshold) {
-                        LOGGER.info(String.format(
-                                "Instance %s is in initiating state for over than %s minutes, ignoring this instance",
-                                pendingInstance.getId(), pendingThreshold));
-                        pendingInstances.remove(key);
+                for (SpotinstSlave slave : slavesToUpdate) {
+                    Node node = nodesByName.get(slave.getNodeName());
+
+                    if (node != null) {
+                        SpotinstSlave nodeToUpdate = (SpotinstSlave) node;
+
+                        if (Objects.equals(nodeToUpdate.getPrivateIp(), slave.getPrivateIp()) == false ||
+                            Objects.equals(nodeToUpdate.getPublicIp(), slave.getPublicIp()) == false) {
+
+                            LOGGER.info(String.format("Slave: %s of group: %s needs to be updated", slave.getNodeName(),
+                                                      groupId));
+
+                            nodeToUpdate.setPublicIp(slave.getPublicIp());
+                            nodeToUpdate.setPrivateIp(slave.getPrivateIp());
+
+                            nodesByName.put(nodeToUpdate.getNodeName(), nodeToUpdate);
+                            shouldUpdateNodes = true;
+                        }
+                    }
+                }
+
+                if (shouldUpdateNodes) {
+                    List<Node> nodesToUpdate = new LinkedList<>(nodesByName.values());
+
+                    try {
+                        Jenkins.getInstance().setNodes(nodesToUpdate);
+                    }
+                    catch (IOException e) {
+                        LOGGER.error("Failed to update slave nodes", e);
                     }
                 }
             }
         }
     }
+    //endregion
 
-    protected Integer getPendingThreshold() {
-        return Constants.PENDING_INSTANCE_TIMEOUT_IN_MINUTES;
-    }
+    //region Abstract Class
+    public static abstract class DescriptorImpl extends Descriptor<Cloud> {
+        public DescriptorExtensionList<ToolInstallation, ToolDescriptor<?>> getToolDescriptors() {
+            return ToolInstallation.all();
+        }
 
-    protected Integer getSlaveOfflineThreshold() {
-        return Constants.SLAVE_OFFLINE_THRESHOLD_IN_MINUTES;
+        public String getKey(ToolInstallation installation) {
+            return installation.getDescriptor().getClass().getName() + "@" + installation.getName();
+        }
     }
     //endregion
 }

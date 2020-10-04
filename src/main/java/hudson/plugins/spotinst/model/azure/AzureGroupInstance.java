@@ -16,6 +16,8 @@ public class AzureGroupInstance {
     private String vmSize;
     private String instanceId;
     private String lifeCycle;
+    private String privateIp;
+    private String publicIp;
     private Date   createdAt;
 
     public String getRegion() {
@@ -64,6 +66,22 @@ public class AzureGroupInstance {
 
     public void setInstanceId(String instanceId) {
         this.instanceId = instanceId;
+    }
+
+    public String getPrivateIp() {
+        return privateIp;
+    }
+
+    public void setPrivateIp(String privateIp) {
+        this.privateIp = privateIp;
+    }
+
+    public String getPublicIp() {
+        return publicIp;
+    }
+
+    public void setPublicIp(String publicIp) {
+        this.publicIp = publicIp;
     }
 }
 

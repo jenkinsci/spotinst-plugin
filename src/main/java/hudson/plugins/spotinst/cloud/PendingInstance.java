@@ -54,7 +54,8 @@ public class PendingInstance {
 
     public enum StatusEnum {
         PENDING("PENDING"),
-        INSTANCE_INITIATING("INSTANCE_INITIATING");
+        INSTANCE_INITIATING("INSTANCE_INITIATING"),
+        UPDATING("UPDATING");
 
         private String name;
 

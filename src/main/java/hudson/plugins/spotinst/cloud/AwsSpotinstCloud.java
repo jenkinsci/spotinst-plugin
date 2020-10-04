@@ -18,6 +18,7 @@ import hudson.slaves.EnvironmentVariablesNodeProperty;
 import hudson.slaves.SlaveComputer;
 import hudson.tools.ToolLocationNodeProperty;
 import jenkins.model.Jenkins;
+import org.apache.commons.collections.CollectionUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,11 +32,11 @@ import java.util.*;
 public class AwsSpotinstCloud extends BaseSpotinstCloud {
 
     //region Members
-    private static final Logger                                 LOGGER    =
-            LoggerFactory.getLogger(AwsSpotinstCloud.class);
-    private              Map<AwsInstanceTypeEnum, Integer>      executorsForInstanceType;
-    private              List<? extends SpotinstInstanceWeight> executorsForTypes;
-    private static final String                                 CLOUD_URL = "aws/ec2";
+    private static final Logger LOGGER    = LoggerFactory.getLogger(AwsSpotinstCloud.class);
+    private static final String CLOUD_URL = "aws/ec2";
+
+    private Map<AwsInstanceTypeEnum, Integer>      executorsForInstanceType;
+    private List<? extends SpotinstInstanceWeight> executorsForTypes;
     //endregion
 
     //region Constructor
@@ -127,6 +128,7 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
             List<AwsGroupInstance> instances = instancesResponse.getValue();
             LOGGER.info(String.format("There are %s instances in group %s", instances.size(), groupId));
 
+            updateSlaveInstances(instances);
             addNewSlaveInstances(instances);
             removeOldSlaveInstances(instances);
         }
@@ -171,7 +173,8 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
 
         for (AwsScaleResultNewSpot spot : scaleUpResult.getNewSpotRequests()) {
 
-            SpotinstSlave slave = handleNewAwsInstance(spot.getInstanceId(), spot.getInstanceType(), label);
+            SpotinstSlave slave = handleNewAwsInstance(spot.getInstanceId(), spot.getInstanceType(), label, null, null,
+                                                       PendingInstance.StatusEnum.INSTANCE_INITIATING);
 
             retVal.add(slave);
         }
@@ -185,17 +188,25 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
         LOGGER.info(String.format("%s new instances launched", scaleUpResult.getNewInstances().size()));
 
         for (AwsScaleResultNewInstance instance : scaleUpResult.getNewInstances()) {
-            SpotinstSlave slave = handleNewAwsInstance(instance.getInstanceId(), instance.getInstanceType(), label);
+            SpotinstSlave slave =
+                    handleNewAwsInstance(instance.getInstanceId(), instance.getInstanceType(), label, null, null,
+                                         PendingInstance.StatusEnum.INSTANCE_INITIATING);
             retVal.add(slave);
         }
 
         return retVal;
     }
 
-    private SpotinstSlave handleNewAwsInstance(String instanceId, String instanceType, String label) {
+    private SpotinstSlave handleNewAwsInstance(String instanceId, String instanceType, String label, String privateIp,
+                                               String publicIp, PendingInstance.StatusEnum pendingStatus) {
         Integer executors = getNumOfExecutors(instanceType);
-        addToPending(instanceId, executors, PendingInstance.StatusEnum.INSTANCE_INITIATING, label);
-        SpotinstSlave retVal = buildSpotinstSlave(instanceId, instanceType, String.valueOf(executors));
+
+        if (pendingStatus == PendingInstance.StatusEnum.INSTANCE_INITIATING) {
+            addToPending(instanceId, executors, pendingStatus, label);
+        }
+
+        SpotinstSlave retVal =
+                buildSpotinstSlave(instanceId, instanceType, String.valueOf(executors), privateIp, publicIp);
 
         return retVal;
     }
@@ -327,7 +338,9 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
     }
 
     private void addSpotinstSlave(AwsGroupInstance instance) {
-        SpotinstSlave slave = handleNewAwsInstance(instance.getInstanceId(), instance.getInstanceType(), null);
+        SpotinstSlave slave = handleNewAwsInstance(instance.getInstanceId(), instance.getInstanceType(), null,
+                                                   instance.getPrivateIp(), instance.getPublicIp(),
+                                                   PendingInstance.StatusEnum.INSTANCE_INITIATING);
 
         if (slave != null) {
             try {
@@ -337,6 +350,35 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
                 LOGGER.error(String.format("Failed to create node for slave: %s", slave.getInstanceId()), e);
             }
         }
+    }
+
+    private void updateSlaveInstances(List<AwsGroupInstance> instances) {
+        if (CollectionUtils.isNotEmpty(instances)) {
+            List<SpotinstSlave> nodesToUpdate = new LinkedList<>();
+
+            for (AwsGroupInstance instance : instances) {
+                Boolean isSlaveExist = isSlaveExistForInstance(instance);
+
+                if (isSlaveExist) {
+                    SpotinstSlave slave =
+                            handleNewAwsInstance(instance.getInstanceId(), instance.getInstanceType(), null,
+                                                 instance.getPrivateIp(), instance.getPublicIp(),
+                                                 PendingInstance.StatusEnum.UPDATING);
+
+                    nodesToUpdate.add(slave);
+                }
+            }
+
+            if (nodesToUpdate.size() > 0) {
+                super.updateSlaveNodes(nodesToUpdate);
+            }
+        }
+    }
+    //endregion
+
+    //region Getters
+    public List<? extends SpotinstInstanceWeight> getExecutorsForTypes() {
+        return executorsForTypes;
     }
     //endregion
 
@@ -350,12 +392,6 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
         }
 
 
-    }
-    //endregion
-
-    //region Getters
-    public List<? extends SpotinstInstanceWeight> getExecutorsForTypes() {
-        return executorsForTypes;
     }
     //endregion
 }

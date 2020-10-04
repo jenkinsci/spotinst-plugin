@@ -14,6 +14,8 @@ public class AwsGroupInstance {
     private String spotInstanceRequestId;
     private String instanceType;
     private String availabilityZone;
+    private String privateIp;
+    private String publicIp;
 
     public String getInstanceId() {
         return instanceId;
@@ -45,6 +47,22 @@ public class AwsGroupInstance {
 
     public void setAvailabilityZone(String availabilityZone) {
         this.availabilityZone = availabilityZone;
+    }
+
+    public String getPrivateIp() {
+        return privateIp;
+    }
+
+    public void setPrivateIp(String privateIp) {
+        this.privateIp = privateIp;
+    }
+
+    public String getPublicIp() {
+        return publicIp;
+    }
+
+    public void setPublicIp(String publicIp) {
+        this.publicIp = publicIp;
     }
 }
 

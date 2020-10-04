@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Created by ohadmuchnik on 23/05/2016.
@@ -24,19 +25,22 @@ public class SpotinstSlave extends Slave {
 
     //region Members
     private static final Logger LOGGER = LoggerFactory.getLogger(SpotinstSlave.class);
+
     private String            instanceId;
     private String            instanceType;
     private String            elastigroupId;
     private String            workspaceDir;
     private String            groupUrl;
     private SlaveUsageEnum    usage;
+    private String            privateIp;
+    private String            publicIp;
     private Date              createdAt;
     private BaseSpotinstCloud spotinstCloud;
     //endregion
 
     //region Constructor
     public SpotinstSlave(BaseSpotinstCloud spotinstCloud, String name, String elastigroupId, String instanceId,
-                         String instanceType, String label, String idleTerminationMinutes, String workspaceDir,
+                         String instanceType, String privateIp, String publicIp, String label, String idleTerminationMinutes, String workspaceDir,
                          String numOfExecutors, Mode mode, String tunnel, String vmargs,
                          List<NodeProperty<?>> nodeProperties) throws Descriptor.FormException, IOException {
 
@@ -47,6 +51,8 @@ public class SpotinstSlave extends Slave {
         this.elastigroupId = elastigroupId;
         this.instanceType = instanceType;
         this.instanceId = instanceId;
+        this.privateIp = privateIp;
+        this.publicIp = publicIp;
         this.workspaceDir = workspaceDir;
         this.usage = SlaveUsageEnum.fromMode(mode);
         this.createdAt = new Date();
@@ -54,10 +60,9 @@ public class SpotinstSlave extends Slave {
         this.spotinstCloud = spotinstCloud;
         groupUrl = spotinstCloud.getCloudUrl();
     }
-
     //endregion
 
-    //region Public Methods
+    //region Getters
     public String getInstanceId() {
         return instanceId;
     }
@@ -82,6 +87,85 @@ public class SpotinstSlave extends Slave {
         return elastigroupId;
     }
 
+    public SlaveUsageEnum getUsage() {
+        return usage;
+    }
+
+    public String getGroupUrl() {
+        return groupUrl;
+    }
+
+    public BaseSpotinstCloud getSpotinstCloud() {
+        return spotinstCloud;
+    }
+
+    public String getPrivateIp() {
+        return privateIp;
+    }
+
+    public String getPublicIp() {
+        return publicIp;
+    }
+    //endregion
+
+    //region Setters
+    public void setPrivateIp(String privateIp) {
+        this.privateIp = privateIp;
+    }
+
+    public void setPublicIp(String publicIp) {
+        this.publicIp = publicIp;
+    }
+    //endregion
+
+    //region Public Override Methods
+    @Override
+    public DescriptorImpl getDescriptor() {
+        return (DescriptorImpl) super.getDescriptor();
+    }
+
+    @Override
+    public Computer createComputer() {
+        return new SpotinstComputer(this);
+    }
+
+    @Override
+    public Node reconfigure(StaplerRequest req, JSONObject form) throws Descriptor.FormException {
+        String         usageStr  = form.getString("usage");
+        SlaveUsageEnum usageEnum = SlaveUsageEnum.fromName(usageStr);
+        this.usage = usageEnum;
+        this.setMode(this.usage.toMode());
+
+        return this;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
+        SpotinstSlave that = (SpotinstSlave) o;
+        return Objects.equals(instanceId, that.instanceId) && Objects.equals(instanceType, that.instanceType) &&
+               Objects.equals(elastigroupId, that.elastigroupId) && Objects.equals(workspaceDir, that.workspaceDir) &&
+               Objects.equals(groupUrl, that.groupUrl) && usage == that.usage &&
+               Objects.equals(privateIp, that.privateIp) && Objects.equals(publicIp, that.publicIp) &&
+               Objects.equals(createdAt, that.createdAt) && Objects.equals(spotinstCloud, that.spotinstCloud);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), instanceId, instanceType, elastigroupId, workspaceDir, groupUrl, usage,
+                            privateIp, publicIp, createdAt, spotinstCloud);
+    }
+    //endregion
+
+    //region Public Methods
     public void terminate() {
         Boolean isTerminated = spotinstCloud.detachInstance(instanceId);
 
@@ -97,10 +181,6 @@ public class SpotinstSlave extends Slave {
         else {
             LOGGER.error(String.format("Failed to terminate instance: %s", getInstanceId()));
         }
-    }
-
-    public SlaveUsageEnum getUsage() {
-        return usage;
     }
 
     public Boolean forceTerminate() {
@@ -123,20 +203,17 @@ public class SpotinstSlave extends Slave {
         return isTerminated;
     }
 
-    public String getGroupUrl() {
-        return groupUrl;
+    public boolean isSlavePending() {
+        boolean retVal = this.spotinstCloud.isInstancePending(getNodeName());
+        return retVal;
     }
 
-    @Override
-    public DescriptorImpl getDescriptor() {
-        return (DescriptorImpl) super.getDescriptor();
+    public void onSlaveConnected() {
+        this.spotinstCloud.onInstanceReady(getNodeName());
     }
+    //endregion
 
-
-    public BaseSpotinstCloud getSpotinstCloud() {
-        return spotinstCloud;
-    }
-
+    //region Extension class
     @Extension
     public static class DescriptorImpl extends SlaveDescriptor {
 
@@ -149,30 +226,6 @@ public class SpotinstSlave extends Slave {
         public boolean isInstantiable() {
             return false;
         }
-    }
-
-    @Override
-    public Computer createComputer() {
-        return new SpotinstComputer(this);
-    }
-
-    @Override
-    public Node reconfigure(StaplerRequest req, JSONObject form) throws Descriptor.FormException {
-        String         usageStr  = form.getString("usage");
-        SlaveUsageEnum usageEnum = SlaveUsageEnum.fromName(usageStr);
-        this.usage = usageEnum;
-        this.setMode(this.usage.toMode());
-
-        return this;
-    }
-
-    public boolean isSlavePending() {
-        boolean retVal = this.spotinstCloud.isInstancePending(getNodeName());
-        return retVal;
-    }
-
-    public void onSlaveConnected() {
-        this.spotinstCloud.onInstanceReady(getNodeName());
     }
     //endregion
 }

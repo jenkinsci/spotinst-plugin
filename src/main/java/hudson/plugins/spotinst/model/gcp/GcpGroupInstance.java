@@ -13,6 +13,8 @@ public class GcpGroupInstance {
     private String instanceName;
     private String machineType;
     private String zone;
+    private String privateIpAddress;
+    private String publicIpAddress;
 
     public String getInstanceName() {
         return instanceName;
@@ -36,6 +38,22 @@ public class GcpGroupInstance {
 
     public void setZone(String zone) {
         this.zone = zone;
+    }
+
+    public String getPrivateIpAddress() {
+        return privateIpAddress;
+    }
+
+    public void setPrivateIpAddress(String privateIpAddress) {
+        this.privateIpAddress = privateIpAddress;
+    }
+
+    public String getPublicIpAddress() {
+        return publicIpAddress;
+    }
+
+    public void setPublicIpAddress(String publicIpAddress) {
+        this.publicIpAddress = publicIpAddress;
     }
 }
 
