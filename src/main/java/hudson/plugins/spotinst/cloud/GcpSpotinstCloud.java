@@ -10,10 +10,12 @@ import hudson.plugins.spotinst.model.gcp.GcpResultNewInstance;
 import hudson.plugins.spotinst.model.gcp.GcpScaleUpResult;
 import hudson.plugins.spotinst.repos.IGcpGroupRepo;
 import hudson.plugins.spotinst.repos.RepoManager;
-import hudson.plugins.spotinst.slave.*;
+import hudson.plugins.spotinst.slave.SlaveUsageEnum;
+import hudson.plugins.spotinst.slave.SpotinstSlave;
 import hudson.slaves.EnvironmentVariablesNodeProperty;
 import hudson.tools.ToolLocationNodeProperty;
 import jenkins.model.Jenkins;
+import org.apache.commons.collections.CollectionUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,8 +36,9 @@ public class GcpSpotinstCloud extends BaseSpotinstCloud {
     //region Constructors
     @DataBoundConstructor
     public GcpSpotinstCloud(String groupId, String labelString, String idleTerminationMinutes, String workspaceDir,
-                            SlaveUsageEnum usage, String tunnel, String vmargs, EnvironmentVariablesNodeProperty environmentVariables,
-                            ToolLocationNodeProperty         toolLocations, String accountId) {
+                            SlaveUsageEnum usage, String tunnel, String vmargs,
+                            EnvironmentVariablesNodeProperty environmentVariables,
+                            ToolLocationNodeProperty toolLocations, String accountId) {
         super(groupId, labelString, idleTerminationMinutes, workspaceDir, usage, tunnel, vmargs, environmentVariables,
               toolLocations, accountId);
     }
@@ -44,9 +47,10 @@ public class GcpSpotinstCloud extends BaseSpotinstCloud {
     //region Overrides
     @Override
     List<SpotinstSlave> scaleUp(ProvisionRequest request) {
-        List<SpotinstSlave>           retVal          = new LinkedList<>();
-        IGcpGroupRepo                 gcpGroupRepo    = RepoManager.getInstance().getGcpGroupRepo();
-        ApiResponse<GcpScaleUpResult> scaleUpResponse = gcpGroupRepo.scaleUp(groupId, request.getExecutors(), this.accountId);
+        List<SpotinstSlave> retVal       = new LinkedList<>();
+        IGcpGroupRepo       gcpGroupRepo = RepoManager.getInstance().getGcpGroupRepo();
+        ApiResponse<GcpScaleUpResult> scaleUpResponse =
+                gcpGroupRepo.scaleUp(groupId, request.getExecutors(), this.accountId);
 
         if (scaleUpResponse.isRequestSucceed()) {
             GcpScaleUpResult scaleUpResult = scaleUpResponse.getValue();
@@ -58,7 +62,8 @@ public class GcpSpotinstCloud extends BaseSpotinstCloud {
                     for (GcpResultNewInstance newInstance : scaleUpResult.getNewInstances()) {
                         SpotinstSlave newInstanceSlave =
                                 handleNewGcpInstance(newInstance.getInstanceName(), newInstance.getMachineType(),
-                                                     request.getLabel());
+                                                     request.getLabel(), null, null,
+                                                     PendingInstance.StatusEnum.INSTANCE_INITIATING);
                         retVal.add(newInstanceSlave);
                     }
                 }
@@ -67,7 +72,8 @@ public class GcpSpotinstCloud extends BaseSpotinstCloud {
                     for (GcpResultNewInstance newInstance : scaleUpResult.getNewPreemptibles()) {
                         SpotinstSlave newPreemptibleSlave =
                                 handleNewGcpInstance(newInstance.getInstanceName(), newInstance.getMachineType(),
-                                                     request.getLabel());
+                                                     request.getLabel(), null, null,
+                                                     PendingInstance.StatusEnum.INSTANCE_INITIATING);
                         retVal.add(newPreemptibleSlave);
                     }
                 }
@@ -105,7 +111,7 @@ public class GcpSpotinstCloud extends BaseSpotinstCloud {
     @Override
     public void syncGroupInstances() {
         IGcpGroupRepo                       gcpGroupRepo      = RepoManager.getInstance().getGcpGroupRepo();
-        ApiResponse<List<GcpGroupInstance>> instancesResponse = gcpGroupRepo.getGroupInstances(groupId,  this.accountId);
+        ApiResponse<List<GcpGroupInstance>> instancesResponse = gcpGroupRepo.getGroupInstances(groupId, this.accountId);
 
         if (instancesResponse.isRequestSucceed()) {
 
@@ -113,6 +119,7 @@ public class GcpSpotinstCloud extends BaseSpotinstCloud {
 
             LOGGER.info(String.format("There are %s instances in group %s", instances.size(), groupId));
 
+            updateSlaveInstances(instances);
             addNewGcpSlaveInstances(instances);
             removeOldGcpSlaveInstances(instances);
 
@@ -131,10 +138,16 @@ public class GcpSpotinstCloud extends BaseSpotinstCloud {
     //endregion
 
     //region Private Methods
-    private SpotinstSlave handleNewGcpInstance(String instanceName, String machineType, String label) {
+    private SpotinstSlave handleNewGcpInstance(String instanceName, String machineType, String label, String privateIp,
+                                               String publicIp, PendingInstance.StatusEnum pendingStatus) {
         Integer executors = GcpMachineType.fromValue(machineType).getExecutors();
-        addToPending(instanceName, executors, PendingInstance.StatusEnum.INSTANCE_INITIATING, label);
-        SpotinstSlave retVal = buildSpotinstSlave(instanceName, machineType, String.valueOf(executors));
+
+        if (pendingStatus == PendingInstance.StatusEnum.INSTANCE_INITIATING) {
+            addToPending(instanceName, executors, pendingStatus, label);
+        }
+        
+        SpotinstSlave retVal =
+                buildSpotinstSlave(instanceName, machineType, String.valueOf(executors), privateIp, publicIp);
         return retVal;
     }
 
@@ -207,7 +220,9 @@ public class GcpSpotinstCloud extends BaseSpotinstCloud {
 
     private void addSpotinstGcpSlave(GcpGroupInstance instance) {
         if (instance.getInstanceName() != null) {
-            SpotinstSlave slave = handleNewGcpInstance(instance.getInstanceName(), instance.getMachineType(), null);
+            SpotinstSlave slave = handleNewGcpInstance(instance.getInstanceName(), instance.getMachineType(), null,
+                                                       instance.getPrivateIpAddress(), instance.getPublicIpAddress(),
+                                                       PendingInstance.StatusEnum.INSTANCE_INITIATING);
 
             try {
                 Jenkins.getInstance().addNode(slave);
@@ -218,6 +233,27 @@ public class GcpSpotinstCloud extends BaseSpotinstCloud {
         }
     }
 
+    private void updateSlaveInstances(List<GcpGroupInstance> instances) {
+        if (CollectionUtils.isNotEmpty(instances)) {
+            List<SpotinstSlave> nodesToUpdate = new LinkedList<>();
+
+            for (GcpGroupInstance instance : instances) {
+                Boolean isSlaveExist = isSlaveExistForGcpInstance(instance);
+
+                if (isSlaveExist) {
+                    SpotinstSlave slave =
+                            handleNewGcpInstance(instance.getInstanceName(), instance.getMachineType(), null,
+                                                 instance.getPrivateIpAddress(), instance.getPublicIpAddress(),
+                                                 PendingInstance.StatusEnum.UPDATING);
+                    nodesToUpdate.add(slave);
+                }
+            }
+
+            if (nodesToUpdate.size() > 0) {
+                super.updateSlaveNodes(nodesToUpdate);
+            }
+        }
+    }
     //endregion
 
     //region Classes

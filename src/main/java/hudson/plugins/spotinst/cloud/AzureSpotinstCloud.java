@@ -9,10 +9,12 @@ import hudson.plugins.spotinst.model.azure.AzureGroupInstance;
 import hudson.plugins.spotinst.model.azure.AzureVmSizeEnum;
 import hudson.plugins.spotinst.repos.IAzureGroupRepo;
 import hudson.plugins.spotinst.repos.RepoManager;
-import hudson.plugins.spotinst.slave.*;
+import hudson.plugins.spotinst.slave.SlaveUsageEnum;
+import hudson.plugins.spotinst.slave.SpotinstSlave;
 import hudson.slaves.EnvironmentVariablesNodeProperty;
 import hudson.tools.ToolLocationNodeProperty;
 import jenkins.model.Jenkins;
+import org.apache.commons.collections.CollectionUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,7 +39,7 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
     public AzureSpotinstCloud(String groupId, String labelString, String idleTerminationMinutes, String workspaceDir,
                               SlaveUsageEnum usage, String tunnel, String vmargs,
                               EnvironmentVariablesNodeProperty environmentVariables,
-                              ToolLocationNodeProperty         toolLocations, String accountId) {
+                              ToolLocationNodeProperty toolLocations, String accountId) {
         super(groupId, labelString, idleTerminationMinutes, workspaceDir, usage, tunnel, vmargs, environmentVariables,
               toolLocations, accountId);
     }
@@ -65,9 +67,10 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
 
     @Override
     public Boolean detachInstance(String instanceId) {
-        Boolean              retVal                 = false;
-        IAzureGroupRepo      azureGroupRepo         = RepoManager.getInstance().getAzureGroupRepo();
-        ApiResponse<Boolean> detachInstanceResponse = azureGroupRepo.detachInstance(groupId, instanceId, this.accountId);
+        Boolean         retVal         = false;
+        IAzureGroupRepo azureGroupRepo = RepoManager.getInstance().getAzureGroupRepo();
+        ApiResponse<Boolean> detachInstanceResponse =
+                azureGroupRepo.detachInstance(groupId, instanceId, this.accountId);
 
         if (detachInstanceResponse.isRequestSucceed()) {
             LOGGER.info(String.format("Instance %s detached", instanceId));
@@ -88,14 +91,16 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
 
     @Override
     public void monitorInstances() {
-        IAzureGroupRepo                       azureGroupRepo    = RepoManager.getInstance().getAzureGroupRepo();
-        ApiResponse<List<AzureGroupInstance>> instancesResponse = azureGroupRepo.getGroupInstances(groupId, this.accountId);
+        IAzureGroupRepo azureGroupRepo = RepoManager.getInstance().getAzureGroupRepo();
+        ApiResponse<List<AzureGroupInstance>> instancesResponse =
+                azureGroupRepo.getGroupInstances(groupId, this.accountId);
 
         if (instancesResponse.isRequestSucceed()) {
             List<AzureGroupInstance> instances = instancesResponse.getValue();
 
             LOGGER.info(String.format("There are %s instances in group %s", instances.size(), groupId));
 
+            updateSlaveInstances(instances);
             addNewSlaveInstances(instances);
             removeOldSlaveInstances(instances);
         }
@@ -214,7 +219,8 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
 
         if (instance.getInstanceId() != null) {
             Integer executors = getNumOfExecutors(instance.getVmSize());
-            slave = buildSpotinstSlave(instance.getInstanceId(), instance.getVmSize(), String.valueOf(executors));
+            slave = buildSpotinstSlave(instance.getInstanceId(), instance.getVmSize(), String.valueOf(executors),
+                                       instance.getPrivateIp(), instance.getPublicIp());
         }
 
         if (slave != null) {
@@ -260,6 +266,29 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
             pendingInstances.put(key, pendingInstance);
         }
 
+    }
+
+    private void updateSlaveInstances(List<AzureGroupInstance> instances) {
+        if (CollectionUtils.isNotEmpty(instances)) {
+            List<SpotinstSlave> nodesToUpdate = new LinkedList<>();
+
+            for (AzureGroupInstance instance : instances) {
+                Boolean isSlaveExist = isSlaveExistForInstance(instance);
+
+                if (isSlaveExist) {
+                    Integer executors = getNumOfExecutors(instance.getVmSize());
+                    SpotinstSlave slave = buildSpotinstSlave(instance.getInstanceId(), instance.getVmSize(),
+                                                             String.valueOf(executors), instance.getPrivateIp(),
+                                                             instance.getPublicIp());
+
+                    nodesToUpdate.add(slave);
+                }
+            }
+
+            if (nodesToUpdate.size() > 0) {
+                super.updateSlaveNodes(nodesToUpdate);
+            }
+        }
     }
     //endregion
 
