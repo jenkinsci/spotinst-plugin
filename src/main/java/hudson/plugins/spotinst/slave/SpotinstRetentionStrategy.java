@@ -2,7 +2,6 @@ package hudson.plugins.spotinst.slave;
 
 import hudson.model.Descriptor;
 import hudson.slaves.RetentionStrategy;
-import hudson.util.TimeUnit2;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -82,12 +81,12 @@ public class SpotinstRetentionStrategy extends RetentionStrategy<SpotinstCompute
 
     //region Private Methods
     private long CheckComputer(SpotinstComputer computer) {
+        SpotinstSlave slave = computer.getNode();
 
-        if (idleTerminationMinutes == 0 || computer.getNode() == null) {
+        if (idleTerminationMinutes == 0 || slave == null) {
             return 1;
         }
 
-        SpotinstSlave slave = computer.getNode();
         if (slave.isSlavePending()) {
             return 1;
         }
@@ -97,23 +96,23 @@ public class SpotinstRetentionStrategy extends RetentionStrategy<SpotinstCompute
             final long idleMilliseconds = System.currentTimeMillis() - computer.getIdleStartMilliseconds();
 
             if (idleTerminationMinutes > 0) {
-                if (idleMilliseconds > TimeUnit2.MINUTES.toMillis(idleTerminationMinutes)) {
+                if (idleMilliseconds > TimeUnit.MINUTES.toMillis(idleTerminationMinutes)) {
 
                     LOGGER.info(String.format("%s is idle for %s minutes, terminating..", computer.getName(),
-                                              TimeUnit2.MILLISECONDS.toMinutes(idleMilliseconds)));
+                                              TimeUnit.MILLISECONDS.toMinutes(idleMilliseconds)));
                     slave.terminate();
                 }
             }
             else {
                 long upTime = System.currentTimeMillis() - slave.getCreatedAt().getTime();
                 final int freeSecondsLeft =
-                        (60 * 60) - (int) (TimeUnit2.SECONDS.convert(upTime, TimeUnit2.MILLISECONDS) % (60 * 60));
+                        (60 * 60) - (int) (TimeUnit.SECONDS.convert(upTime, TimeUnit.MILLISECONDS) % (60 * 60));
 
                 if (freeSecondsLeft <= TimeUnit.MINUTES.toSeconds(Math.abs(idleTerminationMinutes))) {
                     LOGGER.info(String.format(
                             "Idle timeout of %s after %s idle minutes, with %s minutes remaining in billing period",
-                            computer.getName(), TimeUnit2.MILLISECONDS.toMinutes(idleMilliseconds),
-                            TimeUnit2.SECONDS.toMinutes(freeSecondsLeft)));
+                            computer.getName(), TimeUnit.MILLISECONDS.toMinutes(idleMilliseconds),
+                            TimeUnit.SECONDS.toMinutes(freeSecondsLeft)));
                     slave.terminate();
                 }
             }

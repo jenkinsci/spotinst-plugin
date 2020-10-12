@@ -6,6 +6,7 @@ import hudson.model.Descriptor;
 import hudson.model.Node;
 import hudson.model.Slave;
 import hudson.plugins.spotinst.cloud.BaseSpotinstCloud;
+import hudson.slaves.JNLPLauncher;
 import hudson.slaves.NodeProperty;
 import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
@@ -39,12 +40,11 @@ public class SpotinstSlave extends Slave {
     //region Constructor
     public SpotinstSlave(BaseSpotinstCloud spotinstCloud, String name, String elastigroupId, String instanceId,
                          String instanceType, String label, String idleTerminationMinutes, String workspaceDir,
-                         String numOfExecutors, Mode mode, String tunnel, String vmargs,
+                         String numOfExecutors, Mode mode, String tunnel, Boolean shouldUseWebsocket, String vmargs,
                          List<NodeProperty<?>> nodeProperties) throws Descriptor.FormException, IOException {
-
         super(name, "Elastigroup Id: " + elastigroupId, workspaceDir, numOfExecutors, mode, label,
-              new SpotinstComputerLauncher(tunnel, vmargs), new SpotinstRetentionStrategy(idleTerminationMinutes),
-              nodeProperties);
+              new SpotinstComputerLauncher(tunnel, vmargs, shouldUseWebsocket),
+              new SpotinstRetentionStrategy(idleTerminationMinutes), nodeProperties);
 
         this.elastigroupId = elastigroupId;
         this.instanceType = instanceType;
@@ -76,7 +76,7 @@ public class SpotinstSlave extends Slave {
     }
 
     public Date getCreatedAt() {
-        return createdAt;
+        return (Date) createdAt.clone();
     }
 
     public String getElastigroupId() {
@@ -133,10 +133,20 @@ public class SpotinstSlave extends Slave {
 
     @Override
     public Node reconfigure(StaplerRequest req, JSONObject form) throws Descriptor.FormException {
-        String         usageStr  = form.getString("usage");
-        SlaveUsageEnum usageEnum = SlaveUsageEnum.fromName(usageStr);
-        this.usage = usageEnum;
-        this.setMode(this.usage.toMode());
+        if (form != null) {
+            String         usageStr  = form.getString("usage");
+            SlaveUsageEnum usageEnum = SlaveUsageEnum.fromName(usageStr);
+
+            if (usageEnum != null) {
+                this.usage = usageEnum;
+            }
+
+            this.setMode(this.usage.toMode());
+
+            boolean      shouldUseWebsocket = form.getBoolean("shouldUseWebsocket");
+            JNLPLauncher launcher           = (JNLPLauncher) getLauncher();
+            launcher.setWebSocket(shouldUseWebsocket);
+        }
 
         return this;
     }
@@ -195,7 +205,7 @@ public class SpotinstSlave extends Slave {
         }
 
         try {
-            Jenkins.getInstance().removeNode(this);
+            Jenkins.get().removeNode(this);
         }
         catch (IOException e) {
             e.printStackTrace();

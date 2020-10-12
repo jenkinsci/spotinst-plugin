@@ -38,10 +38,10 @@ public class GcpSpotinstCloud extends BaseSpotinstCloud {
     //region Constructors
     @DataBoundConstructor
     public GcpSpotinstCloud(String groupId, String labelString, String idleTerminationMinutes, String workspaceDir,
-                            SlaveUsageEnum usage, String tunnel, String vmargs,
+                            SlaveUsageEnum usage, String tunnel, Boolean shouldUseWebsocket, String vmargs,
                             EnvironmentVariablesNodeProperty environmentVariables,
                             ToolLocationNodeProperty toolLocations, String accountId) {
-        super(groupId, labelString, idleTerminationMinutes, workspaceDir, usage, tunnel, vmargs, environmentVariables,
+        super(groupId, labelString, idleTerminationMinutes, workspaceDir, usage, tunnel, shouldUseWebsocket, vmargs, environmentVariables,
               toolLocations, accountId);
     }
     //endregion

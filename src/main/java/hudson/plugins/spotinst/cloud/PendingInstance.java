@@ -29,11 +29,11 @@ public class PendingInstance {
     }
 
     public Date getCreatedAt() {
-        return createdAt;
+        return (Date) createdAt.clone();
     }
 
     public void setCreatedAt(Date createdAt) {
-        this.createdAt = createdAt;
+        this.createdAt = (Date) createdAt.clone();
     }
 
     public StatusEnum getStatus() {

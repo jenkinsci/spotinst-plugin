@@ -9,8 +9,12 @@ import hudson.slaves.SlaveComputer;
  */
 public class SpotinstComputerLauncher extends JNLPLauncher {
 
-    public SpotinstComputerLauncher(String tunnel, String vmargs) {
+    public SpotinstComputerLauncher(String tunnel, String vmargs, Boolean shouldUseWebsocket) {
         super(tunnel, vmargs);
+
+        if (shouldUseWebsocket != null) {
+            setWebSocket(shouldUseWebsocket);
+        }
     }
 
     @Override

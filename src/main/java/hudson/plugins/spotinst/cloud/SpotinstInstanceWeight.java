@@ -27,7 +27,13 @@ public class SpotinstInstanceWeight implements Describable<SpotinstInstanceWeigh
     //region Overrides
     @Override
     public Descriptor<SpotinstInstanceWeight> getDescriptor() {
-        return Jenkins.getInstance().getDescriptor(getClass());
+        Descriptor<SpotinstInstanceWeight> retVal = Jenkins.getInstance().getDescriptor(getClass());
+
+        if (retVal == null) {
+            throw new RuntimeException("Descriptor of type SpotinstInstanceWeight cannot be null");
+        }
+
+        return retVal;
     }
     //endregion
 
@@ -37,7 +43,7 @@ public class SpotinstInstanceWeight implements Describable<SpotinstInstanceWeigh
 
         @Override
         public String getDisplayName() {
-            return null;
+            return "Spotinst Instance Weight";
         }
     }
     //endregion

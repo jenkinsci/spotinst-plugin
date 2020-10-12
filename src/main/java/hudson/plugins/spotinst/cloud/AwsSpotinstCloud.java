@@ -43,9 +43,9 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
     @DataBoundConstructor
     public AwsSpotinstCloud(String groupId, String labelString, String idleTerminationMinutes, String workspaceDir,
                             List<? extends SpotinstInstanceWeight> executorsForTypes, SlaveUsageEnum usage,
-                            String tunnel, String vmargs, EnvironmentVariablesNodeProperty environmentVariables,
+                            String tunnel, Boolean shouldUseWebsocket, String vmargs, EnvironmentVariablesNodeProperty environmentVariables,
                             ToolLocationNodeProperty toolLocations, String accountId) {
-        super(groupId, labelString, idleTerminationMinutes, workspaceDir, usage, tunnel, vmargs, environmentVariables,
+        super(groupId, labelString, idleTerminationMinutes, workspaceDir, usage, tunnel, shouldUseWebsocket, vmargs, environmentVariables,
               toolLocations, accountId);
         this.executorsForTypes = new LinkedList<>();
         executorsForInstanceType = new HashMap<>();
@@ -228,7 +228,8 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
 
     private void removeOldSlaveInstances(List<AwsGroupInstance> elastigroupInstances) {
         List<SpotinstSlave> allGroupsSlaves = getAllSpotinstSlaves();
-        if (allGroupsSlaves != null && allGroupsSlaves.size() > 0) {
+
+        if (allGroupsSlaves.size() > 0) {
 
             LOGGER.info(String.format("Found %s existing nodes for group %s", allGroupsSlaves.size(), groupId));
 

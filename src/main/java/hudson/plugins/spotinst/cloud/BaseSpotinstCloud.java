@@ -46,11 +46,12 @@ public abstract class BaseSpotinstCloud extends Cloud {
     private   String                            vmargs;
     private   EnvironmentVariablesNodeProperty  environmentVariables;
     private   ToolLocationNodeProperty          toolLocations;
+    private   Boolean                           shouldUseWebsocket;
     //endregion
 
     //region Constructor
     public BaseSpotinstCloud(String groupId, String labelString, String idleTerminationMinutes, String workspaceDir,
-                             SlaveUsageEnum usage, String tunnel, String vmargs,
+                             SlaveUsageEnum usage, String tunnel, Boolean shouldUseWebsocket, String vmargs,
                              EnvironmentVariablesNodeProperty environmentVariables,
                              ToolLocationNodeProperty toolLocations, String accountId) {
         super(groupId);
@@ -70,6 +71,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
         }
 
         this.tunnel = tunnel;
+        this.shouldUseWebsocket = shouldUseWebsocket;
         this.vmargs = vmargs;
         this.environmentVariables = environmentVariables;
         this.toolLocations = toolLocations;
@@ -247,7 +249,8 @@ public abstract class BaseSpotinstCloud extends Cloud {
 
         try {
             slave = new SpotinstSlave(this, id, groupId, id, instanceType, labelString, idleTerminationMinutes,
-                                      workspaceDir, numOfExecutors, mode, this.tunnel, this.vmargs, nodeProperties);
+                                      workspaceDir, numOfExecutors, mode, this.tunnel, this.shouldUseWebsocket,
+                                      this.vmargs, nodeProperties);
         }
         catch (Descriptor.FormException | IOException e) {
             LOGGER.error(String.format("Failed to build Spotinst slave for: %s", id));
@@ -263,17 +266,15 @@ public abstract class BaseSpotinstCloud extends Cloud {
         List<SpotinstSlave> retVal   = new LinkedList<>();
         List<Node>          allNodes = Jenkins.getInstance().getNodes();
 
-        if (allNodes != null) {
-            LOGGER.info(String.format("Found total %s nodes in Jenkins, filtering the group nodes", allNodes.size()));
+        LOGGER.info(String.format("Found total %s nodes in Jenkins, filtering the group nodes", allNodes.size()));
 
-            for (Node node : allNodes) {
+        for (Node node : allNodes) {
 
-                if (node instanceof SpotinstSlave) {
-                    SpotinstSlave slave = (SpotinstSlave) node;
+            if (node instanceof SpotinstSlave) {
+                SpotinstSlave slave = (SpotinstSlave) node;
 
-                    if (slave.getElastigroupId().equals(groupId)) {
-                        retVal.add(slave);
-                    }
+                if (slave.getElastigroupId().equals(groupId)) {
+                    retVal.add(slave);
                 }
             }
         }
@@ -294,9 +295,13 @@ public abstract class BaseSpotinstCloud extends Cloud {
                         pendingExecutors += pendingInstance.getNumOfExecutors();
                     }
                     break;
-
                     case INSTANCE_INITIATING: {
                         initiatingExecutors += pendingInstance.getNumOfExecutors();
+                    }
+                    break;
+                    default: {
+                        LOGGER.warn(String.format("Pending instance %s has unknown status %s", pendingInstance.getId(),
+                                                  pendingInstance.getStatus().getName()));
                     }
                     break;
                 }
@@ -361,6 +366,14 @@ public abstract class BaseSpotinstCloud extends Cloud {
 
     public void setPendingInstances(Map<String, PendingInstance> pendingInstances) {
         this.pendingInstances = pendingInstances;
+    }
+
+    public Boolean getShouldUseWebsocket() {
+        return shouldUseWebsocket;
+    }
+
+    public void setShouldUseWebsocket(Boolean shouldUseWebsocket) {
+        this.shouldUseWebsocket = shouldUseWebsocket;
     }
     //endregion
 

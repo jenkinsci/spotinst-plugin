@@ -34,11 +34,11 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
     //region Constructor
     @DataBoundConstructor
     public AzureSpotinstCloud(String groupId, String labelString, String idleTerminationMinutes, String workspaceDir,
-                              SlaveUsageEnum usage, String tunnel, String vmargs,
+                              SlaveUsageEnum usage, String tunnel, Boolean shouldUseWebsocket, String vmargs,
                               EnvironmentVariablesNodeProperty environmentVariables,
                               ToolLocationNodeProperty toolLocations, String accountId) {
-        super(groupId, labelString, idleTerminationMinutes, workspaceDir, usage, tunnel, vmargs, environmentVariables,
-              toolLocations, accountId);
+        super(groupId, labelString, idleTerminationMinutes, workspaceDir, usage, tunnel, shouldUseWebsocket, vmargs,
+              environmentVariables, toolLocations, accountId);
     }
     //endregion
 
@@ -170,7 +170,7 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
     private void removeOldSlaveInstances(List<AzureGroupInstance> azureGroupInstances) {
         List<SpotinstSlave> allGroupsSlaves = getAllSpotinstSlaves();
 
-        if (allGroupsSlaves != null) {
+        if (allGroupsSlaves.size() > 0) {
             List<String> groupInstanceIds = getGroupInstanceIds(azureGroupInstances);
 
             for (SpotinstSlave slave : allGroupsSlaves) {
