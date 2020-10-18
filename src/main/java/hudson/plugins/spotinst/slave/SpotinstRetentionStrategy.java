@@ -13,13 +13,15 @@ import java.util.concurrent.locks.ReentrantLock;
  * Created by ohadmuchnik on 25/05/2016.
  */
 public class SpotinstRetentionStrategy extends RetentionStrategy<SpotinstComputer> {
-
     //region Members
-    private static final Logger  LOGGER   = LoggerFactory.getLogger(SpotinstRetentionStrategy.class);
-    public static final  boolean DISABLED = Boolean.getBoolean(SpotinstRetentionStrategy.class.getName() + ".disabled");
-    public final      int           idleTerminationMinutes;
+    public static final boolean DISABLED = Boolean.getBoolean(SpotinstRetentionStrategy.class.getName() + ".disabled");
+
+    private static final Logger LOGGER                     = LoggerFactory.getLogger(SpotinstRetentionStrategy.class);
+    private static final int    STARTUP_TIME_DEFAULT_VALUE = 30;
+
+    public final int idleTerminationMinutes;
+
     private transient ReentrantLock checkLock;
-    private static final int STARTUP_TIME_DEFAULT_VALUE = 30;
     //endregion
 
     //region Constructor
@@ -65,14 +67,9 @@ public class SpotinstRetentionStrategy extends RetentionStrategy<SpotinstCompute
             }
         }
     }
+    //endregion
 
-    public static class DescriptorImpl extends Descriptor<RetentionStrategy<?>> {
-        @Override
-        public String getDisplayName() {
-            return "Spotinst";
-        }
-    }
-
+    //region Protected Methods
     protected Object readResolve() {
         checkLock = new ReentrantLock(false);
         return this;
@@ -119,6 +116,15 @@ public class SpotinstRetentionStrategy extends RetentionStrategy<SpotinstCompute
         }
 
         return 1;
+    }
+    //endregion
+
+    //region Descriptor class
+    public static class DescriptorImpl extends Descriptor<RetentionStrategy<?>> {
+        @Override
+        public String getDisplayName() {
+            return "Spotinst";
+        }
     }
     //endregion
 }

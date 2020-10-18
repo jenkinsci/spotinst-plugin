@@ -1,9 +1,11 @@
 package hudson.plugins.spotinst.slave;
 
+import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Extension;
 import hudson.model.Computer;
 import hudson.model.TaskListener;
 import hudson.slaves.ComputerListener;
+import hudson.slaves.OfflineCause;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,6 +41,11 @@ public class SpotinstComputerListener extends ComputerListener {
         super.onOnline(computer, listener);
     }
 
-    //TODO - handle onOffline computer
+    @Override
+    public void onOffline(@NonNull Computer c, OfflineCause cause) {
+        LOGGER.info(String.format("Computer went offline, Cause: %s.", cause));
+        c.disconnect(cause);
+        super.onOffline(c, cause);
+    }
     //endregion
 }
