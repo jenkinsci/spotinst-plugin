@@ -9,21 +9,18 @@ import hudson.plugins.spotinst.model.azure.AzureGroupInstance;
 import hudson.plugins.spotinst.model.azure.AzureVmSizeEnum;
 import hudson.plugins.spotinst.repos.IAzureGroupRepo;
 import hudson.plugins.spotinst.repos.RepoManager;
+import hudson.plugins.spotinst.slave.SlaveInstanceDetails;
 import hudson.plugins.spotinst.slave.SlaveUsageEnum;
 import hudson.plugins.spotinst.slave.SpotinstSlave;
 import hudson.slaves.EnvironmentVariablesNodeProperty;
 import hudson.tools.ToolLocationNodeProperty;
 import jenkins.model.Jenkins;
-import org.apache.commons.collections.CollectionUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.Date;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * Created by ohadmuchnik on 19/06/2017.
@@ -100,9 +97,17 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
 
             LOGGER.info(String.format("There are %s instances in group %s", instances.size(), groupId));
 
-            updateSlaveInstances(instances);
             addNewSlaveInstances(instances);
             removeOldSlaveInstances(instances);
+
+            Map<String, SlaveInstanceDetails> slaveInstancesDetailsByInstanceId = new HashMap<>();
+
+            for (AzureGroupInstance instance : instances) {
+                SlaveInstanceDetails instanceDetails = SlaveInstanceDetails.build(instance);
+                slaveInstancesDetailsByInstanceId.put(instanceDetails.getInstanceId(), instanceDetails);
+            }
+
+            this.slaveInstancesDetailsByInstanceId = new HashMap<>(slaveInstancesDetailsByInstanceId);
         }
         else {
             LOGGER.error(String.format("Failed to get group %s instances. Errors: %s", groupId,
@@ -219,8 +224,7 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
 
         if (instance.getInstanceId() != null) {
             Integer executors = getNumOfExecutors(instance.getVmSize());
-            slave = buildSpotinstSlave(instance.getInstanceId(), instance.getVmSize(), String.valueOf(executors),
-                                       instance.getPrivateIp(), instance.getPublicIp());
+            slave = buildSpotinstSlave(instance.getInstanceId(), instance.getVmSize(), String.valueOf(executors));
         }
 
         if (slave != null) {
@@ -266,29 +270,6 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
             pendingInstances.put(key, pendingInstance);
         }
 
-    }
-
-    private void updateSlaveInstances(List<AzureGroupInstance> instances) {
-        if (CollectionUtils.isNotEmpty(instances)) {
-            List<SpotinstSlave> nodesToUpdate = new LinkedList<>();
-
-            for (AzureGroupInstance instance : instances) {
-                Boolean isSlaveExist = isSlaveExistForInstance(instance);
-
-                if (isSlaveExist) {
-                    Integer executors = getNumOfExecutors(instance.getVmSize());
-                    SpotinstSlave slave = buildSpotinstSlave(instance.getInstanceId(), instance.getVmSize(),
-                                                             String.valueOf(executors), instance.getPrivateIp(),
-                                                             instance.getPublicIp());
-
-                    nodesToUpdate.add(slave);
-                }
-            }
-
-            if (nodesToUpdate.size() > 0) {
-                super.updateSlaveNodes(nodesToUpdate);
-            }
-        }
     }
     //endregion
 

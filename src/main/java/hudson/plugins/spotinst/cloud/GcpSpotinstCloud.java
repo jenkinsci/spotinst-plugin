@@ -10,19 +10,21 @@ import hudson.plugins.spotinst.model.gcp.GcpResultNewInstance;
 import hudson.plugins.spotinst.model.gcp.GcpScaleUpResult;
 import hudson.plugins.spotinst.repos.IGcpGroupRepo;
 import hudson.plugins.spotinst.repos.RepoManager;
+import hudson.plugins.spotinst.slave.SlaveInstanceDetails;
 import hudson.plugins.spotinst.slave.SlaveUsageEnum;
 import hudson.plugins.spotinst.slave.SpotinstSlave;
 import hudson.slaves.EnvironmentVariablesNodeProperty;
 import hudson.tools.ToolLocationNodeProperty;
 import jenkins.model.Jenkins;
-import org.apache.commons.collections.CollectionUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by ohadmuchnik on 20/03/2017.
@@ -62,8 +64,7 @@ public class GcpSpotinstCloud extends BaseSpotinstCloud {
                     for (GcpResultNewInstance newInstance : scaleUpResult.getNewInstances()) {
                         SpotinstSlave newInstanceSlave =
                                 handleNewGcpInstance(newInstance.getInstanceName(), newInstance.getMachineType(),
-                                                     request.getLabel(), null, null,
-                                                     PendingInstance.StatusEnum.INSTANCE_INITIATING);
+                                                     request.getLabel());
                         retVal.add(newInstanceSlave);
                     }
                 }
@@ -72,8 +73,7 @@ public class GcpSpotinstCloud extends BaseSpotinstCloud {
                     for (GcpResultNewInstance newInstance : scaleUpResult.getNewPreemptibles()) {
                         SpotinstSlave newPreemptibleSlave =
                                 handleNewGcpInstance(newInstance.getInstanceName(), newInstance.getMachineType(),
-                                                     request.getLabel(), null, null,
-                                                     PendingInstance.StatusEnum.INSTANCE_INITIATING);
+                                                     request.getLabel());
                         retVal.add(newPreemptibleSlave);
                     }
                 }
@@ -119,10 +119,17 @@ public class GcpSpotinstCloud extends BaseSpotinstCloud {
 
             LOGGER.info(String.format("There are %s instances in group %s", instances.size(), groupId));
 
-            updateSlaveInstances(instances);
             addNewGcpSlaveInstances(instances);
             removeOldGcpSlaveInstances(instances);
 
+            Map<String, SlaveInstanceDetails> slaveInstancesDetailsByInstanceId = new HashMap<>();
+
+            for (GcpGroupInstance instance : instances) {
+                SlaveInstanceDetails instanceDetails = SlaveInstanceDetails.build(instance);
+                slaveInstancesDetailsByInstanceId.put(instanceDetails.getInstanceId(), instanceDetails);
+            }
+
+            this.slaveInstancesDetailsByInstanceId = new HashMap<>(slaveInstancesDetailsByInstanceId);
         }
         else {
             LOGGER.error(String.format("Failed to get group %s instances. Errors: %s", groupId,
@@ -138,16 +145,11 @@ public class GcpSpotinstCloud extends BaseSpotinstCloud {
     //endregion
 
     //region Private Methods
-    private SpotinstSlave handleNewGcpInstance(String instanceName, String machineType, String label, String privateIp,
-                                               String publicIp, PendingInstance.StatusEnum pendingStatus) {
+    private SpotinstSlave handleNewGcpInstance(String instanceName, String machineType, String label) {
         Integer executors = GcpMachineType.fromValue(machineType).getExecutors();
+        addToPending(instanceName, executors, PendingInstance.StatusEnum.INSTANCE_INITIATING, label);
+        SpotinstSlave retVal = buildSpotinstSlave(instanceName, machineType, String.valueOf(executors));
 
-        if (pendingStatus == PendingInstance.StatusEnum.INSTANCE_INITIATING) {
-            addToPending(instanceName, executors, pendingStatus, label);
-        }
-        
-        SpotinstSlave retVal =
-                buildSpotinstSlave(instanceName, machineType, String.valueOf(executors), privateIp, publicIp);
         return retVal;
     }
 
@@ -220,37 +222,13 @@ public class GcpSpotinstCloud extends BaseSpotinstCloud {
 
     private void addSpotinstGcpSlave(GcpGroupInstance instance) {
         if (instance.getInstanceName() != null) {
-            SpotinstSlave slave = handleNewGcpInstance(instance.getInstanceName(), instance.getMachineType(), null,
-                                                       instance.getPrivateIpAddress(), instance.getPublicIpAddress(),
-                                                       PendingInstance.StatusEnum.INSTANCE_INITIATING);
+            SpotinstSlave slave = handleNewGcpInstance(instance.getInstanceName(), instance.getMachineType(), null);
 
             try {
                 Jenkins.getInstance().addNode(slave);
             }
             catch (IOException e) {
                 LOGGER.error(String.format("Failed to create node for slave: %s", slave.getInstanceId()), e);
-            }
-        }
-    }
-
-    private void updateSlaveInstances(List<GcpGroupInstance> instances) {
-        if (CollectionUtils.isNotEmpty(instances)) {
-            List<SpotinstSlave> nodesToUpdate = new LinkedList<>();
-
-            for (GcpGroupInstance instance : instances) {
-                Boolean isSlaveExist = isSlaveExistForGcpInstance(instance);
-
-                if (isSlaveExist) {
-                    SpotinstSlave slave =
-                            handleNewGcpInstance(instance.getInstanceName(), instance.getMachineType(), null,
-                                                 instance.getPrivateIpAddress(), instance.getPublicIpAddress(),
-                                                 PendingInstance.StatusEnum.UPDATING);
-                    nodesToUpdate.add(slave);
-                }
-            }
-
-            if (nodesToUpdate.size() > 0) {
-                super.updateSlaveNodes(nodesToUpdate);
             }
         }
     }
