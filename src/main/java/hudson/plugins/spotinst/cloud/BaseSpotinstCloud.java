@@ -8,6 +8,7 @@ import hudson.model.labels.LabelAtom;
 import hudson.plugins.spotinst.api.infra.JsonMapper;
 import hudson.plugins.spotinst.common.Constants;
 import hudson.plugins.spotinst.common.TimeUtils;
+import hudson.plugins.spotinst.slave.SlaveInstanceDetails;
 import hudson.plugins.spotinst.slave.SlaveUsageEnum;
 import hudson.plugins.spotinst.slave.SpotinstSlave;
 import hudson.slaves.Cloud;
@@ -18,7 +19,6 @@ import hudson.tools.ToolDescriptor;
 import hudson.tools.ToolInstallation;
 import hudson.tools.ToolLocationNodeProperty;
 import jenkins.model.Jenkins;
-import org.apache.commons.collections.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,18 +33,19 @@ public abstract class BaseSpotinstCloud extends Cloud {
     //region Members
     private static final Logger LOGGER = LoggerFactory.getLogger(BaseSpotinstCloud.class);
 
-    protected String                           accountId;
-    protected String                           groupId;
-    protected Map<String, PendingInstance>     pendingInstances;
-    private   String                           labelString;
-    private   String                           idleTerminationMinutes;
-    private   String                           workspaceDir;
-    private   Set<LabelAtom>                   labelSet;
-    private   SlaveUsageEnum                   usage;
-    private   String                           tunnel;
-    private   String                           vmargs;
-    private   EnvironmentVariablesNodeProperty environmentVariables;
-    private   ToolLocationNodeProperty         toolLocations;
+    protected String                            accountId;
+    protected String                            groupId;
+    protected Map<String, PendingInstance>      pendingInstances;
+    protected Map<String, SlaveInstanceDetails> slaveInstancesDetailsByInstanceId;
+    private   String                            labelString;
+    private   String                            idleTerminationMinutes;
+    private   String                            workspaceDir;
+    private   Set<LabelAtom>                    labelSet;
+    private   SlaveUsageEnum                    usage;
+    private   String                            tunnel;
+    private   String                            vmargs;
+    private   EnvironmentVariablesNodeProperty  environmentVariables;
+    private   ToolLocationNodeProperty          toolLocations;
     //endregion
 
     //region Constructor
@@ -72,12 +73,13 @@ public abstract class BaseSpotinstCloud extends Cloud {
         this.vmargs = vmargs;
         this.environmentVariables = environmentVariables;
         this.toolLocations = toolLocations;
+        this.slaveInstancesDetailsByInstanceId = new HashMap<>();
     }
 
 
     //endregion
 
-    //region Overriden Public Methods
+    //region Overridden Public Methods
     @Override
     public Collection<PlannedNode> provision(Label label, int excessWorkload) {
         ProvisionRequest request = new ProvisionRequest(label, excessWorkload);
@@ -170,6 +172,12 @@ public abstract class BaseSpotinstCloud extends Cloud {
             }
         }
     }
+
+    public SlaveInstanceDetails getSlaveDetails(String instanceId) {
+        SlaveInstanceDetails retVal = slaveInstancesDetailsByInstanceId.get(instanceId);
+
+        return retVal;
+    }
     //endregion
 
     //region Private Methods
@@ -227,8 +235,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
         pendingInstances.put(id, pendingInstance);
     }
 
-    protected SpotinstSlave buildSpotinstSlave(String id, String instanceType, String numOfExecutors, String privateIp,
-                                               String publicIp) {
+    protected SpotinstSlave buildSpotinstSlave(String id, String instanceType, String numOfExecutors) {
         SpotinstSlave slave = null;
         Node.Mode     mode  = Node.Mode.NORMAL;
 
@@ -239,9 +246,8 @@ public abstract class BaseSpotinstCloud extends Cloud {
         List<NodeProperty<?>> nodeProperties = buildNodeProperties();
 
         try {
-            slave = new SpotinstSlave(this, id, groupId, id, instanceType, privateIp, publicIp, labelString,
-                                      idleTerminationMinutes, workspaceDir, numOfExecutors, mode, this.tunnel,
-                                      this.vmargs, nodeProperties);
+            slave = new SpotinstSlave(this, id, groupId, id, instanceType, labelString, idleTerminationMinutes,
+                                      workspaceDir, numOfExecutors, mode, this.tunnel, this.vmargs, nodeProperties);
         }
         catch (Descriptor.FormException | IOException e) {
             LOGGER.error(String.format("Failed to build Spotinst slave for: %s", id));
@@ -288,7 +294,6 @@ public abstract class BaseSpotinstCloud extends Cloud {
                         pendingExecutors += pendingInstance.getNumOfExecutors();
                     }
                     break;
-
 
                     case INSTANCE_INITIATING: {
                         initiatingExecutors += pendingInstance.getNumOfExecutors();
@@ -367,54 +372,6 @@ public abstract class BaseSpotinstCloud extends Cloud {
     public abstract String getCloudUrl();
 
     public abstract void syncGroupInstances();
-
-    protected void updateSlaveNodes(List<SpotinstSlave> slavesToUpdate) {
-        if (CollectionUtils.isNotEmpty(slavesToUpdate)) {
-            List<Node> nodes = Jenkins.getInstance().getNodes();
-
-            if (CollectionUtils.isNotEmpty(nodes)) {
-                Map<String, Node> nodesByName = new HashMap<>();
-
-                for (Node node : nodes) {
-                    nodesByName.put(node.getNodeName(), node);
-                }
-
-                boolean shouldUpdateNodes = false;
-
-                for (SpotinstSlave slave : slavesToUpdate) {
-                    Node node = nodesByName.get(slave.getNodeName());
-
-                    if (node != null) {
-                        SpotinstSlave nodeToUpdate = (SpotinstSlave) node;
-
-                        if (Objects.equals(nodeToUpdate.getPrivateIp(), slave.getPrivateIp()) == false ||
-                            Objects.equals(nodeToUpdate.getPublicIp(), slave.getPublicIp()) == false) {
-
-                            LOGGER.info(String.format("Slave: %s of group: %s needs to be updated", slave.getNodeName(),
-                                                      groupId));
-
-                            nodeToUpdate.setPublicIp(slave.getPublicIp());
-                            nodeToUpdate.setPrivateIp(slave.getPrivateIp());
-
-                            nodesByName.put(nodeToUpdate.getNodeName(), nodeToUpdate);
-                            shouldUpdateNodes = true;
-                        }
-                    }
-                }
-
-                if (shouldUpdateNodes) {
-                    List<Node> nodesToUpdate = new LinkedList<>(nodesByName.values());
-
-                    try {
-                        Jenkins.getInstance().setNodes(nodesToUpdate);
-                    }
-                    catch (IOException e) {
-                        LOGGER.error("Failed to update slave nodes", e);
-                    }
-                }
-            }
-        }
-    }
     //endregion
 
     //region Abstract Class

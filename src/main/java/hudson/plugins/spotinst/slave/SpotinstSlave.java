@@ -32,15 +32,13 @@ public class SpotinstSlave extends Slave {
     private String            workspaceDir;
     private String            groupUrl;
     private SlaveUsageEnum    usage;
-    private String            privateIp;
-    private String            publicIp;
     private Date              createdAt;
     private BaseSpotinstCloud spotinstCloud;
     //endregion
 
     //region Constructor
     public SpotinstSlave(BaseSpotinstCloud spotinstCloud, String name, String elastigroupId, String instanceId,
-                         String instanceType, String privateIp, String publicIp, String label, String idleTerminationMinutes, String workspaceDir,
+                         String instanceType, String label, String idleTerminationMinutes, String workspaceDir,
                          String numOfExecutors, Mode mode, String tunnel, String vmargs,
                          List<NodeProperty<?>> nodeProperties) throws Descriptor.FormException, IOException {
 
@@ -51,8 +49,6 @@ public class SpotinstSlave extends Slave {
         this.elastigroupId = elastigroupId;
         this.instanceType = instanceType;
         this.instanceId = instanceId;
-        this.privateIp = privateIp;
-        this.publicIp = publicIp;
         this.workspaceDir = workspaceDir;
         this.usage = SlaveUsageEnum.fromMode(mode);
         this.createdAt = new Date();
@@ -100,21 +96,27 @@ public class SpotinstSlave extends Slave {
     }
 
     public String getPrivateIp() {
-        return privateIp;
+        String               retVal          = null;
+        String               instanceId      = getInstanceId();
+        SlaveInstanceDetails instanceDetails = spotinstCloud.getSlaveDetails(instanceId);
+
+        if (instanceDetails != null) {
+            retVal = instanceDetails.getPrivateIp();
+        }
+
+        return retVal;
     }
 
     public String getPublicIp() {
-        return publicIp;
-    }
-    //endregion
+        String               retVal          = null;
+        String               instanceId      = getInstanceId();
+        SlaveInstanceDetails instanceDetails = spotinstCloud.getSlaveDetails(instanceId);
 
-    //region Setters
-    public void setPrivateIp(String privateIp) {
-        this.privateIp = privateIp;
-    }
+        if (instanceDetails != null) {
+            retVal = instanceDetails.getPublicIp();
+        }
 
-    public void setPublicIp(String publicIp) {
-        this.publicIp = publicIp;
+        return retVal;
     }
     //endregion
 
@@ -154,14 +156,13 @@ public class SpotinstSlave extends Slave {
         return Objects.equals(instanceId, that.instanceId) && Objects.equals(instanceType, that.instanceType) &&
                Objects.equals(elastigroupId, that.elastigroupId) && Objects.equals(workspaceDir, that.workspaceDir) &&
                Objects.equals(groupUrl, that.groupUrl) && usage == that.usage &&
-               Objects.equals(privateIp, that.privateIp) && Objects.equals(publicIp, that.publicIp) &&
                Objects.equals(createdAt, that.createdAt) && Objects.equals(spotinstCloud, that.spotinstCloud);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(super.hashCode(), instanceId, instanceType, elastigroupId, workspaceDir, groupUrl, usage,
-                            privateIp, publicIp, createdAt, spotinstCloud);
+                            createdAt, spotinstCloud);
     }
     //endregion
 
