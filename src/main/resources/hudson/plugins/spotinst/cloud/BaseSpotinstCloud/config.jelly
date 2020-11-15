@@ -25,6 +25,9 @@
     <f:entry title="${%Tunnel connection through}" field="tunnel">
         <f:textbox/>
     </f:entry>
+    <f:entry title="${%Use WebSocket}" field="shouldUseWebsocket">
+        <f:checkbox/>
+    </f:entry>
     <f:entry title="${%JVM options}" field="vmargs">
         <f:textbox/>
     </f:entry>

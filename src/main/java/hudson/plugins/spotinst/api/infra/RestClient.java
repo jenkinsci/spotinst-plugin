@@ -15,6 +15,7 @@ import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 public class RestClient {
@@ -118,9 +119,10 @@ public class RestClient {
 
     private static RestResponse buildRestResponse(HttpResponse response) throws ApiException {
         RestResponse   retVal;
-        BufferedReader rd;
+        BufferedReader rd = null;
+
         try {
-            rd = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
+            rd = new BufferedReader(new InputStreamReader(response.getEntity().getContent(), StandardCharsets.UTF_8));
 
             StringBuffer result = new StringBuffer();
             String       line   = "";
@@ -134,6 +136,16 @@ public class RestClient {
         catch (IOException e) {
             LOGGER.error("Exception when building Rest response.", e);
             throw new ApiException("Exception when building Rest response.", e);
+        }
+        finally {
+            if (rd != null) {
+                try {
+                    rd.close();
+                }
+                catch (IOException ex) {
+                    LOGGER.warn("Failed to close buffer", ex);
+                }
+            }
         }
 
         return retVal;

@@ -2,7 +2,6 @@ package hudson.plugins.spotinst.slave;
 
 import hudson.model.Descriptor;
 import hudson.slaves.RetentionStrategy;
-import hudson.util.TimeUnit2;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,13 +13,15 @@ import java.util.concurrent.locks.ReentrantLock;
  * Created by ohadmuchnik on 25/05/2016.
  */
 public class SpotinstRetentionStrategy extends RetentionStrategy<SpotinstComputer> {
-
     //region Members
-    private static final Logger  LOGGER   = LoggerFactory.getLogger(SpotinstRetentionStrategy.class);
-    public static final  boolean DISABLED = Boolean.getBoolean(SpotinstRetentionStrategy.class.getName() + ".disabled");
-    public final      int           idleTerminationMinutes;
+    public static final boolean DISABLED = Boolean.getBoolean(SpotinstRetentionStrategy.class.getName() + ".disabled");
+
+    private static final Logger LOGGER                     = LoggerFactory.getLogger(SpotinstRetentionStrategy.class);
+    private static final int    STARTUP_TIME_DEFAULT_VALUE = 30;
+
+    public final int idleTerminationMinutes;
+
     private transient ReentrantLock checkLock;
-    private static final int STARTUP_TIME_DEFAULT_VALUE = 30;
     //endregion
 
     //region Constructor
@@ -66,14 +67,9 @@ public class SpotinstRetentionStrategy extends RetentionStrategy<SpotinstCompute
             }
         }
     }
+    //endregion
 
-    public static class DescriptorImpl extends Descriptor<RetentionStrategy<?>> {
-        @Override
-        public String getDisplayName() {
-            return "Spotinst";
-        }
-    }
-
+    //region Protected Methods
     protected Object readResolve() {
         checkLock = new ReentrantLock(false);
         return this;
@@ -82,12 +78,12 @@ public class SpotinstRetentionStrategy extends RetentionStrategy<SpotinstCompute
 
     //region Private Methods
     private long CheckComputer(SpotinstComputer computer) {
+        SpotinstSlave slave = computer.getNode();
 
-        if (idleTerminationMinutes == 0 || computer.getNode() == null) {
+        if (idleTerminationMinutes == 0 || slave == null) {
             return 1;
         }
 
-        SpotinstSlave slave = computer.getNode();
         if (slave.isSlavePending()) {
             return 1;
         }
@@ -97,29 +93,38 @@ public class SpotinstRetentionStrategy extends RetentionStrategy<SpotinstCompute
             final long idleMilliseconds = System.currentTimeMillis() - computer.getIdleStartMilliseconds();
 
             if (idleTerminationMinutes > 0) {
-                if (idleMilliseconds > TimeUnit2.MINUTES.toMillis(idleTerminationMinutes)) {
+                if (idleMilliseconds > TimeUnit.MINUTES.toMillis(idleTerminationMinutes)) {
 
                     LOGGER.info(String.format("%s is idle for %s minutes, terminating..", computer.getName(),
-                                              TimeUnit2.MILLISECONDS.toMinutes(idleMilliseconds)));
+                                              TimeUnit.MILLISECONDS.toMinutes(idleMilliseconds)));
                     slave.terminate();
                 }
             }
             else {
                 long upTime = System.currentTimeMillis() - slave.getCreatedAt().getTime();
                 final int freeSecondsLeft =
-                        (60 * 60) - (int) (TimeUnit2.SECONDS.convert(upTime, TimeUnit2.MILLISECONDS) % (60 * 60));
+                        (60 * 60) - (int) (TimeUnit.SECONDS.convert(upTime, TimeUnit.MILLISECONDS) % (60 * 60));
 
                 if (freeSecondsLeft <= TimeUnit.MINUTES.toSeconds(Math.abs(idleTerminationMinutes))) {
                     LOGGER.info(String.format(
                             "Idle timeout of %s after %s idle minutes, with %s minutes remaining in billing period",
-                            computer.getName(), TimeUnit2.MILLISECONDS.toMinutes(idleMilliseconds),
-                            TimeUnit2.SECONDS.toMinutes(freeSecondsLeft)));
+                            computer.getName(), TimeUnit.MILLISECONDS.toMinutes(idleMilliseconds),
+                            TimeUnit.SECONDS.toMinutes(freeSecondsLeft)));
                     slave.terminate();
                 }
             }
         }
 
         return 1;
+    }
+    //endregion
+
+    //region Descriptor class
+    public static class DescriptorImpl extends Descriptor<RetentionStrategy<?>> {
+        @Override
+        public String getDisplayName() {
+            return "Spotinst";
+        }
     }
     //endregion
 }

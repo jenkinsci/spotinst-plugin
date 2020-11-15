@@ -3,6 +3,8 @@ package hudson.plugins.spotinst.slave;
 import hudson.slaves.SlaveComputer;
 import org.kohsuke.stapler.HttpRedirect;
 import org.kohsuke.stapler.HttpResponse;
+import org.kohsuke.stapler.HttpResponses;
+import org.kohsuke.stapler.interceptor.RequirePOST;
 
 import java.io.IOException;
 
@@ -41,12 +43,19 @@ public class SpotinstComputer extends SlaveComputer {
     }
 
     @Override
+    @RequirePOST
     public HttpResponse doDoDelete() throws IOException {
         checkPermission(DELETE);
-        if (getNode() != null) {
-            getNode().forceTerminate();
+
+        try {
+            if (getNode() != null) {
+                getNode().forceTerminate();
+            }
+
+            return new HttpRedirect("..");
+        } catch (NullPointerException ex) {
+            return HttpResponses.error(500, ex);
         }
-        return new HttpRedirect("..");
     }
     //endregion
 }
