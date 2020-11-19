@@ -41,11 +41,15 @@ termination"
 [SpotinstPlugin-Versionhistory]
 == Version history
 
+[SpotinstPlugin-Version2.0.28(Nov19,2020)]
+=== Version 2.1.1 (Nov 19, 2020)
+* Add AWS instance types
+
 [SpotinstPlugin-Version2.0.28(Nov15,2020)]
 === Version 2.1.0 (Nov 15, 2020)
 
 * Requires Jenkins 2.222.1
-* Add Websocket protocol support
+* Add Websocket proto   col support
 * Upgrade Jenkins Dependencies to 4.9
 * Job recovery, after slave terminates during a Job run.
 
