@@ -19,6 +19,7 @@ import hudson.tools.ToolDescriptor;
 import hudson.tools.ToolInstallation;
 import hudson.tools.ToolLocationNodeProperty;
 import jenkins.model.Jenkins;
+import org.apache.commons.lang.BooleanUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,11 +48,13 @@ public abstract class BaseSpotinstCloud extends Cloud {
     private   EnvironmentVariablesNodeProperty  environmentVariables;
     private   ToolLocationNodeProperty          toolLocations;
     private   Boolean                           shouldUseWebsocket;
+    private   Boolean                           shouldRetriggerBuilds;
     //endregion
 
     //region Constructor
     public BaseSpotinstCloud(String groupId, String labelString, String idleTerminationMinutes, String workspaceDir,
-                             SlaveUsageEnum usage, String tunnel, Boolean shouldUseWebsocket, String vmargs,
+                             SlaveUsageEnum usage, String tunnel, Boolean shouldUseWebsocket,
+                             Boolean shouldRetriggerBuilds, String vmargs,
                              EnvironmentVariablesNodeProperty environmentVariables,
                              ToolLocationNodeProperty toolLocations, String accountId) {
         super(groupId);
@@ -70,6 +73,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
             this.usage = SlaveUsageEnum.NORMAL;
         }
 
+        this.shouldRetriggerBuilds = shouldRetriggerBuilds == null || BooleanUtils.isTrue(shouldRetriggerBuilds);
         this.tunnel = tunnel;
         this.shouldUseWebsocket = shouldUseWebsocket;
         this.vmargs = vmargs;
@@ -250,7 +254,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
         try {
             slave = new SpotinstSlave(this, id, groupId, id, instanceType, labelString, idleTerminationMinutes,
                                       workspaceDir, numOfExecutors, mode, this.tunnel, this.shouldUseWebsocket,
-                                      this.vmargs, nodeProperties);
+                                      this.vmargs, nodeProperties, this.shouldRetriggerBuilds);
         }
         catch (Descriptor.FormException | IOException e) {
             LOGGER.error(String.format("Failed to build Spotinst slave for: %s", id));
@@ -375,6 +379,15 @@ public abstract class BaseSpotinstCloud extends Cloud {
     public void setShouldUseWebsocket(Boolean shouldUseWebsocket) {
         this.shouldUseWebsocket = shouldUseWebsocket;
     }
+
+    public Boolean getShouldRetriggerBuilds() {
+        return shouldRetriggerBuilds;
+    }
+
+    public void setShouldRetriggerBuilds(Boolean shouldRetriggerBuilds) {
+        this.shouldRetriggerBuilds = shouldRetriggerBuilds;
+    }
+
     //endregion
 
     //region Abstract Methods

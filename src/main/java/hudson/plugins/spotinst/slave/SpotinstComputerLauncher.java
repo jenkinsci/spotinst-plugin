@@ -17,16 +17,38 @@ import java.util.List;
 public class SpotinstComputerLauncher extends JNLPLauncher {
     //region Members
     private static final Logger LOGGER = LoggerFactory.getLogger(SpotinstComputerLauncher.class);
+
+    private Boolean shouldRetriggerBuilds;
     //endregion
 
-    public SpotinstComputerLauncher(String tunnel, String vmargs, Boolean shouldUseWebsocket) {
+    //region Constructor
+    public SpotinstComputerLauncher(String tunnel, String vmargs, Boolean shouldUseWebsocket,
+                                    Boolean shouldRetriggerBuilds) {
         super(tunnel, vmargs);
+
+        this.shouldRetriggerBuilds = shouldRetriggerBuilds;
 
         if (shouldUseWebsocket != null) {
             setWebSocket(shouldUseWebsocket);
         }
     }
+    //endregion
 
+    //region Getters & Setters
+    /**
+     * shouldRetriggerBuilds was introduced after some clouds have already been set-up, so until those are saved
+     * again (only then Jenkins calls their constructor), we need to set the default behaviour for them.
+     */
+    public Boolean getShouldRetriggerBuilds() {
+        if (shouldRetriggerBuilds == null) {
+            shouldRetriggerBuilds = true;
+        }
+
+        return shouldRetriggerBuilds;
+    }
+    //endregion
+
+    //region Override Public Methods
     @Override
     public void afterDisconnect(final SlaveComputer computer, final TaskListener listener) {
         // according to jenkins docs could be null in edge cases, check ComputerLauncher.afterDisconnect
@@ -34,7 +56,9 @@ public class SpotinstComputerLauncher extends JNLPLauncher {
             SpotinstComputer spotinstComputer = (SpotinstComputer) computer;
             SpotinstSlave    slave            = spotinstComputer.getNode();
 
-            if (slave == null || BooleanUtils.isFalse(slave.isSlavePending())) {
+            Boolean shouldRetriggerBuilds = getShouldRetriggerBuilds();
+
+            if (shouldRetriggerBuilds && (slave == null || BooleanUtils.isFalse(slave.isSlavePending()))) {
                 LOGGER.info(String.format("Start retriggering executors for %s", spotinstComputer.getDisplayName()));
 
                 final List<Executor> executors = spotinstComputer.getExecutors();
@@ -62,6 +86,10 @@ public class SpotinstComputerLauncher extends JNLPLauncher {
 
                 LOGGER.info(String.format("Finished retriggering executors for %s", spotinstComputer.getDisplayName()));
             }
+            else if (BooleanUtils.isFalse(shouldRetriggerBuilds)) {
+                LOGGER.info(String.format("Build retrigger disabled for %s, not retriggering executors",
+                                          spotinstComputer.getDisplayName()));
+            }
         }
         else if (computer != null) {
             LOGGER.info(
@@ -80,4 +108,5 @@ public class SpotinstComputerLauncher extends JNLPLauncher {
     public void launch(SlaveComputer computer, TaskListener listener) {
         super.launch(computer, listener);
     }
+    //endregion
 }

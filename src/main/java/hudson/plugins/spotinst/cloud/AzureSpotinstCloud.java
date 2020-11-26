@@ -34,10 +34,10 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
     //region Constructor
     @DataBoundConstructor
     public AzureSpotinstCloud(String groupId, String labelString, String idleTerminationMinutes, String workspaceDir,
-                              SlaveUsageEnum usage, String tunnel, Boolean shouldUseWebsocket, String vmargs,
+                              SlaveUsageEnum usage, String tunnel, Boolean shouldUseWebsocket,Boolean shouldRetriggerBuilds, String vmargs,
                               EnvironmentVariablesNodeProperty environmentVariables,
                               ToolLocationNodeProperty toolLocations, String accountId) {
-        super(groupId, labelString, idleTerminationMinutes, workspaceDir, usage, tunnel, shouldUseWebsocket, vmargs,
+        super(groupId, labelString, idleTerminationMinutes, workspaceDir, usage, tunnel, shouldUseWebsocket, shouldRetriggerBuilds, vmargs,
               environmentVariables, toolLocations, accountId);
     }
     //endregion
