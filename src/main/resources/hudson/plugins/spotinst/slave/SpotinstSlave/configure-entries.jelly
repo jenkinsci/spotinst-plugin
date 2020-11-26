@@ -1,6 +1,6 @@
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form">
-    <img style="width:32px;height:32px;border-radius:3px" src="https://s3.amazonaws.com/spotinst-emails/layout/spotinst-icon.png"/>
+    <img style="height:32px" src="https://spotinst-public.s3.amazonaws.com/assets/emails/welcome-email/spot_large.png"/>
     <f:entry title="Elastigroup">
         <a href="https://console.spotinst.com/#/${it.getGroupUrl()}/elastigroup/view/${it.getElastigroupId()}">
             <input value="${it.getElastigroupId()}" readonly="true" style="border:0;color: #337ab7"/>

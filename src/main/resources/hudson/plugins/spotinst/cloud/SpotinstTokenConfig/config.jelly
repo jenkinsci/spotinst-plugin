@@ -5,8 +5,8 @@
 
         <tr>
             <td>
-                <img style="width:32px;height:32px;border-radius:3px"
-                     src="https://s3.amazonaws.com/spotinst-emails/layout/spotinst-icon.png"/>
+                <img style="height:32px;"
+                     src="https://spotinst-public.s3.amazonaws.com/assets/emails/welcome-email/spot_large.png"/>
             </td>
             <td>
                 <f:entry title="Spotinst Personal Access Token" field="spotinstToken">
