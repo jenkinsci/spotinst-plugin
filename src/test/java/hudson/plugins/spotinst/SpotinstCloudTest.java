@@ -62,7 +62,7 @@ public class SpotinstCloudTest {
     public void testAwsProvision_whenThereArePendingInsatcnesForAllExecutors_thenShouldNotSacleUp() {
         String groupId = "sig-1";
         BaseSpotinstCloud spotinstCloud =
-                new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, SlaveUsageEnum.NORMAL, "", false,"", null, null, null);
+                new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, SlaveUsageEnum.NORMAL, "", false, true,"", null, null, null);
         Map<String, PendingInstance> pendingInstances = new HashMap<>();
         pendingInstances.put("sir-1", buildPendingInstance("sir-1", PendingInstance.StatusEnum.PENDING, 2));
         spotinstCloud.setPendingInstances(pendingInstances);
@@ -75,7 +75,7 @@ public class SpotinstCloudTest {
     public void testAwsProvision_whenThereArePendingInsatcnesForPartOfTheExecutors_thenShouldSacleUpTheRest() {
         String groupId = "sig-1";
         AwsSpotinstCloud spotinstCloud =
-                new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, SlaveUsageEnum.NORMAL, "", false, "" ,null, null, null);
+                new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, SlaveUsageEnum.NORMAL, "", false, true, "" ,null, null, null);
         Map<String, PendingInstance> pendingInstances = new HashMap<>();
         pendingInstances.put("sir-1", buildPendingInstance("sir-1", PendingInstance.StatusEnum.PENDING, 2));
         spotinstCloud.setPendingInstances(pendingInstances);
@@ -105,7 +105,7 @@ public class SpotinstCloudTest {
     @Test
     public void testGcpProvision_whenThereArePendingInsatcnesForAllExecutors_thenShouldNotSacleUp() {
         String                       groupId          = "sig-1";
-        BaseSpotinstCloud            spotinstCloud    = new GcpSpotinstCloud(groupId, "", "20", "/tmp", null, "", false, "", null, null, null);
+        BaseSpotinstCloud            spotinstCloud    = new GcpSpotinstCloud(groupId, "", "20", "/tmp", null, "", false, true, "", null, null, null);
         Map<String, PendingInstance> pendingInstances = new HashMap<>();
         pendingInstances.put("sin-1", buildPendingInstance("sin-1", PendingInstance.StatusEnum.PENDING, 2));
         spotinstCloud.setPendingInstances(pendingInstances);
@@ -117,7 +117,7 @@ public class SpotinstCloudTest {
     @Test
     public void testGcpProvision_whenThereArePendingInsatcnesForPartOfTheExecutors_thenShouldSacleUpTheRest() {
         String                       groupId          = "sig-1";
-        GcpSpotinstCloud             spotinstCloud    = new GcpSpotinstCloud(groupId, "", "20", "/tmp", null, "", false, "", null, null, null);
+        GcpSpotinstCloud             spotinstCloud    = new GcpSpotinstCloud(groupId, "", "20", "/tmp", null, "", false, true, "", null, null, null);
         Map<String, PendingInstance> pendingInstances = new HashMap<>();
         pendingInstances.put("sin-1", buildPendingInstance("sin-1", PendingInstance.StatusEnum.PENDING, 2));
         spotinstCloud.setPendingInstances(pendingInstances);
@@ -147,7 +147,7 @@ public class SpotinstCloudTest {
     @Test
     public void testAzureProvision_whenThereArePendingInsatcnesForAllExecutors_thenShouldNotSacleUp() {
         String                       groupId          = "sig-1";
-        BaseSpotinstCloud            spotinstCloud    = new AzureSpotinstCloud(groupId, "", "20", "/tmp", null, "", false, "", null, null, null);
+        BaseSpotinstCloud            spotinstCloud    = new AzureSpotinstCloud(groupId, "", "20", "/tmp", null, "", false, false, "", null, null, null);
         Map<String, PendingInstance> pendingInstances = new HashMap<>();
         pendingInstances.put("q3213", buildPendingInstance(groupId, PendingInstance.StatusEnum.PENDING, 1));
         pendingInstances.put("41234", buildPendingInstance(groupId, PendingInstance.StatusEnum.PENDING, 1));
@@ -160,7 +160,7 @@ public class SpotinstCloudTest {
     @Test
     public void testAzureProvision_whenThereArePendingInsatcnesForPartOfTheExecutors_thenShouldSacleUpTheRest() {
         String                       groupId          = "sig-1";
-        AzureSpotinstCloud           spotinstCloud    = new AzureSpotinstCloud(groupId, "", "20", "/tmp", null, "", false, "", null, null, null);
+        AzureSpotinstCloud           spotinstCloud    = new AzureSpotinstCloud(groupId, "", "20", "/tmp", null, "", false, false, "", null, null, null);
         Map<String, PendingInstance> pendingInstances = new HashMap<>();
         pendingInstances.put("asda", buildPendingInstance(groupId, PendingInstance.StatusEnum.PENDING, 1));
         pendingInstances.put("ada", buildPendingInstance(groupId, PendingInstance.StatusEnum.PENDING, 1));
