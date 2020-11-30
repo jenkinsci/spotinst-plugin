@@ -42,6 +42,12 @@ termination"
 == Version history
 
 [SpotinstPlugin-Version2.0.28(Nov19,2020)]
+=== Version 2.1.2 (Nov 30, 2020)
+
+* Add option to choose Strategy what happens when a slave Terminates during a Job Run,
+Choice Between Retriggering the terminated Job or not.
+
+[SpotinstPlugin-Version2.0.28(Nov19,2020)]
 === Version 2.1.1 (Nov 19, 2020)
 
 * Add AWS instance types
