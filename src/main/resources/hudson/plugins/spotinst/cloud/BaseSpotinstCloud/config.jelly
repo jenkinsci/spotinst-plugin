@@ -1,10 +1,10 @@
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form" xmlns:st="jelly:stapler">
     <f:entry>
-        <img style="width:32px;height:32px;border-radius:3px"
-             src="https://s3.amazonaws.com/spotinst-emails/layout/spotinst-icon.png"/>
+        <img style="height:32px;"
+             src="https://spotinst-public.s3.amazonaws.com/assets/emails/welcome-email/spot_large.png"/>
     </f:entry>
- <f:entry title="${%Account Id}" field="accountId">
+    <f:entry title="${%Account Id}" field="accountId">
         <f:textbox/>
     </f:entry>
     <f:entry title="${%Elastigroup Id}" field="groupId">
@@ -27,6 +27,9 @@
     </f:entry>
     <f:entry title="${%Use WebSocket}" field="shouldUseWebsocket">
         <f:checkbox/>
+    </f:entry>
+    <f:entry title="${%Retrigger Builds on Node Interruption}" field="shouldRetriggerBuilds">
+      <f:checkbox checked="${instance == null || instance.shouldRetriggerBuilds == null || instance.shouldRetriggerBuilds}"/>
     </f:entry>
     <f:entry title="${%JVM options}" field="vmargs">
         <f:textbox/>

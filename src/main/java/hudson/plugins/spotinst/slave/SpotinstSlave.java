@@ -41,9 +41,9 @@ public class SpotinstSlave extends Slave {
     public SpotinstSlave(BaseSpotinstCloud spotinstCloud, String name, String elastigroupId, String instanceId,
                          String instanceType, String label, String idleTerminationMinutes, String workspaceDir,
                          String numOfExecutors, Mode mode, String tunnel, Boolean shouldUseWebsocket, String vmargs,
-                         List<NodeProperty<?>> nodeProperties) throws Descriptor.FormException, IOException {
+                         List<NodeProperty<?>> nodeProperties, Boolean shouldRetriggerBuilds) throws Descriptor.FormException, IOException {
         super(name, "Elastigroup Id: " + elastigroupId, workspaceDir, numOfExecutors, mode, label,
-              new SpotinstComputerLauncher(tunnel, vmargs, shouldUseWebsocket),
+              new SpotinstComputerLauncher(tunnel, vmargs, shouldUseWebsocket, shouldRetriggerBuilds),
               new SpotinstRetentionStrategy(idleTerminationMinutes), nodeProperties);
 
         this.elastigroupId = elastigroupId;
