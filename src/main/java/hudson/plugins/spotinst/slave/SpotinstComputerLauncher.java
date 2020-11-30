@@ -87,7 +87,7 @@ public class SpotinstComputerLauncher extends JNLPLauncher {
                 LOGGER.info(String.format("Finished retriggering executors for %s", spotinstComputer.getDisplayName()));
             }
             else if (BooleanUtils.isFalse(shouldRetriggerBuilds)) {
-                LOGGER.info(String.format("Retriger Build disabled for %s, not retriggering executors",
+                LOGGER.info(String.format("Retrigger Build disabled for %s, not retriggering executors",
                                           spotinstComputer.getDisplayName()));
             }
         }
