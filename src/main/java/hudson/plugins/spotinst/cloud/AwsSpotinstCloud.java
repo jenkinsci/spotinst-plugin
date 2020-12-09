@@ -170,6 +170,8 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
             }
         }
 
+        //todo shibel : add Warning log "Instance type doesnt exist "instanceType" setting executor to 1"
+
         return retVal;
     }
 

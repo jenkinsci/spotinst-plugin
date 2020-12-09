@@ -3,12 +3,14 @@ package hudson.plugins.spotinst.model.azure;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+//todo shibel : add vreated by & maybe spaces by family types
 public enum AzureV3VmSizeEnum {
     BASIC_A0("basic_a0",1),
     BASIC_A1("basic_a1",1),
     BASIC_A2("basic_a2",2),
     BASIC_A3("basic_a3",4),
     BASIC_A4("basic_a4",8),
+
     STANDARD_A0("standard_a0",1),
     STANDARD_A1("standard_a1",1),
     STANDARD_A1_V2("standard_a1_v2",1),
@@ -24,6 +26,7 @@ public enum AzureV3VmSizeEnum {
     STANDARD_A7("standard_a7",8),
     STANDARD_A8M_V2("standard_a8m_v2",8),
     STANDARD_A8_V2("standard_a8_v2",8),
+
     STANDARD_B12MS("standard_b12ms",12),
     STANDARD_B16MS("standard_b16ms",16),
     STANDARD_B1LS("standard_b1ls",1),
@@ -34,6 +37,7 @@ public enum AzureV3VmSizeEnum {
     STANDARD_B2S("standard_b2s",2),
     STANDARD_B4MS("standard_b4ms",4),
     STANDARD_B8MS("standard_b8ms",8),
+
     STANDARD_D11_V2("standard_d11_v2",2),
     STANDARD_D12_V2("standard_d12_v2",4),
     STANDARD_D13_V2("standard_d13_v2",8),
@@ -59,6 +63,7 @@ public enum AzureV3VmSizeEnum {
     STANDARD_D2_V2("standard_d2_v2",2),
     STANDARD_D2_V3("standard_d2_v3",2),
     STANDARD_D2_V4("standard_d2_v4",2),
+
     STANDARD_D32AS_V4("standard_d32as_v4",32),
     STANDARD_D32A_V4("standard_d32a_v4",32),
     STANDARD_D32DS_V4("standard_d32ds_v4",32),

@@ -33,7 +33,6 @@ public class AzureV3SpotinstCloud extends BaseSpotinstCloud {
     private static final Logger LOGGER = LoggerFactory.getLogger(AzureV3SpotinstCloud.class);
     //endregion
 
-
     //region Constructor
     @DataBoundConstructor
     public AzureV3SpotinstCloud(String groupId, String labelString, String idleTerminationMinutes, String workspaceDir,
@@ -58,9 +57,11 @@ public class AzureV3SpotinstCloud extends BaseSpotinstCloud {
         if (scaleUpResponse.isRequestSucceed()) {
             List<AzureScaleResultNewVm> newVms = scaleUpResponse.getValue();
 
+            //todo shibel : change to != null
             Boolean isNewVmsPresent = newVms != null;
 
             if (isNewVmsPresent) {
+                // todo shibel : add group id to log
                 LOGGER.info(String.format("Scale up group %s succeeded", groupId));
                 List<SpotinstSlave> newInstanceSlaves = handleNewVms(newVms, request.getLabel());
                 retVal.addAll(newInstanceSlaves);
@@ -138,9 +139,8 @@ public class AzureV3SpotinstCloud extends BaseSpotinstCloud {
     //region Private Methods
     private List<SpotinstSlave> handleNewVms(List<AzureScaleResultNewVm> newVms, String label) {
         List<SpotinstSlave> retVal = new LinkedList<>();
-
-        LOGGER.info(String.format("%s new instances launched", newVms.size()));
-
+        // todo shibel : add group id to log
+        LOGGER.info(String.format("%s new instances launched ", newVms.size()));
 
         for (AzureScaleResultNewVm vm : newVms) {
             SpotinstSlave slave = handleNewVm(vm.getVmName(), vm.getVmSize(), label);
@@ -241,6 +241,7 @@ public class AzureV3SpotinstCloud extends BaseSpotinstCloud {
         }
         else {
             retVal = defaultExecutors;
+            //todo shibel : change Warning log "Instance type doesnt exist "instanceType" setting executor to 1"
             LOGGER.info(String.format(
                     "Failed to determine # of executors for instance type %s, defaulting to %s executor(s) ", vmSize,
                     defaultExecutors));
