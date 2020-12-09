@@ -362,7 +362,7 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
 
         @Override
         public String getDisplayName() {
-            return "Spotinst AWS Elastigroup";
+            return "Spot AWS Elastigroup";
         }
 
 

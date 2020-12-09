@@ -267,7 +267,7 @@ public class AzureV3SpotinstCloud extends BaseSpotinstCloud {
 
         @Override
         public String getDisplayName() {
-            return "Spotinst Azure Elastigroup";
+            return "Spot Azure Elastigroup";
         }
     }
     //endregion

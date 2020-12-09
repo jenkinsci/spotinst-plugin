@@ -240,7 +240,7 @@ public class GcpSpotinstCloud extends BaseSpotinstCloud {
 
         @Override
         public String getDisplayName() {
-            return "Spotinst GCP Elastigroup";
+            return "Spot GCP Elastigroup";
         }
     }
     //endregion

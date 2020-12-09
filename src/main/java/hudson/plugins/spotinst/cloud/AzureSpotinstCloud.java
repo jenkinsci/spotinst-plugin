@@ -279,7 +279,7 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
 
         @Override
         public String getDisplayName() {
-            return "Spotinst Azure LPVM (deprecated)";
+            return "Spot Azure LPVM (old)";
         }
     }
     //endregion
