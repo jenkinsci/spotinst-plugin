@@ -2,6 +2,7 @@ package hudson.plugins.spotinst.slave;
 
 import hudson.plugins.spotinst.model.aws.AwsGroupInstance;
 import hudson.plugins.spotinst.model.azure.AzureGroupInstance;
+import hudson.plugins.spotinst.model.azure.AzureV3GroupVm;
 import hudson.plugins.spotinst.model.gcp.GcpGroupInstance;
 
 /**
@@ -39,6 +40,13 @@ public class SlaveInstanceDetails {
         SlaveInstanceDetails retVal =
                 new SlaveInstanceDetails(instance.getInstanceName(), instance.getPrivateIpAddress(),
                                          instance.getPublicIpAddress());
+        return retVal;
+    }
+
+    public static SlaveInstanceDetails build(AzureV3GroupVm instance) {
+        SlaveInstanceDetails retVal =
+                new SlaveInstanceDetails(instance.getVmName(), instance.getPrivateIp(),
+                                         instance.getPublicIp());
         return retVal;
     }
 

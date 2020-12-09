@@ -145,7 +145,7 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
 
     @Override
     public String getCloudUrl() {
-        return "/azure/compute";
+        return "azure/compute";
     }
     //endregion
 
@@ -279,7 +279,7 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
 
         @Override
         public String getDisplayName() {
-            return "Spotinst Azure Elastigroup";
+            return "Spotinst Azure LPVM (deprecated)";
         }
     }
     //endregion
