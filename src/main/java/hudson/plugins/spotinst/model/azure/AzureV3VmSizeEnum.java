@@ -3,7 +3,9 @@ package hudson.plugins.spotinst.model.azure;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-//todo shibel : add vreated by & maybe spaces by family types
+/**
+ * Created by Shibel Karmi Mansour on 07/12/2020.
+ */
 public enum AzureV3VmSizeEnum {
     BASIC_A0("basic_a0",1),
     BASIC_A1("basic_a1",1),
@@ -54,6 +56,7 @@ public enum AzureV3VmSizeEnum {
     STANDARD_D16_V3("standard_d16_v3",16),
     STANDARD_D16_V4("standard_d16_v4",16),
     STANDARD_D1_V2("standard_d1_v2",1),
+
     STANDARD_D2AS_V4("standard_d2as_v4",2),
     STANDARD_D2A_V4("standard_d2a_v4",2),
     STANDARD_D2DS_V4("standard_d2ds_v4",2),
@@ -73,6 +76,7 @@ public enum AzureV3VmSizeEnum {
     STANDARD_D32_V3("standard_d32_v3",32),
     STANDARD_D32_V4("standard_d32_v4",32),
     STANDARD_D3_V2("standard_d3_v2",4),
+
     STANDARD_D48AS_V4("standard_d48as_v4",48),
     STANDARD_D48A_V4("standard_d48a_v4",48),
     STANDARD_D48DS_V4("standard_d48ds_v4",48),
@@ -90,7 +94,9 @@ public enum AzureV3VmSizeEnum {
     STANDARD_D4_V2("standard_d4_v2",8),
     STANDARD_D4_V3("standard_d4_v3",4),
     STANDARD_D4_V4("standard_d4_v4",4),
+
     STANDARD_D5_V2("standard_d5_v2",16),
+
     STANDARD_D64AS_V4("standard_d64as_v4",64),
     STANDARD_D64A_V4("standard_d64a_v4",64),
     STANDARD_D64DS_V4("standard_d64ds_v4",64),
@@ -99,6 +105,7 @@ public enum AzureV3VmSizeEnum {
     STANDARD_D64S_V4("standard_d64s_v4",64),
     STANDARD_D64_V3("standard_d64_v3",64),
     STANDARD_D64_V4("standard_d64_v4",64),
+
     STANDARD_D8AS_V4("standard_d8as_v4",8),
     STANDARD_D8A_V4("standard_d8a_v4",8),
     STANDARD_D8DS_V4("standard_d8ds_v4",8),
@@ -107,8 +114,10 @@ public enum AzureV3VmSizeEnum {
     STANDARD_D8S_V4("standard_d8s_v4",8),
     STANDARD_D8_V3("standard_d8_v3",8),
     STANDARD_D8_V4("standard_d8_v4",8),
+
     STANDARD_D96AS_V4("standard_d96as_v4",96),
     STANDARD_D96A_V4("standard_d96a_v4",96),
+
     STANDARD_DC1S_V2("standard_dc1s_v2",1),
     STANDARD_DC2S("standard_dc2s",2),
     STANDARD_DC2S_V2("standard_dc2s_v2",2),
@@ -116,6 +125,7 @@ public enum AzureV3VmSizeEnum {
     STANDARD_DC4S_V2("standard_dc4s_v2",4),
     STANDARD_DC8S_V2("standard_dc8s_v2",16),
     STANDARD_DC8_V2("standard_dc8_v2",8),
+
     STANDARD_DS11_1_V2("standard_ds11-1_v2",1),
     STANDARD_DS11_V2("standard_ds11_v2",2),
     STANDARD_DS12_1_V2("standard_ds12-1_v2",1),
@@ -135,6 +145,7 @@ public enum AzureV3VmSizeEnum {
     STANDARD_DS3_V2("standard_ds3_v2",4),
     STANDARD_DS4_V2("standard_ds4_v2",8),
     STANDARD_DS5_V2("standard_ds5_v2",16),
+
     STANDARD_E16_4AS_V4("standard_e16-4as_v4",4),
     STANDARD_E16_4DS_V4("standard_e16-4ds_v4",4),
     STANDARD_E16_4S_V3("standard_e16-4s_v3",4),
@@ -151,6 +162,7 @@ public enum AzureV3VmSizeEnum {
     STANDARD_E16S_V4("standard_e16s_v4",16),
     STANDARD_E16_V3("standard_e16_v3",16),
     STANDARD_E16_V4("standard_e16_v4",16),
+
     STANDARD_E20AS_V4("standard_e20as_v4",20),
     STANDARD_E20A_V4("standard_e20a_v4",20),
     STANDARD_E20DS_V4("standard_e20ds_v4",20),
@@ -158,6 +170,7 @@ public enum AzureV3VmSizeEnum {
     STANDARD_E20S_V3("standard_e20s_v3",20),
     STANDARD_E20S_V4("standard_e20s_v4",20),
     STANDARD_E20_V3("standard_e20_v3",20),
+
     STANDARD_E2AS_V4("standard_e2as_v4",2),
     STANDARD_E2A_V4("standard_e2a_v4",2),
     STANDARD_E2DS_V4("standard_e2ds_v4",2),
@@ -166,6 +179,7 @@ public enum AzureV3VmSizeEnum {
     STANDARD_E2S_V4("standard_e2s_v4",2),
     STANDARD_E2_V3("standard_e2_v3",2),
     STANDARD_E2_V4("standard_e2_v4",2),
+
     STANDARD_E32_16AS_V4("standard_e32-16as_v4",16),
     STANDARD_E32_16DS_V4("standard_e32-16ds_v4",16),
     STANDARD_E32_16S_V3("standard_e32-16s_v3",16),
@@ -182,10 +196,12 @@ public enum AzureV3VmSizeEnum {
     STANDARD_E32S_V4("standard_e32s_v4",32),
     STANDARD_E32_V3("standard_e32_v3",32),
     STANDARD_E32_V4("standard_e32_v4",32),
+
     STANDARD_E4_2AS_V4("standard_e4-2as_v4",2),
     STANDARD_E4_2DS_V4("standard_e4-2ds_v4",2),
     STANDARD_E4_2S_V3("standard_e4-2s_v3",2),
     STANDARD_E4_2S_V4("standard_e4-2s_v4",2),
+
     STANDARD_E48AS_V4("standard_e48as_v4",48),
     STANDARD_E48A_V4("standard_e48a_v4",48),
     STANDARD_E48DS_V4("standard_e48ds_v4",48),
@@ -194,6 +210,7 @@ public enum AzureV3VmSizeEnum {
     STANDARD_E48S_V4("standard_e48s_v4",48),
     STANDARD_E48_V3("standard_e48_v3",48),
     STANDARD_E48_V4("standard_e48_v4",48),
+
     STANDARD_E4AS_V4("standard_e4as_v4",4),
     STANDARD_E4A_V4("standard_e4a_v4",4),
     STANDARD_E4DS_V4("standard_e4ds_v4",4),
@@ -202,6 +219,7 @@ public enum AzureV3VmSizeEnum {
     STANDARD_E4S_V4("standard_e4s_v4",4),
     STANDARD_E4_V3("standard_e4_v3",4),
     STANDARD_E4_V4("standard_e4_v4",4),
+
     STANDARD_E64_16AS_V4("standard_e64-16as_v4",16),
     STANDARD_E64_16DS_V4("standard_e64-16ds_v4",16),
     STANDARD_E64_16S_V3("standard_e64-16s_v3",16),
@@ -222,6 +240,7 @@ public enum AzureV3VmSizeEnum {
     STANDARD_E64S_V4("standard_e64s_v4",64),
     STANDARD_E64_V3("standard_e64_v3",64),
     STANDARD_E64_V4("standard_e64_v4",64),
+
     STANDARD_E8_2AS_V4("standard_e8-2as_v4",2),
     STANDARD_E8_2DS_V4("standard_e8-2ds_v4",2),
     STANDARD_E8_2S_V3("standard_e8-2s_v3",2),
@@ -230,8 +249,10 @@ public enum AzureV3VmSizeEnum {
     STANDARD_E8_4DS_V4("standard_e8-4ds_v4",4),
     STANDARD_E8_4S_V3("standard_e8-4s_v3",4),
     STANDARD_E8_4S_V4("standard_e8-4s_v4",4),
+
     STANDARD_E80_IDS_V4("standard_e80-ids_v4",80),
     STANDARD_E80_IS_V4("standard_e80-is_v4",80),
+
     STANDARD_E8AS_V4("standard_e8as_v4",8),
     STANDARD_E8A_V4("standard_e8a_v4",8),
     STANDARD_E8DS_V4("standard_e8ds_v4",8),
@@ -244,6 +265,7 @@ public enum AzureV3VmSizeEnum {
     STANDARD_E96_48AS_V4("standard_e96-48as_v4",48),
     STANDARD_E96AS_V4("standard_e96as_v4",96),
     STANDARD_E96A_V4("standard_e96a_v4",96),
+
     STANDARD_F1("standard_f1",1),
     STANDARD_F16("standard_f16",16),
     STANDARD_F16S("standard_f16s",16),
@@ -262,6 +284,7 @@ public enum AzureV3VmSizeEnum {
     STANDARD_F8("standard_f8",8),
     STANDARD_F8S("standard_f8s",8),
     STANDARD_F8S_V2("standard_f8s_v2",8),
+
     STANDARD_G1("standard_g1",2),
     STANDARD_G2("standard_g2",4),
     STANDARD_G3("standard_g3",8),
@@ -276,6 +299,7 @@ public enum AzureV3VmSizeEnum {
     STANDARD_GS5("standard_gs5",32),
     STANDARD_GS5_16("standard_gs5-16",16),
     STANDARD_GS5_8("standard_gs5-8",8),
+
     STANDARD_H16("standard_h16",16),
     STANDARD_H16M("standard_h16m",16),
     STANDARD_H16MR("standard_h16mr",16),
@@ -291,6 +315,7 @@ public enum AzureV3VmSizeEnum {
     STANDARD_HB120RS_V2("standard_hb120rs_v2",120),
     STANDARD_HB60RS("standard_hb60rs",60),
     STANDARD_HC44RS("standard_hc44rs",44),
+
     STANDARD_L16S("standard_l16s",16),
     STANDARD_L16S_V2("standard_l16s_v2",16),
     STANDARD_L32S("standard_l32s",32),
@@ -301,6 +326,7 @@ public enum AzureV3VmSizeEnum {
     STANDARD_L80S_V2("standard_l80s_v2",80),
     STANDARD_L8S("standard_l8s",8),
     STANDARD_L8S_V2("standard_l8s_v2",8),
+
     STANDARD_M128("standard_m128",128),
     STANDARD_M128_32MS("standard_m128-32ms",32),
     STANDARD_M128_64MS("standard_m128-64ms",64),
@@ -333,6 +359,7 @@ public enum AzureV3VmSizeEnum {
     STANDARD_M8_2MS("standard_m8-2ms",8),
     STANDARD_M8_4MS("standard_m8-4ms",8),
     STANDARD_M8MS("standard_m8ms",8),
+
     STANDARD_NC12("standard_nc12",12),
     STANDARD_NC12S_V2("standard_nc12s_v2",12),
     STANDARD_NC12S_V3("standard_nc12s_v3",12),

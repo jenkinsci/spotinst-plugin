@@ -254,8 +254,11 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
         if (vmSizeEnum != null) {
             retVal = vmSizeEnum.getExecutors();
         }
-
-        //todo shibel : add Warning log "Instance type doesnt exist "instanceType" setting executor to 1"
+        else {
+            LOGGER.warn(String.format(
+                    "Failed to determine # of executors for instance type %s, defaulting to %s executor(s). Group ID: %s", vmSize,
+                    retVal, this.getGroupId()));
+        }
 
         return retVal;
     }

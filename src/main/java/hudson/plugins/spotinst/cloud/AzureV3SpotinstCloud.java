@@ -57,13 +57,9 @@ public class AzureV3SpotinstCloud extends BaseSpotinstCloud {
         if (scaleUpResponse.isRequestSucceed()) {
             List<AzureScaleResultNewVm> newVms = scaleUpResponse.getValue();
 
-            //todo shibel : change to != null
-            Boolean isNewVmsPresent = newVms != null;
-
-            if (isNewVmsPresent) {
-                // todo shibel : add group id to log
+            if (newVms != null) {
                 LOGGER.info(String.format("Scale up group %s succeeded", groupId));
-                List<SpotinstSlave> newInstanceSlaves = handleNewVms(newVms, request.getLabel());
+                List<SpotinstSlave> newInstanceSlaves = handleNewVms(newVms, request.getLabel(), groupId);
                 retVal.addAll(newInstanceSlaves);
             }
             else {
@@ -137,10 +133,9 @@ public class AzureV3SpotinstCloud extends BaseSpotinstCloud {
     //endregion
 
     //region Private Methods
-    private List<SpotinstSlave> handleNewVms(List<AzureScaleResultNewVm> newVms, String label) {
+    private List<SpotinstSlave> handleNewVms(List<AzureScaleResultNewVm> newVms, String label, String groupId) {
         List<SpotinstSlave> retVal = new LinkedList<>();
-        // todo shibel : add group id to log
-        LOGGER.info(String.format("%s new instances launched ", newVms.size()));
+        LOGGER.info(String.format("%s new instances launched in group %s", newVms.size(), groupId));
 
         for (AzureScaleResultNewVm vm : newVms) {
             SpotinstSlave slave = handleNewVm(vm.getVmName(), vm.getVmSize(), label);
@@ -241,10 +236,9 @@ public class AzureV3SpotinstCloud extends BaseSpotinstCloud {
         }
         else {
             retVal = defaultExecutors;
-            //todo shibel : change Warning log "Instance type doesnt exist "instanceType" setting executor to 1"
-            LOGGER.info(String.format(
-                    "Failed to determine # of executors for instance type %s, defaulting to %s executor(s) ", vmSize,
-                    defaultExecutors));
+            LOGGER.warn(String.format(
+                    "Failed to determine # of executors for instance type %s, defaulting to %s executor(s). Group ID: %s", vmSize,
+                    defaultExecutors, this.getGroupId()));
         }
 
         return retVal;
