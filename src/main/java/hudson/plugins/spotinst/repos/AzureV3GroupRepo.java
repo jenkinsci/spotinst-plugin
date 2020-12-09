@@ -6,7 +6,7 @@ import hudson.plugins.spotinst.api.infra.ApiResponse;
 import hudson.plugins.spotinst.api.infra.ExceptionHelper;
 import hudson.plugins.spotinst.model.azure.AzureV3GroupStatus;
 import hudson.plugins.spotinst.model.azure.AzureV3GroupVm;
-import hudson.plugins.spotinst.model.azure.AzureScaleResultNewVm;
+import hudson.plugins.spotinst.model.azure.AzureV3ScaleResultNewVm;
 
 import java.util.List;
 
@@ -49,11 +49,11 @@ public class AzureV3GroupRepo implements IAzureV3GroupRepo {
     }
 
     @Override
-    public ApiResponse<List<AzureScaleResultNewVm>> scaleUp(String groupId, Integer adjustment, String accountId) {
-        ApiResponse<List<AzureScaleResultNewVm>> retVal;
+    public ApiResponse<List<AzureV3ScaleResultNewVm>> scaleUp(String groupId, Integer adjustment, String accountId) {
+        ApiResponse<List<AzureV3ScaleResultNewVm>> retVal;
 
         try {
-            List<AzureScaleResultNewVm> scaleUpVms = SpotinstApi.azureV3ScaleUp(groupId, adjustment, accountId);
+            List<AzureV3ScaleResultNewVm> scaleUpVms = SpotinstApi.azureV3ScaleUp(groupId, adjustment, accountId);
 
             retVal = new ApiResponse<>(scaleUpVms);
 

@@ -6,7 +6,7 @@ import hudson.plugins.spotinst.api.infra.ApiResponse;
 import hudson.plugins.spotinst.api.infra.JsonMapper;
 import hudson.plugins.spotinst.common.Constants;
 import hudson.plugins.spotinst.model.azure.AzureV3GroupVm;
-import hudson.plugins.spotinst.model.azure.AzureScaleResultNewVm;
+import hudson.plugins.spotinst.model.azure.AzureV3ScaleResultNewVm;
 import hudson.plugins.spotinst.model.azure.AzureV3VmSizeEnum;
 import hudson.plugins.spotinst.repos.IAzureV3GroupRepo;
 import hudson.plugins.spotinst.repos.RepoManager;
@@ -51,11 +51,11 @@ public class AzureV3SpotinstCloud extends BaseSpotinstCloud {
         List<SpotinstSlave> retVal = new LinkedList<>();
 
         IAzureV3GroupRepo azureV3GroupRepo = RepoManager.getInstance().getAzureV3GroupRepo();
-        ApiResponse<List<AzureScaleResultNewVm>> scaleUpResponse =
+        ApiResponse<List<AzureV3ScaleResultNewVm>> scaleUpResponse =
                 azureV3GroupRepo.scaleUp(groupId, request.getExecutors(), this.accountId);
 
         if (scaleUpResponse.isRequestSucceed()) {
-            List<AzureScaleResultNewVm> newVms = scaleUpResponse.getValue();
+            List<AzureV3ScaleResultNewVm> newVms = scaleUpResponse.getValue();
 
             if (newVms != null) {
                 LOGGER.info(String.format("Scale up group %s succeeded", groupId));
@@ -133,11 +133,11 @@ public class AzureV3SpotinstCloud extends BaseSpotinstCloud {
     //endregion
 
     //region Private Methods
-    private List<SpotinstSlave> handleNewVms(List<AzureScaleResultNewVm> newVms, String label, String groupId) {
+    private List<SpotinstSlave> handleNewVms(List<AzureV3ScaleResultNewVm> newVms, String label, String groupId) {
         List<SpotinstSlave> retVal = new LinkedList<>();
         LOGGER.info(String.format("%s new instances launched in group %s", newVms.size(), groupId));
 
-        for (AzureScaleResultNewVm vm : newVms) {
+        for (AzureV3ScaleResultNewVm vm : newVms) {
             SpotinstSlave slave = handleNewVm(vm.getVmName(), vm.getVmSize(), label);
             retVal.add(slave);
         }

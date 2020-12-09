@@ -2,7 +2,7 @@ package hudson.plugins.spotinst.repos;
 
 import hudson.plugins.spotinst.api.infra.ApiResponse;
 import hudson.plugins.spotinst.model.azure.AzureV3GroupVm;
-import hudson.plugins.spotinst.model.azure.AzureScaleResultNewVm;
+import hudson.plugins.spotinst.model.azure.AzureV3ScaleResultNewVm;
 
 import java.util.List;
 
@@ -14,5 +14,5 @@ public interface IAzureV3GroupRepo {
 
     ApiResponse<Boolean> detachVM(String groupId, String vmId, String accountId);
 
-    ApiResponse<List<AzureScaleResultNewVm>> scaleUp(String groupId, Integer adjustment, String accountId);
+    ApiResponse<List<AzureV3ScaleResultNewVm>> scaleUp(String groupId, Integer adjustment, String accountId);
 }

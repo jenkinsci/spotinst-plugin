@@ -255,9 +255,9 @@ public class SpotinstApi {
         return retVal;
     }
 
-        public static List<AzureScaleResultNewVm> azureV3ScaleUp(String groupId, int adjustment, String accountId) throws ApiException {
-        List<AzureScaleResultNewVm> retVal  = new LinkedList<>();
-        Map<String, String>         headers = buildHeaders();
+        public static List<AzureV3ScaleResultNewVm> azureV3ScaleUp(String groupId, int adjustment, String accountId) throws ApiException {
+        List<AzureV3ScaleResultNewVm> retVal  = new LinkedList<>();
+        Map<String, String>           headers = buildHeaders();
 
         Map<String, String> queryParams = buildQueryParams(accountId);
         queryParams.put("adjustment", String.valueOf(adjustment));
