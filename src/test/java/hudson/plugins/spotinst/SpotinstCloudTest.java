@@ -191,10 +191,12 @@ public class SpotinstCloudTest {
         String groupId = "sig-1";
         BaseSpotinstCloud spotinstCloud =
                 new AzureV3SpotinstCloud(groupId, "", "20", "/tmp", null, "", false, true, "", null, null, null);
+
         Map<String, PendingInstance> pendingInstances = new HashMap<>();
         pendingInstances.put("vm-1", buildPendingInstance("vm-1", PendingInstance.StatusEnum.PENDING, 2));
         spotinstCloud.setPendingInstances(pendingInstances);
         spotinstCloud.provision(null, 2);
+
         Mockito.verify(RepoManager.getInstance().getAzureV3GroupRepo(), Mockito.never())
                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString());
     }
@@ -253,6 +255,76 @@ public class SpotinstCloudTest {
         Node node = Jenkins.get().getNode("vm-2");
         assertNotEquals(node, null);
         assertEquals(1, node.getNumExecutors());
+    }
+
+    @Test
+    public void testAzureV3Provision_whenNewInstancesAreLaunched_thenTheirSizeIsAccountedForInNodes() {
+        String groupId = "sig-1";
+        BaseSpotinstCloud spotinstCloud =
+                new AzureV3SpotinstCloud(groupId, "", "20", "/tmp", null, "", false, true, "", null, null, null);
+
+        AzureV3VmSizeEnum vmSizeBasicA1 = AzureV3VmSizeEnum.BASIC_A1;
+        AzureV3VmSizeEnum vmSizeBasicA2 = AzureV3VmSizeEnum.BASIC_A2;
+
+        AzureV3ScaleResultNewVm newVm1 = new AzureV3ScaleResultNewVm();
+        newVm1.setVmName("vm-2");
+        newVm1.setLifeCycle("spot");
+        newVm1.setVmSize(vmSizeBasicA1.getValue());
+
+        AzureV3ScaleResultNewVm newVm2 = new AzureV3ScaleResultNewVm();
+        newVm2.setVmName("vm-3");
+        newVm2.setLifeCycle("spot");
+        newVm2.setVmSize(vmSizeBasicA2.getValue());
+
+        List<AzureV3ScaleResultNewVm> vms = Arrays.asList(newVm1, newVm2);
+
+        Mockito.when(RepoManager.getInstance().getAzureV3GroupRepo()
+                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString()))
+               .thenReturn(new ApiResponse<>(vms));
+
+        spotinstCloud.provision(null, 4);
+
+        List<Node> allNodes = Jenkins.get().getNodes();
+
+        int numOfExecutorsInNodes = allNodes.stream().map(Node::getNumExecutors).mapToInt(Integer::intValue).sum();
+        int numOfExecutorsInInstances = vmSizeBasicA1.getExecutors() + vmSizeBasicA2.getExecutors();
+
+        assertEquals(numOfExecutorsInInstances, numOfExecutorsInNodes);
+    }
+
+    @Test
+    public void testAzureV3Provision_whenNewInstancesAreLaunched_thenTheirSizeIsAccountedForInPendingInstances() {
+        String groupId = "sig-1";
+        BaseSpotinstCloud spotinstCloud =
+                new AzureV3SpotinstCloud(groupId, "", "20", "/tmp", null, "", false, true, "", null, null, null);
+        Map<String, PendingInstance> pendingInstances = new HashMap<>();
+        pendingInstances.put("vm-1", buildPendingInstance("vm-1", PendingInstance.StatusEnum.PENDING, 2));
+        spotinstCloud.setPendingInstances(pendingInstances);
+
+        AzureV3VmSizeEnum vmSizeBasicA1 = AzureV3VmSizeEnum.BASIC_A1;
+        AzureV3VmSizeEnum vmSizeBasicA2 = AzureV3VmSizeEnum.BASIC_A2;
+
+        AzureV3ScaleResultNewVm newVm1 = new AzureV3ScaleResultNewVm();
+        newVm1.setVmName("vm-2");
+        newVm1.setLifeCycle("spot");
+        newVm1.setVmSize(vmSizeBasicA1.getValue());
+
+        AzureV3ScaleResultNewVm newVm2 = new AzureV3ScaleResultNewVm();
+        newVm2.setVmName("vm-3");
+        newVm2.setLifeCycle("spot");
+        newVm2.setVmSize(vmSizeBasicA2.getValue());
+
+        List<AzureV3ScaleResultNewVm> vms = Arrays.asList(newVm1, newVm2);
+
+        Mockito.when(RepoManager.getInstance().getAzureV3GroupRepo()
+                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString()))
+               .thenReturn(new ApiResponse<>(vms));
+
+        spotinstCloud.provision(null, 3);
+        spotinstCloud.provision(null, 2);
+
+        Mockito.verify(RepoManager.getInstance().getAzureV3GroupRepo(), Mockito.times(1))
+               .scaleUp(groupId, 1, null);
     }
     //endregion
 
