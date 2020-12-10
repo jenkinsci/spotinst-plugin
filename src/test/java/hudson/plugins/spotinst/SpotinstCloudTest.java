@@ -7,8 +7,8 @@ import hudson.plugins.spotinst.common.*;
 import hudson.plugins.spotinst.common.AwsInstanceTypeEnum;
 import hudson.plugins.spotinst.model.aws.AwsScaleResultNewSpot;
 import hudson.plugins.spotinst.model.aws.AwsScaleUpResult;
-import hudson.plugins.spotinst.model.azure.AzureV3ScaleResultNewVm;
-import hudson.plugins.spotinst.model.azure.AzureV3VmSizeEnum;
+import hudson.plugins.spotinst.model.azure.AzureScaleUpResultNewVm;
+import hudson.plugins.spotinst.model.azure.AzureVmSizeEnum;
 import hudson.plugins.spotinst.model.gcp.GcpMachineType;
 import hudson.plugins.spotinst.model.gcp.GcpResultNewInstance;
 import hudson.plugins.spotinst.model.gcp.GcpScaleUpResult;
@@ -40,7 +40,7 @@ public class SpotinstCloudTest {
         IAwsGroupRepo     awsGroupRepo     = Mockito.mock(IAwsGroupRepo.class);
         IGcpGroupRepo     gcpGroupRepo     = Mockito.mock(IGcpGroupRepo.class);
         IAzureGroupRepo   azureGroupRepo   = Mockito.mock(IAzureGroupRepo.class);
-        IAzureV3GroupRepo azureV3GroupRepo = Mockito.mock(IAzureV3GroupRepo.class);
+        IAzureVmGroupRepo azureV3GroupRepo = Mockito.mock(IAzureVmGroupRepo.class);
 
         RepoManager.getInstance().setAwsGroupRepo(awsGroupRepo);
         RepoManager.getInstance().setGcpGroupRepo(gcpGroupRepo);
@@ -190,7 +190,7 @@ public class SpotinstCloudTest {
     public void testAzureV3Provision_whenThereArePendingInstancesForAllExecutors_thenShouldNotScaleUp() {
         String groupId = "sig-1";
         BaseSpotinstCloud spotinstCloud =
-                new AzureV3SpotinstCloud(groupId, "", "20", "/tmp", null, "", false, true, "", null, null, null);
+                new AzureSpotCloud(groupId, "", "20", "/tmp", null, "", false, true, "", null, null, null);
 
         Map<String, PendingInstance> pendingInstances = new HashMap<>();
         pendingInstances.put("vm-1", buildPendingInstance("vm-1", PendingInstance.StatusEnum.PENDING, 2));
@@ -205,17 +205,17 @@ public class SpotinstCloudTest {
     public void testAzureV3Provision_whenThereArePendingInstancesForPartOfTheExecutors_thenShouldScaleUpTheRest() {
         String groupId = "sig-1";
         BaseSpotinstCloud spotinstCloud =
-                new AzureV3SpotinstCloud(groupId, "", "20", "/tmp", null, "", false, true, "", null, null, null);
+                new AzureSpotCloud(groupId, "", "20", "/tmp", null, "", false, true, "", null, null, null);
         Map<String, PendingInstance> pendingInstances = new HashMap<>();
         pendingInstances.put("vm-1", buildPendingInstance("vm-1", PendingInstance.StatusEnum.PENDING, 2));
         spotinstCloud.setPendingInstances(pendingInstances);
 
-        AzureV3ScaleResultNewVm newSpot = new AzureV3ScaleResultNewVm();
+        AzureScaleUpResultNewVm newSpot = new AzureScaleUpResultNewVm();
         newSpot.setVmName("vm-2");
         newSpot.setLifeCycle("spot");
-        newSpot.setVmSize(AzureV3VmSizeEnum.STANDARD_A1_V2.getValue());
+        newSpot.setVmSize(AzureVmSizeEnum.STANDARD_A1_V2.getValue());
 
-        List<AzureV3ScaleResultNewVm> vms = Collections.singletonList(newSpot);
+        List<AzureScaleUpResultNewVm> vms = Collections.singletonList(newSpot);
 
         Mockito.when(RepoManager.getInstance().getAzureV3GroupRepo()
                                 .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString()))
@@ -237,14 +237,14 @@ public class SpotinstCloudTest {
     public void testAzureV3Provision_whenUnrecognizedVmSize_thenDefaultTo1Executor() {
         String groupId = "sig-1";
         BaseSpotinstCloud spotinstCloud =
-                new AzureV3SpotinstCloud(groupId, "", "20", "/tmp", null, "", false, true, "", null, null, null);
+                new AzureSpotCloud(groupId, "", "20", "/tmp", null, "", false, true, "", null, null, null);
 
-        AzureV3ScaleResultNewVm newSpot = new AzureV3ScaleResultNewVm();
+        AzureScaleUpResultNewVm newSpot = new AzureScaleUpResultNewVm();
         newSpot.setVmName("vm-2");
         newSpot.setLifeCycle("spot");
         newSpot.setVmSize("iDontExistType");
 
-        List<AzureV3ScaleResultNewVm> vms = Collections.singletonList(newSpot);
+        List<AzureScaleUpResultNewVm> vms = Collections.singletonList(newSpot);
 
         Mockito.when(RepoManager.getInstance().getAzureV3GroupRepo()
                                 .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString()))
@@ -261,22 +261,22 @@ public class SpotinstCloudTest {
     public void testAzureV3Provision_whenNewInstancesAreLaunched_thenTheirSizeIsAccountedForInNodes() {
         String groupId = "sig-1";
         BaseSpotinstCloud spotinstCloud =
-                new AzureV3SpotinstCloud(groupId, "", "20", "/tmp", null, "", false, true, "", null, null, null);
+                new AzureSpotCloud(groupId, "", "20", "/tmp", null, "", false, true, "", null, null, null);
 
-        AzureV3VmSizeEnum vmSizeBasicA1 = AzureV3VmSizeEnum.BASIC_A1;
-        AzureV3VmSizeEnum vmSizeBasicA2 = AzureV3VmSizeEnum.BASIC_A2;
+        AzureVmSizeEnum vmSizeBasicA1 = AzureVmSizeEnum.BASIC_A1;
+        AzureVmSizeEnum vmSizeBasicA2 = AzureVmSizeEnum.BASIC_A2;
 
-        AzureV3ScaleResultNewVm newVm1 = new AzureV3ScaleResultNewVm();
+        AzureScaleUpResultNewVm newVm1 = new AzureScaleUpResultNewVm();
         newVm1.setVmName("vm-2");
         newVm1.setLifeCycle("spot");
         newVm1.setVmSize(vmSizeBasicA1.getValue());
 
-        AzureV3ScaleResultNewVm newVm2 = new AzureV3ScaleResultNewVm();
+        AzureScaleUpResultNewVm newVm2 = new AzureScaleUpResultNewVm();
         newVm2.setVmName("vm-3");
         newVm2.setLifeCycle("spot");
         newVm2.setVmSize(vmSizeBasicA2.getValue());
 
-        List<AzureV3ScaleResultNewVm> vms = Arrays.asList(newVm1, newVm2);
+        List<AzureScaleUpResultNewVm> vms = Arrays.asList(newVm1, newVm2);
 
         Mockito.when(RepoManager.getInstance().getAzureV3GroupRepo()
                                 .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString()))
@@ -296,25 +296,25 @@ public class SpotinstCloudTest {
     public void testAzureV3Provision_whenNewInstancesAreLaunched_thenTheirSizeIsAccountedForInPendingInstances() {
         String groupId = "sig-1";
         BaseSpotinstCloud spotinstCloud =
-                new AzureV3SpotinstCloud(groupId, "", "20", "/tmp", null, "", false, true, "", null, null, null);
+                new AzureSpotCloud(groupId, "", "20", "/tmp", null, "", false, true, "", null, null, null);
         Map<String, PendingInstance> pendingInstances = new HashMap<>();
         pendingInstances.put("vm-1", buildPendingInstance("vm-1", PendingInstance.StatusEnum.PENDING, 2));
         spotinstCloud.setPendingInstances(pendingInstances);
 
-        AzureV3VmSizeEnum vmSizeBasicA1 = AzureV3VmSizeEnum.BASIC_A1;
-        AzureV3VmSizeEnum vmSizeBasicA2 = AzureV3VmSizeEnum.BASIC_A2;
+        AzureVmSizeEnum vmSizeBasicA1 = AzureVmSizeEnum.BASIC_A1;
+        AzureVmSizeEnum vmSizeBasicA2 = AzureVmSizeEnum.BASIC_A2;
 
-        AzureV3ScaleResultNewVm newVm1 = new AzureV3ScaleResultNewVm();
+        AzureScaleUpResultNewVm newVm1 = new AzureScaleUpResultNewVm();
         newVm1.setVmName("vm-2");
         newVm1.setLifeCycle("spot");
         newVm1.setVmSize(vmSizeBasicA1.getValue());
 
-        AzureV3ScaleResultNewVm newVm2 = new AzureV3ScaleResultNewVm();
+        AzureScaleUpResultNewVm newVm2 = new AzureScaleUpResultNewVm();
         newVm2.setVmName("vm-3");
         newVm2.setLifeCycle("spot");
         newVm2.setVmSize(vmSizeBasicA2.getValue());
 
-        List<AzureV3ScaleResultNewVm> vms = Arrays.asList(newVm1, newVm2);
+        List<AzureScaleUpResultNewVm> vms = Arrays.asList(newVm1, newVm2);
 
         Mockito.when(RepoManager.getInstance().getAzureV3GroupRepo()
                                 .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString()))

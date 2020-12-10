@@ -4,24 +4,24 @@ import hudson.plugins.spotinst.api.SpotinstApi;
 import hudson.plugins.spotinst.api.infra.ApiException;
 import hudson.plugins.spotinst.api.infra.ApiResponse;
 import hudson.plugins.spotinst.api.infra.ExceptionHelper;
-import hudson.plugins.spotinst.model.azure.AzureV3GroupStatus;
-import hudson.plugins.spotinst.model.azure.AzureV3GroupVm;
-import hudson.plugins.spotinst.model.azure.AzureV3ScaleResultNewVm;
+import hudson.plugins.spotinst.model.azure.AzureGroupStatus;
+import hudson.plugins.spotinst.model.azure.AzureGroupVm;
+import hudson.plugins.spotinst.model.azure.AzureScaleUpResultNewVm;
 
 import java.util.List;
 
 /**
  * Created by Shibel Karmi Mansour on 01/12/2020.
  */
-public class AzureV3GroupRepo implements IAzureV3GroupRepo {
+public class AzureVmGroupRepo implements IAzureVmGroupRepo {
 
     @Override
-    public ApiResponse<List<AzureV3GroupVm>> getGroupVms(String groupId, String accountId) {
-        ApiResponse<List<AzureV3GroupVm>> retVal;
+    public ApiResponse<List<AzureGroupVm>> getGroupVms(String groupId, String accountId) {
+        ApiResponse<List<AzureGroupVm>> retVal;
 
         try {
-            AzureV3GroupStatus   groupStatus = SpotinstApi.getAzureV3GroupStatus(groupId, accountId);
-            List<AzureV3GroupVm> vms         = groupStatus.getVms();
+            AzureGroupStatus   groupStatus = SpotinstApi.getAzureV3GroupStatus(groupId, accountId);
+            List<AzureGroupVm> vms         = groupStatus.getVms();
             retVal = new ApiResponse<>(vms);
         }
         catch (ApiException e) {
@@ -49,11 +49,11 @@ public class AzureV3GroupRepo implements IAzureV3GroupRepo {
     }
 
     @Override
-    public ApiResponse<List<AzureV3ScaleResultNewVm>> scaleUp(String groupId, Integer adjustment, String accountId) {
-        ApiResponse<List<AzureV3ScaleResultNewVm>> retVal;
+    public ApiResponse<List<AzureScaleUpResultNewVm>> scaleUp(String groupId, Integer adjustment, String accountId) {
+        ApiResponse<List<AzureScaleUpResultNewVm>> retVal;
 
         try {
-            List<AzureV3ScaleResultNewVm> scaleUpVms = SpotinstApi.azureV3ScaleUp(groupId, adjustment, accountId);
+            List<AzureScaleUpResultNewVm> scaleUpVms = SpotinstApi.azureV3ScaleUp(groupId, adjustment, accountId);
 
             retVal = new ApiResponse<>(scaleUpVms);
 

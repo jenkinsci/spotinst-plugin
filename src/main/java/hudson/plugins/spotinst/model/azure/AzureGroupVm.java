@@ -8,7 +8,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class AzureV3GroupVm {
+public class AzureGroupVm {
     //region members
     private String vmName;
     private String vmSize;

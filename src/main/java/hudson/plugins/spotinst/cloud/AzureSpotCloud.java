@@ -5,10 +5,10 @@ import hudson.model.Node;
 import hudson.plugins.spotinst.api.infra.ApiResponse;
 import hudson.plugins.spotinst.api.infra.JsonMapper;
 import hudson.plugins.spotinst.common.Constants;
-import hudson.plugins.spotinst.model.azure.AzureV3GroupVm;
-import hudson.plugins.spotinst.model.azure.AzureV3ScaleResultNewVm;
-import hudson.plugins.spotinst.model.azure.AzureV3VmSizeEnum;
-import hudson.plugins.spotinst.repos.IAzureV3GroupRepo;
+import hudson.plugins.spotinst.model.azure.AzureGroupVm;
+import hudson.plugins.spotinst.model.azure.AzureScaleUpResultNewVm;
+import hudson.plugins.spotinst.model.azure.AzureVmSizeEnum;
+import hudson.plugins.spotinst.repos.IAzureVmGroupRepo;
 import hudson.plugins.spotinst.repos.RepoManager;
 import hudson.plugins.spotinst.slave.SlaveInstanceDetails;
 import hudson.plugins.spotinst.slave.SlaveUsageEnum;
@@ -28,18 +28,18 @@ import java.util.stream.Collectors;
 /**
  * Created by Shibel Karmi Mansour on 08/12/2020.
  */
-public class AzureV3SpotinstCloud extends BaseSpotinstCloud {
+public class AzureSpotCloud extends BaseSpotinstCloud {
     //region Members
-    private static final Logger LOGGER = LoggerFactory.getLogger(AzureV3SpotinstCloud.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(AzureSpotCloud.class);
     //endregion
 
     //region Constructor
     @DataBoundConstructor
-    public AzureV3SpotinstCloud(String groupId, String labelString, String idleTerminationMinutes, String workspaceDir,
-                                SlaveUsageEnum usage, String tunnel, Boolean shouldUseWebsocket,
-                                Boolean shouldRetriggerBuilds, String vmargs,
-                                EnvironmentVariablesNodeProperty environmentVariables,
-                                ToolLocationNodeProperty toolLocations, String accountId) {
+    public AzureSpotCloud(String groupId, String labelString, String idleTerminationMinutes, String workspaceDir,
+                          SlaveUsageEnum usage, String tunnel, Boolean shouldUseWebsocket,
+                          Boolean shouldRetriggerBuilds, String vmargs,
+                          EnvironmentVariablesNodeProperty environmentVariables,
+                          ToolLocationNodeProperty toolLocations, String accountId) {
         super(groupId, labelString, idleTerminationMinutes, workspaceDir, usage, tunnel, shouldUseWebsocket,
               shouldRetriggerBuilds, vmargs, environmentVariables, toolLocations, accountId);
     }
@@ -50,12 +50,12 @@ public class AzureV3SpotinstCloud extends BaseSpotinstCloud {
     List<SpotinstSlave> scaleUp(ProvisionRequest request) {
         List<SpotinstSlave> retVal = new LinkedList<>();
 
-        IAzureV3GroupRepo azureV3GroupRepo = RepoManager.getInstance().getAzureV3GroupRepo();
-        ApiResponse<List<AzureV3ScaleResultNewVm>> scaleUpResponse =
+        IAzureVmGroupRepo azureV3GroupRepo = RepoManager.getInstance().getAzureV3GroupRepo();
+        ApiResponse<List<AzureScaleUpResultNewVm>> scaleUpResponse =
                 azureV3GroupRepo.scaleUp(groupId, request.getExecutors(), this.accountId);
 
         if (scaleUpResponse.isRequestSucceed()) {
-            List<AzureV3ScaleResultNewVm> newVms = scaleUpResponse.getValue();
+            List<AzureScaleUpResultNewVm> newVms = scaleUpResponse.getValue();
 
             if (newVms != null) {
                 LOGGER.info(String.format("Scale up group %s succeeded", groupId));
@@ -78,7 +78,7 @@ public class AzureV3SpotinstCloud extends BaseSpotinstCloud {
     @Override
     public Boolean detachInstance(String instanceId) {
         Boolean              retVal           = false;
-        IAzureV3GroupRepo    azureV3GroupRepo = RepoManager.getInstance().getAzureV3GroupRepo();
+        IAzureVmGroupRepo    azureV3GroupRepo = RepoManager.getInstance().getAzureV3GroupRepo();
         ApiResponse<Boolean> detachVmResponse = azureV3GroupRepo.detachVM(groupId, instanceId, this.accountId);
 
         if (detachVmResponse.isRequestSucceed()) {
@@ -105,11 +105,11 @@ public class AzureV3SpotinstCloud extends BaseSpotinstCloud {
 
     @Override
     public void syncGroupInstances() {
-        IAzureV3GroupRepo                 azureV3GroupRepo  = RepoManager.getInstance().getAzureV3GroupRepo();
-        ApiResponse<List<AzureV3GroupVm>> instancesResponse = azureV3GroupRepo.getGroupVms(groupId, this.accountId);
+        IAzureVmGroupRepo               azureV3GroupRepo  = RepoManager.getInstance().getAzureV3GroupRepo();
+        ApiResponse<List<AzureGroupVm>> instancesResponse = azureV3GroupRepo.getGroupVms(groupId, this.accountId);
 
         if (instancesResponse.isRequestSucceed()) {
-            List<AzureV3GroupVm> vms = instancesResponse.getValue();
+            List<AzureGroupVm> vms = instancesResponse.getValue();
 
             LOGGER.info(String.format("There are %s instances in group %s", vms.size(), groupId));
 
@@ -118,7 +118,7 @@ public class AzureV3SpotinstCloud extends BaseSpotinstCloud {
 
             Map<String, SlaveInstanceDetails> slaveInstancesDetailsByInstanceId = new HashMap<>();
 
-            for (AzureV3GroupVm vm : vms) {
+            for (AzureGroupVm vm : vms) {
                 SlaveInstanceDetails instanceDetails = SlaveInstanceDetails.build(vm);
                 slaveInstancesDetailsByInstanceId.put(instanceDetails.getInstanceId(), instanceDetails);
             }
@@ -133,11 +133,11 @@ public class AzureV3SpotinstCloud extends BaseSpotinstCloud {
     //endregion
 
     //region Private Methods
-    private List<SpotinstSlave> handleNewVms(List<AzureV3ScaleResultNewVm> newVms, String label, String groupId) {
+    private List<SpotinstSlave> handleNewVms(List<AzureScaleUpResultNewVm> newVms, String label, String groupId) {
         List<SpotinstSlave> retVal = new LinkedList<>();
         LOGGER.info(String.format("%s new instances launched in group %s", newVms.size(), groupId));
 
-        for (AzureV3ScaleResultNewVm vm : newVms) {
+        for (AzureScaleUpResultNewVm vm : newVms) {
             SpotinstSlave slave = handleNewVm(vm.getVmName(), vm.getVmSize(), label);
             retVal.add(slave);
         }
@@ -152,13 +152,13 @@ public class AzureV3SpotinstCloud extends BaseSpotinstCloud {
         return retVal;
     }
 
-    private void removeOldSlaveInstances(List<AzureV3GroupVm> azureV3GroupVms) {
+    private void removeOldSlaveInstances(List<AzureGroupVm> azureGroupVms) {
         List<SpotinstSlave> allGroupsSlaves = getAllSpotinstSlaves();
 
         if (allGroupsSlaves.size() > 0) {
             List<String> elastigroupVmIds =
-                    azureV3GroupVms.stream().filter(x -> x.getVmName() != null).map(AzureV3GroupVm::getVmName)
-                                   .collect(Collectors.toList());
+                    azureGroupVms.stream().filter(x -> x.getVmName() != null).map(AzureGroupVm::getVmName)
+                                 .collect(Collectors.toList());
 
             for (SpotinstSlave slave : allGroupsSlaves) {
                 String slaveInstanceId = slave.getInstanceId();
@@ -184,11 +184,11 @@ public class AzureV3SpotinstCloud extends BaseSpotinstCloud {
         }
     }
 
-    private void addNewSlaveInstances(List<AzureV3GroupVm> azureV3GroupVms) {
+    private void addNewSlaveInstances(List<AzureGroupVm> azureGroupVms) {
 
-        if (azureV3GroupVms.size() > 0) {
+        if (azureGroupVms.size() > 0) {
 
-            for (AzureV3GroupVm vm : azureV3GroupVms) {
+            for (AzureGroupVm vm : azureGroupVms) {
                 Boolean doesSlaveNotExist = BooleanUtils.isFalse(isSlaveExistForInstance(vm));
 
                 if (doesSlaveNotExist) {
@@ -206,7 +206,7 @@ public class AzureV3SpotinstCloud extends BaseSpotinstCloud {
 
     }
 
-    private void addSpotinstSlave(AzureV3GroupVm vm) {
+    private void addSpotinstSlave(AzureGroupVm vm) {
         SpotinstSlave slave = null;
 
         if (vm.getVmName() != null) {
@@ -227,9 +227,9 @@ public class AzureV3SpotinstCloud extends BaseSpotinstCloud {
     private Integer getNumOfExecutors(String vmSize) {
         LOGGER.info(String.format("Determining # of executors for instance type: %s", vmSize));
 
-        Integer           retVal;
-        Integer           defaultExecutors = 1;
-        AzureV3VmSizeEnum vmSizeEnum       = AzureV3VmSizeEnum.fromValue(vmSize);
+        Integer         retVal;
+        Integer         defaultExecutors = 1;
+        AzureVmSizeEnum vmSizeEnum       = AzureVmSizeEnum.fromValue(vmSize);
 
         if (vmSizeEnum != null) {
             retVal = vmSizeEnum.getExecutors();
@@ -244,7 +244,7 @@ public class AzureV3SpotinstCloud extends BaseSpotinstCloud {
         return retVal;
     }
 
-    private Boolean isSlaveExistForInstance(AzureV3GroupVm vm) {
+    private Boolean isSlaveExistForInstance(AzureGroupVm vm) {
         Boolean retVal = false;
         Node    node   = Jenkins.get().getNode(vm.getVmName());
 

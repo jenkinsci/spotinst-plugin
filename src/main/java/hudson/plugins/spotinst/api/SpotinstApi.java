@@ -237,8 +237,8 @@ public class SpotinstApi {
     //endregion
 
     //region Azure V3
-    public static AzureV3GroupStatus getAzureV3GroupStatus(String groupId, String accountId) throws ApiException {
-        AzureV3GroupStatus  retVal      = new AzureV3GroupStatus();
+    public static AzureGroupStatus getAzureV3GroupStatus(String groupId, String accountId) throws ApiException {
+        AzureGroupStatus    retVal      = new AzureGroupStatus();
         Map<String, String> headers     = buildHeaders();
         Map<String, String> queryParams = buildQueryParams(accountId);
 
@@ -246,7 +246,7 @@ public class SpotinstApi {
                 .sendGet(SPOTINST_API_HOST + AZURE_V3_SERVICE_PREFIX + "/group/" + groupId + "/status", headers,
                          queryParams);
 
-        AzureV3GroupStatusResponse vmsResponse = getCastedResponse(response, AzureV3GroupStatusResponse.class);
+        AzureGroupStatusResponse vmsResponse = getCastedResponse(response, AzureGroupStatusResponse.class);
 
         if (vmsResponse.getResponse().getItems().size() > 0) {
             retVal = vmsResponse.getResponse().getItems().get(0);
@@ -255,8 +255,8 @@ public class SpotinstApi {
         return retVal;
     }
 
-        public static List<AzureV3ScaleResultNewVm> azureV3ScaleUp(String groupId, int adjustment, String accountId) throws ApiException {
-        List<AzureV3ScaleResultNewVm> retVal  = new LinkedList<>();
+        public static List<AzureScaleUpResultNewVm> azureV3ScaleUp(String groupId, int adjustment, String accountId) throws ApiException {
+        List<AzureScaleUpResultNewVm> retVal  = new LinkedList<>();
         Map<String, String>           headers = buildHeaders();
 
         Map<String, String> queryParams = buildQueryParams(accountId);
@@ -266,8 +266,8 @@ public class SpotinstApi {
                 .sendPut(SPOTINST_API_HOST + AZURE_V3_SERVICE_PREFIX + "/group/" + groupId + "/scale/up", null, headers,
                          queryParams);
 
-        AzureV3ScaleUpResponse
-                scaleUpResponse = getCastedResponse(response, AzureV3ScaleUpResponse.class);
+        AzureScaleUpResponse
+                scaleUpResponse = getCastedResponse(response, AzureScaleUpResponse.class);
 
         if (scaleUpResponse.getResponse().getItems().size() > 0) {
             retVal = scaleUpResponse.getResponse().getItems();
@@ -281,7 +281,7 @@ public class SpotinstApi {
         Map<String, String> headers     = buildHeaders();
         Map<String, String> queryParams = buildQueryParams(accountId);
 
-        AzureV3DetachVMsRequest request = new AzureV3DetachVMsRequest();
+        AzureDetachVMsRequest request = new AzureDetachVMsRequest();
         request.setVmsToDetach(Collections.singletonList(vmId));
         request.setShouldDecrementTargetCapacity(true);
         request.setShouldTerminateVms(true);

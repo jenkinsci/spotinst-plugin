@@ -8,7 +8,7 @@ public class RepoManager {
     private IAwsGroupRepo     awsGroupRepo;
     private IGcpGroupRepo     gcpGroupRepo;
     private IAzureGroupRepo   azureGroupRepo;
-    private IAzureV3GroupRepo azureV3GroupRepo;
+    private IAzureVmGroupRepo azureV3GroupRepo;
     //endregion
 
     //region Constructor
@@ -16,7 +16,7 @@ public class RepoManager {
         this.awsGroupRepo = new AwsGroupRepo();
         this.gcpGroupRepo = new GcpGroupRepo();
         this.azureGroupRepo = new AzureGroupRepo();
-        this.azureV3GroupRepo = new AzureV3GroupRepo();
+        this.azureV3GroupRepo = new AzureVmGroupRepo();
     }
 
     private static RepoManager instance = new RepoManager();
@@ -51,11 +51,11 @@ public class RepoManager {
         this.azureGroupRepo = azureGroupRepo;
     }
 
-    public IAzureV3GroupRepo getAzureV3GroupRepo() {
+    public IAzureVmGroupRepo getAzureV3GroupRepo() {
         return azureV3GroupRepo;
     }
 
-    public void setAzureV3GroupRepo(IAzureV3GroupRepo azureV3GroupRepo) {
+    public void setAzureV3GroupRepo(IAzureVmGroupRepo azureV3GroupRepo) {
         this.azureV3GroupRepo = azureV3GroupRepo;
     }
     //endregion

@@ -9,7 +9,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class AzureV3ScaleResultNewVm {
+public class AzureScaleUpResultNewVm {
     //region Members
     private String vmName;
     private String vmSize;

@@ -10,7 +10,7 @@ import java.util.List;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class AzureV3DetachVMsRequest {
+public class AzureDetachVMsRequest {
     //region members
     private List<String> vmsToDetach;
     private Boolean      shouldTerminateVms;
