@@ -50,7 +50,7 @@ public class AzureSpotCloud extends BaseSpotinstCloud {
     List<SpotinstSlave> scaleUp(ProvisionRequest request) {
         List<SpotinstSlave> retVal = new LinkedList<>();
 
-        IAzureVmGroupRepo azureV3GroupRepo = RepoManager.getInstance().getAzureV3GroupRepo();
+        IAzureVmGroupRepo azureV3GroupRepo = RepoManager.getInstance().getAzureVmGroupRepo();
         ApiResponse<List<AzureScaleUpResultNewVm>> scaleUpResponse =
                 azureV3GroupRepo.scaleUp(groupId, request.getExecutors(), this.accountId);
 
@@ -78,7 +78,7 @@ public class AzureSpotCloud extends BaseSpotinstCloud {
     @Override
     public Boolean detachInstance(String instanceId) {
         Boolean              retVal           = false;
-        IAzureVmGroupRepo    azureV3GroupRepo = RepoManager.getInstance().getAzureV3GroupRepo();
+        IAzureVmGroupRepo    azureV3GroupRepo = RepoManager.getInstance().getAzureVmGroupRepo();
         ApiResponse<Boolean> detachVmResponse = azureV3GroupRepo.detachVM(groupId, instanceId, this.accountId);
 
         if (detachVmResponse.isRequestSucceed()) {
@@ -105,7 +105,7 @@ public class AzureSpotCloud extends BaseSpotinstCloud {
 
     @Override
     public void syncGroupInstances() {
-        IAzureVmGroupRepo               azureV3GroupRepo  = RepoManager.getInstance().getAzureV3GroupRepo();
+        IAzureVmGroupRepo               azureV3GroupRepo  = RepoManager.getInstance().getAzureVmGroupRepo();
         ApiResponse<List<AzureGroupVm>> instancesResponse = azureV3GroupRepo.getGroupVms(groupId, this.accountId);
 
         if (instancesResponse.isRequestSucceed()) {
