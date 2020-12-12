@@ -14,7 +14,7 @@
     <packaging>hpi</packaging>
 
     <name>Spotinst plugin</name>
-    <description>This plugin to Allow Jenkins to start slaves with Spot framework, and kill them as they get unused.</description>
+    <description>This plugin to Allow Jenkins to start agents with Spot framework, and kill them as they get unused.</description>
     <url>https://github.com/jenkinsci/spotinst-plugin/blob/master/JenkinsWiki.adoc</url>
     <licenses>
         <license>
