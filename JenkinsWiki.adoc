@@ -1,4 +1,4 @@
-[.conf-macro .output-inline]#Allow Jenkins to start slaves with
+[.conf-macro .output-inline]#Allow Jenkins to start agents with
 http://www.spotinst.com/[Spotinst] framework, and kill them as they get
 unused. #
 
@@ -7,7 +7,7 @@ unused. #
 
 This plugin uses http://www.spotinst.com/[Spotinst] Elastigroup to
 launch instances instead of directly launching them by itself. +
-The Elastigroup will make sure the slaves target capacity is being
+The Elastigroup will make sure the agent's target capacity is being
 maintained. +
 More details can be found in
 our http://blog.spotinst.com/2016/06/08/elastigroup-jenkins/[Blog post].
@@ -49,7 +49,7 @@ termination"
 [SpotinstPlugin-Version2.1.2(Nov19,2020)]
 === Version 2.1.2 (Nov 30, 2020)
 
-* Add option to choose Strategy what happens when a slave Terminates during a Job Run,
+* Add option to choose Strategy what happens when an agent Terminates during a Job Run,
 Choice Between Retriggering the terminated Job or not.
 
 [SpotinstPlugin-Version2.1.1(Nov19,2020)]
@@ -63,7 +63,7 @@ Choice Between Retriggering the terminated Job or not.
 * Requires Jenkins 2.222.1
 * Add Websocket protocol support
 * Upgrade Jenkins Dependencies to 4.9
-* Job recovery, after slave terminates during a Job run.
+* Job recovery, after agent terminates during a Job run.
 
 [SpotinstPlugin-Version2.0.27(Oct25,2020)]
 === Version 2.0.27 (Oct 25, 2020)
@@ -179,7 +179,7 @@ as code plugin use
 === Version 2.0.1 (Jun 26, 2017)
 
 * Add Spotinst Account Id configuration
-* Support for Azure Elastigroups , slaves can run on Azure virtual
+* Support for Azure Elastigroups , agents can run on Azure virtual
 machines
 
 [SpotinstPlugin-Version2.0.0(Mar23,2017)]
@@ -187,16 +187,16 @@ machines
 
 * *** New Major version - breaking changes (*you will need to
 reconfigure Spotinst token and Spotinst cloud*) ***
-* Support for idle slave termination according to billing hour
-* Support for multiple labels in each slave
+* Support for idle agent termination according to billing hour
+* Support for multiple labels in each agent
 * Performance Improvements
 
 [SpotinstPlugin-Version1.2.7(Feb28,2017)]
 === Version 1.2.7 (Feb 28, 2017)
 
-* Support for 'Tunnel connection through' option for slave connection to
-master 
-* Add JVM options for slaves
+* Support for 'Tunnel connection through' option for agent connection to
+controller 
+* Add JVM options for agents
 
 [SpotinstPlugin-Version1.2.6(Feb20,2017)]
 === Version 1.2.6 (Feb 20, 2017)
@@ -208,7 +208,7 @@ master 
 === Version 1.2.5 (Feb 1, 2017)
 
 * Performance Improvements
-* Support slave connection with credentials from thirdParty (GitHub)
+* Support agent connection with credentials from thirdParty (GitHub)
 
 [SpotinstPlugin-Version1.2.4(Sep5,2016)]
 === Version 1.2.4 (Sep 5, 2016)
@@ -218,13 +218,13 @@ master 
 [SpotinstPlugin-Version1.2.3(Aug30,2016)]
 === Version 1.2.3 (Aug 30, 2016)
 
-* Support for GCP (Google Cloud Platform) Elastigroups , slaves can run
+* Support for GCP (Google Cloud Platform) Elastigroups , agents can run
 on GCE instances 
 
 [SpotinstPlugin-Version1.2.2(Aug21,2016)]
 === Version 1.2.2 (Aug 21, 2016)
 
-* Support for recovering spot slaves 
+* Support for recovering spot agents 
 
 [SpotinstPlugin-Version1.2(Jul18,2016)]
 === Version 1.2 (Jul 18, 2016)
