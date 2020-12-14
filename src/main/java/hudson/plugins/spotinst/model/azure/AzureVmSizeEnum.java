@@ -422,7 +422,7 @@ public enum AzureVmSizeEnum {
         }
 
         if (retVal == null) {
-            LOGGER.error("Tried to create Azure V3 Size Enum for: " + value + " but we don't support such type ");
+            LOGGER.error("Tried to create Azure VM Size Enum for: " + value + " but we don't support such type ");
         }
 
         return retVal;

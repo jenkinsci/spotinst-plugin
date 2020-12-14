@@ -20,7 +20,7 @@ public class AzureVmGroupRepo implements IAzureVmGroupRepo {
         ApiResponse<List<AzureGroupVm>> retVal;
 
         try {
-            AzureGroupStatus   groupStatus = SpotinstApi.getAzureV3GroupStatus(groupId, accountId);
+            AzureGroupStatus   groupStatus = SpotinstApi.getAzureVmGroupStatus(groupId, accountId);
             List<AzureGroupVm> vms         = groupStatus.getVms();
             retVal = new ApiResponse<>(vms);
         }
@@ -36,7 +36,7 @@ public class AzureVmGroupRepo implements IAzureVmGroupRepo {
         ApiResponse<Boolean> retVal;
 
         try {
-            Boolean isDetached = SpotinstApi.azureV3DetachVm(groupId, vmId, accountId);
+            Boolean isDetached = SpotinstApi.AzureVmDetach(groupId, vmId, accountId);
 
             retVal = new ApiResponse<>(isDetached);
 
@@ -53,7 +53,7 @@ public class AzureVmGroupRepo implements IAzureVmGroupRepo {
         ApiResponse<List<AzureScaleUpResultNewVm>> retVal;
 
         try {
-            List<AzureScaleUpResultNewVm> scaleUpVms = SpotinstApi.azureV3ScaleUp(groupId, adjustment, accountId);
+            List<AzureScaleUpResultNewVm> scaleUpVms = SpotinstApi.AzureVmScaleUp(groupId, adjustment, accountId);
 
             retVal = new ApiResponse<>(scaleUpVms);
 

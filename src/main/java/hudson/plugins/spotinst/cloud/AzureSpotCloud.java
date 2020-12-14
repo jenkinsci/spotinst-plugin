@@ -49,10 +49,9 @@ public class AzureSpotCloud extends BaseSpotinstCloud {
     @Override
     List<SpotinstSlave> scaleUp(ProvisionRequest request) {
         List<SpotinstSlave> retVal = new LinkedList<>();
-
-        IAzureVmGroupRepo azureV3GroupRepo = RepoManager.getInstance().getAzureVmGroupRepo();
+        IAzureVmGroupRepo azureVmGroupRepo = RepoManager.getInstance().getAzureVmGroupRepo();
         ApiResponse<List<AzureScaleUpResultNewVm>> scaleUpResponse =
-                azureV3GroupRepo.scaleUp(groupId, request.getExecutors(), this.accountId);
+                azureVmGroupRepo.scaleUp(groupId, request.getExecutors(), this.accountId);
 
         if (scaleUpResponse.isRequestSucceed()) {
             List<AzureScaleUpResultNewVm> newVms = scaleUpResponse.getValue();
@@ -78,8 +77,8 @@ public class AzureSpotCloud extends BaseSpotinstCloud {
     @Override
     public Boolean detachInstance(String instanceId) {
         Boolean              retVal           = false;
-        IAzureVmGroupRepo    azureV3GroupRepo = RepoManager.getInstance().getAzureVmGroupRepo();
-        ApiResponse<Boolean> detachVmResponse = azureV3GroupRepo.detachVM(groupId, instanceId, this.accountId);
+        IAzureVmGroupRepo    azureVmGroupRepo = RepoManager.getInstance().getAzureVmGroupRepo();
+        ApiResponse<Boolean> detachVmResponse = azureVmGroupRepo.detachVM(groupId, instanceId, this.accountId);
 
         if (detachVmResponse.isRequestSucceed()) {
             LOGGER.info(String.format("Instance %s detached", instanceId));
@@ -105,8 +104,8 @@ public class AzureSpotCloud extends BaseSpotinstCloud {
 
     @Override
     public void syncGroupInstances() {
-        IAzureVmGroupRepo               azureV3GroupRepo  = RepoManager.getInstance().getAzureVmGroupRepo();
-        ApiResponse<List<AzureGroupVm>> instancesResponse = azureV3GroupRepo.getGroupVms(groupId, this.accountId);
+        IAzureVmGroupRepo               azureVmGroupRepo  = RepoManager.getInstance().getAzureVmGroupRepo();
+        ApiResponse<List<AzureGroupVm>> instancesResponse = azureVmGroupRepo.getGroupVms(groupId, this.accountId);
 
         if (instancesResponse.isRequestSucceed()) {
             List<AzureGroupVm> vms = instancesResponse.getValue();

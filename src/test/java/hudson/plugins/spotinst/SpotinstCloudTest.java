@@ -153,7 +153,7 @@ public class SpotinstCloudTest {
     }
     //endregion
 
-    //region Azure
+    //region Azure Scale Sets
     @Test
     public void testAzureProvision_whenThereArePendingInsatcnesForAllExecutors_thenShouldNotSacleUp() {
         String                       groupId          = "sig-1";
@@ -194,7 +194,7 @@ public class SpotinstCloudTest {
     }
     //endregion
 
-    //region Azure V3
+    //region Azure VM
     @Test
     public void testAzureV3Provision_whenThereArePendingInstancesForAllExecutors_thenShouldNotScaleUp() {
         String groupId = "sig-1";

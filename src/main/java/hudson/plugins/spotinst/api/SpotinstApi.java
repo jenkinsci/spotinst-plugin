@@ -29,7 +29,7 @@ public class SpotinstApi {
     private final static String PLUGIN_NAME             = "spotinst";
     private final static String HEADER_USER_AGENT       = "User-Agent";
     private final static String QUERY_PARAM_ADJUSTMENT  = "adjustment";
-    private final static String AZURE_V3_SERVICE_PREFIX = "/azure/compute";
+    private final static String AZURE_VM_SERVICE_PREFIX = "/azure/compute";
     //endregion
 
     //region Public Methods
@@ -181,7 +181,7 @@ public class SpotinstApi {
     }
     //endregion
 
-    //region Azure V2
+    //region Azure Scale Sets
     public static List<AzureGroupInstance> getAzureGroupInstances(String groupId,
                                                                   String accountId) throws ApiException {
         List<AzureGroupInstance> retVal      = new LinkedList<>();
@@ -236,14 +236,14 @@ public class SpotinstApi {
     }
     //endregion
 
-    //region Azure V3
-    public static AzureGroupStatus getAzureV3GroupStatus(String groupId, String accountId) throws ApiException {
+    //region Azure VMs
+    public static AzureGroupStatus getAzureVmGroupStatus(String groupId, String accountId) throws ApiException {
         AzureGroupStatus    retVal      = new AzureGroupStatus();
         Map<String, String> headers     = buildHeaders();
         Map<String, String> queryParams = buildQueryParams(accountId);
 
         RestResponse response = RestClient
-                .sendGet(SPOTINST_API_HOST + AZURE_V3_SERVICE_PREFIX + "/group/" + groupId + "/status", headers,
+                .sendGet(SPOTINST_API_HOST + AZURE_VM_SERVICE_PREFIX + "/group/" + groupId + "/status", headers,
                          queryParams);
 
         AzureGroupStatusResponse vmsResponse = getCastedResponse(response, AzureGroupStatusResponse.class);
@@ -255,7 +255,8 @@ public class SpotinstApi {
         return retVal;
     }
 
-        public static List<AzureScaleUpResultNewVm> azureV3ScaleUp(String groupId, int adjustment, String accountId) throws ApiException {
+    public static List<AzureScaleUpResultNewVm> AzureVmScaleUp(String groupId, int adjustment,
+                                                               String accountId) throws ApiException {
         List<AzureScaleUpResultNewVm> retVal  = new LinkedList<>();
         Map<String, String>           headers = buildHeaders();
 
@@ -263,11 +264,10 @@ public class SpotinstApi {
         queryParams.put("adjustment", String.valueOf(adjustment));
 
         RestResponse response = RestClient
-                .sendPut(SPOTINST_API_HOST + AZURE_V3_SERVICE_PREFIX + "/group/" + groupId + "/scale/up", null, headers,
+                .sendPut(SPOTINST_API_HOST + AZURE_VM_SERVICE_PREFIX + "/group/" + groupId + "/scale/up", null, headers,
                          queryParams);
 
-        AzureScaleUpResponse
-                scaleUpResponse = getCastedResponse(response, AzureScaleUpResponse.class);
+        AzureScaleUpResponse scaleUpResponse = getCastedResponse(response, AzureScaleUpResponse.class);
 
         if (scaleUpResponse.getResponse().getItems().size() > 0) {
             retVal = scaleUpResponse.getResponse().getItems();
@@ -276,8 +276,7 @@ public class SpotinstApi {
         return retVal;
     }
 
-    public static Boolean azureV3DetachVm(String groupId, String vmId,
-                                          String accountId) throws ApiException {
+    public static Boolean AzureVmDetach(String groupId, String vmId, String accountId) throws ApiException {
         Map<String, String> headers     = buildHeaders();
         Map<String, String> queryParams = buildQueryParams(accountId);
 
@@ -287,7 +286,7 @@ public class SpotinstApi {
         request.setShouldTerminateVms(true);
         String body = JsonMapper.toJson(request);
         RestResponse response = RestClient
-                .sendPut(SPOTINST_API_HOST + AZURE_V3_SERVICE_PREFIX + "/group/" + groupId + "/detachVms", body,
+                .sendPut(SPOTINST_API_HOST + AZURE_VM_SERVICE_PREFIX + "/group/" + groupId + "/detachVms", body,
                          headers, queryParams);
         getCastedResponse(response, ApiEmptyResponse.class);
         Boolean retVal = true;
