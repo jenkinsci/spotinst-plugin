@@ -168,6 +168,10 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
                 retVal = type.getExecutors();
                 LOGGER.info(String.format("Using the default value of %s", retVal));
             }
+        } else {
+            LOGGER.warn(String.format(
+                    "Failed to determine # of executors for instance type %s, defaulting to %s executor(s). Group ID: %s", instanceType,
+                    retVal, this.getGroupId()));
         }
 
         return retVal;
@@ -362,7 +366,7 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
 
         @Override
         public String getDisplayName() {
-            return "Spotinst AWS Elastigroup";
+            return "Spot AWS Elastigroup";
         }
 
 

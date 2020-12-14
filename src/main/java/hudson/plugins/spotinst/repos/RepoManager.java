@@ -5,9 +5,10 @@ package hudson.plugins.spotinst.repos;
  */
 public class RepoManager {
     //region Members
-    private IAwsGroupRepo   awsGroupRepo;
-    private IGcpGroupRepo   gcpGroupRepo;
-    private IAzureGroupRepo azureGroupRepo;
+    private IAwsGroupRepo     awsGroupRepo;
+    private IGcpGroupRepo     gcpGroupRepo;
+    private IAzureGroupRepo   azureGroupRepo;
+    private IAzureVmGroupRepo azureVmGroupRepo;
     //endregion
 
     //region Constructor
@@ -15,6 +16,7 @@ public class RepoManager {
         this.awsGroupRepo = new AwsGroupRepo();
         this.gcpGroupRepo = new GcpGroupRepo();
         this.azureGroupRepo = new AzureGroupRepo();
+        this.azureVmGroupRepo = new AzureVmGroupRepo();
     }
 
     private static RepoManager instance = new RepoManager();
@@ -47,6 +49,14 @@ public class RepoManager {
 
     public void setAzureGroupRepo(IAzureGroupRepo azureGroupRepo) {
         this.azureGroupRepo = azureGroupRepo;
+    }
+
+    public IAzureVmGroupRepo getAzureVmGroupRepo() {
+        return azureVmGroupRepo;
+    }
+
+    public void setAzureVmGroupRepo(IAzureVmGroupRepo azureVmGroupRepo) {
+        this.azureVmGroupRepo = azureVmGroupRepo;
     }
     //endregion
 }

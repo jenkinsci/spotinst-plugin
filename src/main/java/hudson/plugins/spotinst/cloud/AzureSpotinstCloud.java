@@ -6,7 +6,7 @@ import hudson.plugins.spotinst.api.infra.ApiResponse;
 import hudson.plugins.spotinst.api.infra.JsonMapper;
 import hudson.plugins.spotinst.common.Constants;
 import hudson.plugins.spotinst.model.azure.AzureGroupInstance;
-import hudson.plugins.spotinst.model.azure.AzureVmSizeEnum;
+import hudson.plugins.spotinst.model.azure.AzureScaleSetSizeEnum;
 import hudson.plugins.spotinst.repos.IAzureGroupRepo;
 import hudson.plugins.spotinst.repos.RepoManager;
 import hudson.plugins.spotinst.slave.SlaveInstanceDetails;
@@ -145,7 +145,7 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
 
     @Override
     public String getCloudUrl() {
-        return "/azure/compute";
+        return "azure/compute";
     }
     //endregion
 
@@ -248,11 +248,16 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
     private Integer getNumOfExecutors(String vmSize) {
         LOGGER.info(String.format("Determining the # of executors for instance type: %s", vmSize));
 
-        Integer         retVal     = 1;
-        AzureVmSizeEnum vmSizeEnum = AzureVmSizeEnum.fromValue(vmSize);
+        Integer               retVal     = 1;
+        AzureScaleSetSizeEnum vmSizeEnum = AzureScaleSetSizeEnum.fromValue(vmSize);
 
         if (vmSizeEnum != null) {
             retVal = vmSizeEnum.getExecutors();
+        }
+        else {
+            LOGGER.warn(String.format(
+                    "Failed to determine # of executors for instance type %s, defaulting to %s executor(s). Group ID: %s", vmSize,
+                    retVal, this.getGroupId()));
         }
 
         return retVal;
@@ -279,7 +284,7 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
 
         @Override
         public String getDisplayName() {
-            return "Spotinst Azure Elastigroup";
+            return "Spot Azure LPVM (old)";
         }
     }
     //endregion

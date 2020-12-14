@@ -1,13 +1,13 @@
-[.conf-macro .output-inline]#Allow Jenkins to start slaves with
-http://www.spotinst.com/[Spotinst] framework, and kill them as they get
+[.conf-macro .output-inline]#Allow Jenkins to start agents/nodes with
+http://www.spotinst.com/[Spot] framework, and terminate them as they get
 unused. #
 
 [[SpotinstPlugin-SpotinstElasitgroup]]
-== Spotinst Elasitgroup
+== Spot Elastigroup
 
-This plugin uses http://www.spotinst.com/[Spotinst] Elastigroup to
+This plugin uses http://www.spotinst.com/[Spot] Elastigroup to
 launch instances instead of directly launching them by itself. +
-The Elastigroup will make sure the slaves target capacity is being
+The Elastigroup will make sure the agents' target-capacity is being
 maintained. +
 More details can be found in
 our http://blog.spotinst.com/2016/06/08/elastigroup-jenkins/[Blog post].
@@ -15,11 +15,11 @@ our http://blog.spotinst.com/2016/06/08/elastigroup-jenkins/[Blog post].
 [[SpotinstPlugin-Usage]]
 == Usage
 
-You'll need a Spotinst account to use this plugin, you can get one
-at https://spotinst.com/signup/[Spotinst Signup].
+You'll need a Spot account to use this plugin, you can get one
+at https://spotinst.com/signup/[Spot Signup].
 
 Once you have an account, login into
-your https://console.spotinst.com/[Spotinst Console] to generate API
+your https://console.spotinst.com/[Spot Console] to generate API
 token (Settings -> Personal Access Tokens
 -> https://console.spotinst.com/#/settings/tokens[Generate])
 
@@ -27,14 +27,14 @@ Now, Create an Elastigroup with your proper Region, AMI, Instance Types
 etc.
 
 After you installed the plugin, navigate to the main "Manage Jenkins" >
-"Configure System" page, and scroll down to the “Spotinst” Section, and
+"Configure System" page, and scroll down to the “Spot” Section, and
 add the *API Token* you’ve generated in the previous step. Then click
 on "Validate Token", make sure that *the token is valid*.
 
-Once you’ve set the Spotinst Token, scroll down near the bottom to the
+Once you’ve set the Spot Token, scroll down near the bottom to the
 “Cloud” section. +
 There, Click on the "Add a new cloud" button, and select
-the "Spotinst" option. +
+the "Spot" option. +
 Now – you should Specify your "Elastigroup ID" and "Idle minutes before
 termination"
 
