@@ -230,7 +230,7 @@ public class SpotinstSlave extends Slave {
 
         @Override
         public String getDisplayName() {
-            return "Spotinst Slave";
+            return "Spot Node";
         }
 
         @Override

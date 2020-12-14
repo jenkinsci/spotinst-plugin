@@ -5,9 +5,7 @@ import hudson.PluginWrapper;
 import hudson.plugins.spotinst.api.infra.*;
 import hudson.plugins.spotinst.common.SpotinstContext;
 import hudson.plugins.spotinst.model.aws.*;
-import hudson.plugins.spotinst.model.azure.AzureDetachInstancesRequest;
-import hudson.plugins.spotinst.model.azure.AzureGroupInstance;
-import hudson.plugins.spotinst.model.azure.AzureGroupInstancesResponse;
+import hudson.plugins.spotinst.model.azure.*;
 import hudson.plugins.spotinst.model.gcp.*;
 import jenkins.model.Jenkins;
 import org.apache.commons.httpclient.HttpStatus;
@@ -20,17 +18,18 @@ import java.util.*;
 public class SpotinstApi {
 
     //region Members
-    private static final Logger LOGGER                 = LoggerFactory.getLogger(SpotinstApi.class);
-    private final static String SPOTINST_API_HOST      = "https://api.spotinst.io";
-    private final static String HEADER_AUTH            = "Authorization";
-    private final static String AUTH_PREFIX            = "Bearer ";
-    private final static String HEADER_CONTENT_TYPE    = "Content-Type";
-    private final static String CONTENT_TYPE           = "application/json";
-    private final static String QUERY_PARAM_ACCOUNT_ID = "accountId";
-    private final static String USER_AGENT_FORMAT      = "Jenkins/%s;spotinst-plugin/%s";
-    private final static String PLUGIN_NAME            = "spotinst";
-    private final static String HEADER_USER_AGENT      = "User-Agent";
-    private final static String QUERY_PARAM_ADJUSTMENT = "adjustment";
+    private static final Logger LOGGER                  = LoggerFactory.getLogger(SpotinstApi.class);
+    private final static String SPOTINST_API_HOST       = "https://api.spotinst.io";
+    private final static String HEADER_AUTH             = "Authorization";
+    private final static String AUTH_PREFIX             = "Bearer ";
+    private final static String HEADER_CONTENT_TYPE     = "Content-Type";
+    private final static String CONTENT_TYPE            = "application/json";
+    private final static String QUERY_PARAM_ACCOUNT_ID  = "accountId";
+    private final static String USER_AGENT_FORMAT       = "Jenkins/%s;spotinst-plugin/%s";
+    private final static String PLUGIN_NAME             = "spotinst";
+    private final static String HEADER_USER_AGENT       = "User-Agent";
+    private final static String QUERY_PARAM_ADJUSTMENT  = "adjustment";
+    private final static String AZURE_VM_SERVICE_PREFIX = "/azure/compute";
     //endregion
 
     //region Public Methods
@@ -182,7 +181,7 @@ public class SpotinstApi {
     }
     //endregion
 
-    //region Azure
+    //region Azure Scale Sets
     public static List<AzureGroupInstance> getAzureGroupInstances(String groupId,
                                                                   String accountId) throws ApiException {
         List<AzureGroupInstance> retVal      = new LinkedList<>();
@@ -237,6 +236,63 @@ public class SpotinstApi {
     }
     //endregion
 
+    //region Azure VMs
+    public static AzureGroupStatus getAzureVmGroupStatus(String groupId, String accountId) throws ApiException {
+        AzureGroupStatus    retVal      = new AzureGroupStatus();
+        Map<String, String> headers     = buildHeaders();
+        Map<String, String> queryParams = buildQueryParams(accountId);
+
+        RestResponse response = RestClient
+                .sendGet(SPOTINST_API_HOST + AZURE_VM_SERVICE_PREFIX + "/group/" + groupId + "/status", headers,
+                         queryParams);
+
+        AzureGroupStatusResponse vmsResponse = getCastedResponse(response, AzureGroupStatusResponse.class);
+
+        if (vmsResponse.getResponse().getItems().size() > 0) {
+            retVal = vmsResponse.getResponse().getItems().get(0);
+        }
+
+        return retVal;
+    }
+
+    public static List<AzureScaleUpResultNewVm> azureVmScaleUp(String groupId, int adjustment,
+                                                               String accountId) throws ApiException {
+        List<AzureScaleUpResultNewVm> retVal  = new LinkedList<>();
+        Map<String, String>           headers = buildHeaders();
+
+        Map<String, String> queryParams = buildQueryParams(accountId);
+        queryParams.put("adjustment", String.valueOf(adjustment));
+
+        RestResponse response = RestClient
+                .sendPut(SPOTINST_API_HOST + AZURE_VM_SERVICE_PREFIX + "/group/" + groupId + "/scale/up", null, headers,
+                         queryParams);
+
+        AzureScaleUpResponse scaleUpResponse = getCastedResponse(response, AzureScaleUpResponse.class);
+
+        if (scaleUpResponse.getResponse().getItems().size() > 0) {
+            retVal = scaleUpResponse.getResponse().getItems();
+        }
+
+        return retVal;
+    }
+
+    public static Boolean azureVmDetach(String groupId, String vmId, String accountId) throws ApiException {    
+        Map<String, String> headers     = buildHeaders();
+        Map<String, String> queryParams = buildQueryParams(accountId);
+
+        AzureDetachVMsRequest request = new AzureDetachVMsRequest();
+        request.setVmsToDetach(Collections.singletonList(vmId));
+        request.setShouldDecrementTargetCapacity(true);
+        request.setShouldTerminateVms(true);
+        String body = JsonMapper.toJson(request);
+        RestResponse response = RestClient
+                .sendPut(SPOTINST_API_HOST + AZURE_VM_SERVICE_PREFIX + "/group/" + groupId + "/detachVms", body,
+                         headers, queryParams);
+        getCastedResponse(response, ApiEmptyResponse.class);
+        Boolean retVal = true;
+
+        return retVal;
+    }
     //endregion
 
     //region Private Methods

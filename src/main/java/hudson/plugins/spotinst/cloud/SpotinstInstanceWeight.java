@@ -43,7 +43,7 @@ public class SpotinstInstanceWeight implements Describable<SpotinstInstanceWeigh
 
         @Override
         public String getDisplayName() {
-            return "Spotinst Instance Weight";
+            return "Spot Instance Weight";
         }
     }
     //endregion
