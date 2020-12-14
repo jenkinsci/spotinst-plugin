@@ -41,6 +41,11 @@ termination"
 [SpotinstPlugin-Versionhistory]
 == Version history
 
+[SpotinstPlugin-Version2.1.4(Dec14,2020)]
+=== Version 2.1.4 (Dec 14, 2020)
+
+* New cloud support for Azure Virtual Machine
+
 [SpotinstPlugin-Version2.1.3(Dec6,2020)]
 === Version 2.1.3 (Dec 6, 2020)
 
