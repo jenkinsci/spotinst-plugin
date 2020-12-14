@@ -255,7 +255,7 @@ public class SpotinstApi {
         return retVal;
     }
 
-    public static List<AzureScaleUpResultNewVm> AzureVmScaleUp(String groupId, int adjustment,
+    public static List<AzureScaleUpResultNewVm> azureVmScaleUp(String groupId, int adjustment,
                                                                String accountId) throws ApiException {
         List<AzureScaleUpResultNewVm> retVal  = new LinkedList<>();
         Map<String, String>           headers = buildHeaders();
@@ -276,7 +276,7 @@ public class SpotinstApi {
         return retVal;
     }
 
-    public static Boolean AzureVmDetach(String groupId, String vmId, String accountId) throws ApiException {
+    public static Boolean azureVmDetach(String groupId, String vmId, String accountId) throws ApiException {    
         Map<String, String> headers     = buildHeaders();
         Map<String, String> queryParams = buildQueryParams(accountId);
 
