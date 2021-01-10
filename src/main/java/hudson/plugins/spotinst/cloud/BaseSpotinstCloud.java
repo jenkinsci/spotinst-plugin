@@ -49,8 +49,6 @@ public abstract class BaseSpotinstCloud extends Cloud {
     private   Boolean                           shouldRetriggerBuilds;
     private   ComputerConnector                 computerConnector;
     private   ConnectionMethodEnum              connectionMethod;
-    //todo shibel - remove?
-    private   String                            credentialsId;
     private   Boolean                           shouldUsePrivateIp;
     //endregion
 
@@ -206,8 +204,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
     }
 
     private void connectOfflineSshAgents() {
-        //todo shibel - no need to pass 'pendingInstances' its a member
-        List<SpotinstSlave> offlineAgents = getOfflineSshAgents(pendingInstances);
+        List<SpotinstSlave> offlineAgents = getOfflineSshAgents();
 
         if (offlineAgents.size() > 0) {
             LOGGER.info(String.format("%s offline SSH agent(s) currently waiting to connect", offlineAgents.size()));
@@ -235,7 +232,10 @@ public abstract class BaseSpotinstCloud extends Cloud {
         SpotinstComputer computerForAgent = (SpotinstComputer) offlineAgent.toComputer();
 
         if (computerForAgent != null) {
-            //todo shibel - 'getComputerConnector' can return null? (maybe case when the user changed the cloud to be JNLP)
+            //todo shibel answered - 'getComputerConnector' can return null? (maybe case when the user changed the cloud to be JNLP)
+            // this is just a "to-be-safe" measure. In fact, the computerConnector is not nullified when we switch from
+            // SSH to JNLP, it is just not used anymore (unless the user switches again). But I did see some agents launching
+            // without computers, it is some kind of edge case (those will be cleaned up by BaseSpotinstCloud#terminateOfflineSlaves()
             ComputerConnector connector        = getComputerConnector();
             ComputerLauncher  computerLauncher = computerForAgent.getLauncher();
 
@@ -265,7 +265,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
         }
     }
 
-    private List<SpotinstSlave> getOfflineSshAgents(Map<String, PendingInstance> pendingInstances) {
+    private List<SpotinstSlave> getOfflineSshAgents() {
         List<SpotinstSlave> retVal = new LinkedList<>();
 
         if (pendingInstances.size() > 0) {
@@ -279,7 +279,9 @@ public abstract class BaseSpotinstCloud extends Cloud {
                 if (agent != null) {
                     SpotinstComputer computerForAgent = (SpotinstComputer) agent.getComputer();
 
-                    //todo shibel - what about case when the agent is still trying to connect (the last iteartion of the monitor called connect)
+                    //todo shibel answered - what about case when the agent is still trying to connect (the last iteartion of the monitor called connect)
+                    //  if a connection is already in progress then computerForAgent.connect(false) in BaseSpotinstCloud#connectAgent will not
+                    //  force a reconnection. A connecting computer is not online by definition (see SlaveComputer#isConnecting).
                     if (computerForAgent != null) {
                         if (computerForAgent.isOnline()) {
                             LOGGER.info(String.format("Agent %s is already online, no need to handle", instanceId));
@@ -446,38 +448,37 @@ public abstract class BaseSpotinstCloud extends Cloud {
         String           instanceId = this.name;
         String           ipAddress;
 
-        //todo shibel - convention - only one return in method
-        if (instanceDetailsById == null) {
+        if (instanceDetailsById != null) {
+            if (this.getShouldUsePrivateIp()) {
+                ipAddress = instanceDetailsById.getPrivateIp();
+            }
+            else {
+                ipAddress = instanceDetailsById.getPublicIp();
+            }
+
+            if (ipAddress != null) {
+                try {
+                    Boolean shouldRetriggerBuilds = this.getShouldRetriggerBuilds();
+                    retVal = new SpotSSHComputerLauncher(
+                            this.getComputerConnector().launch(instanceDetailsById.getPublicIp(), TaskListener.NULL),
+                            shouldRetriggerBuilds);
+                }
+                catch (InterruptedException e) {
+                    String preformatted =
+                            "Creating SSHComputerLauncher for SpotinstSlave (instance %s) was interrupted";
+                    LOGGER.error(String.format(preformatted, instanceId));
+                    e.printStackTrace();
+                }
+            }
+            else {
+                String preformatted = "SSH-cloud instance %s does not have an IP yet, not setting launcher to for now.";
+                LOGGER.info(String.format(preformatted, instanceId));
+            }
+        }
+        else {
             LOGGER.info(String.format(
                     "no details about instance %s in instanceDetailsById map, not initializing launcher yet.",
                     this.name));
-            return null;
-        }
-
-        if (this.getShouldUsePrivateIp()) {
-            ipAddress = instanceDetailsById.getPrivateIp();
-        }
-        else {
-            ipAddress = instanceDetailsById.getPublicIp();
-        }
-
-        if (ipAddress != null) {
-            try {
-                Boolean shouldRetriggerBuilds = this.getShouldRetriggerBuilds();
-                retVal = new SpotSSHComputerLauncher(
-                        this.getComputerConnector().launch(instanceDetailsById.getPublicIp(), TaskListener.NULL),
-                        shouldRetriggerBuilds);
-            }
-            catch (InterruptedException e) {
-                //todo shibel - print error?
-                String preformatted = "Creating SSHComputerLauncher for SpotinstSlave (instance %s) was interrupted";
-                LOGGER.error(String.format(preformatted, instanceId));
-            }
-        }
-        else {
-            //todo shibel - do not print log with 'null'
-            String preformatted = "SSH-cloud instance %s does not have an IP yet, setting launcher to null for now.";
-            LOGGER.info(String.format(preformatted, instanceId));
         }
 
         return retVal;
@@ -627,15 +628,6 @@ public abstract class BaseSpotinstCloud extends Cloud {
 
     public void setComputerConnector(ComputerConnector computerConnector) {
         this.computerConnector = computerConnector;
-    }
-
-    public String getCredentialsId() {
-        return credentialsId;
-    }
-
-
-    public void setCredentialsId(String credentialsId) {
-        this.credentialsId = credentialsId;
     }
 
     public boolean getShouldUsePrivateIp() {
