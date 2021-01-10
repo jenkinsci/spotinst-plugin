@@ -232,10 +232,6 @@ public abstract class BaseSpotinstCloud extends Cloud {
         SpotinstComputer computerForAgent = (SpotinstComputer) offlineAgent.toComputer();
 
         if (computerForAgent != null) {
-            //todo shibel answered - 'getComputerConnector' can return null? (maybe case when the user changed the cloud to be JNLP)
-            // this is just a "to-be-safe" measure. In fact, the computerConnector is not nullified when we switch from
-            // SSH to JNLP, it is just not used anymore (unless the user switches again). But I did see some agents launching
-            // without computers, it is some kind of edge case (those will be cleaned up by BaseSpotinstCloud#terminateOfflineSlaves()
             ComputerConnector connector        = getComputerConnector();
             ComputerLauncher  computerLauncher = computerForAgent.getLauncher();
 
@@ -279,9 +275,6 @@ public abstract class BaseSpotinstCloud extends Cloud {
                 if (agent != null) {
                     SpotinstComputer computerForAgent = (SpotinstComputer) agent.getComputer();
 
-                    //todo shibel answered - what about case when the agent is still trying to connect (the last iteartion of the monitor called connect)
-                    //  if a connection is already in progress then computerForAgent.connect(false) in BaseSpotinstCloud#connectAgent will not
-                    //  force a reconnection. A connecting computer is not online by definition (see SlaveComputer#isConnecting).
                     if (computerForAgent != null) {
                         if (computerForAgent.isOnline()) {
                             LOGGER.info(String.format("Agent %s is already online, no need to handle", instanceId));
