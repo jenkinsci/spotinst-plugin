@@ -4,6 +4,7 @@ import hudson.Extension;
 import hudson.model.Node;
 import hudson.plugins.spotinst.api.infra.ApiResponse;
 import hudson.plugins.spotinst.api.infra.JsonMapper;
+import hudson.plugins.spotinst.common.ConnectionMethodEnum;
 import hudson.plugins.spotinst.common.Constants;
 import hudson.plugins.spotinst.model.azure.AzureGroupInstance;
 import hudson.plugins.spotinst.model.azure.AzureScaleSetSizeEnum;
@@ -12,6 +13,7 @@ import hudson.plugins.spotinst.repos.RepoManager;
 import hudson.plugins.spotinst.slave.SlaveInstanceDetails;
 import hudson.plugins.spotinst.slave.SlaveUsageEnum;
 import hudson.plugins.spotinst.slave.SpotinstSlave;
+import hudson.slaves.ComputerConnector;
 import hudson.slaves.EnvironmentVariablesNodeProperty;
 import hudson.tools.ToolLocationNodeProperty;
 import jenkins.model.Jenkins;
@@ -34,11 +36,15 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
     //region Constructor
     @DataBoundConstructor
     public AzureSpotinstCloud(String groupId, String labelString, String idleTerminationMinutes, String workspaceDir,
-                              SlaveUsageEnum usage, String tunnel, Boolean shouldUseWebsocket,Boolean shouldRetriggerBuilds, String vmargs,
+                              SlaveUsageEnum usage, String tunnel, Boolean shouldUseWebsocket,
+                              Boolean shouldRetriggerBuilds, String vmargs,
                               EnvironmentVariablesNodeProperty environmentVariables,
-                              ToolLocationNodeProperty toolLocations, String accountId) {
-        super(groupId, labelString, idleTerminationMinutes, workspaceDir, usage, tunnel, shouldUseWebsocket, shouldRetriggerBuilds, vmargs,
-              environmentVariables, toolLocations, accountId);
+                              ToolLocationNodeProperty toolLocations, String accountId,
+                              ConnectionMethodEnum connectionMethod, ComputerConnector computerConnector,
+                              Boolean shouldUsePrivateIp) {
+        super(groupId, labelString, idleTerminationMinutes, workspaceDir, usage, tunnel, shouldUseWebsocket,
+              shouldRetriggerBuilds, vmargs, environmentVariables, toolLocations, accountId, connectionMethod,
+              computerConnector, shouldUsePrivateIp);
     }
     //endregion
 
@@ -87,6 +93,35 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
     }
 
     @Override
+    public Map<String, String> getInstanceIpsById() {
+        Map<String, String> retVal = new HashMap<>();
+
+        IAzureGroupRepo awsGroupRepo = RepoManager.getInstance().getAzureGroupRepo();
+        ApiResponse<List<AzureGroupInstance>> instancesResponse =
+                awsGroupRepo.getGroupInstances(groupId, this.accountId);
+
+        if (instancesResponse.isRequestSucceed()) {
+            List<AzureGroupInstance> instances = instancesResponse.getValue();
+
+            for (AzureGroupInstance instance : instances) {
+                if (this.getShouldUsePrivateIp()) {
+                    retVal.put(instance.getInstanceId(), instance.getPrivateIp());
+                }
+                else {
+                    retVal.put(instance.getInstanceId(), instance.getPublicIp());
+                }
+
+            }
+        }
+        else {
+            LOGGER.error(String.format("Failed to get group %s instances. Errors: %s", groupId,
+                                       instancesResponse.getErrors()));
+        }
+
+        return retVal;
+    }
+
+    @Override
     public void monitorInstances() {
         IAzureGroupRepo azureGroupRepo = RepoManager.getInstance().getAzureGroupRepo();
         ApiResponse<List<AzureGroupInstance>> instancesResponse =
@@ -97,8 +132,6 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
 
             LOGGER.info(String.format("There are %s instances in group %s", instances.size(), groupId));
 
-            addNewSlaveInstances(instances);
-            removeOldSlaveInstances(instances);
 
             Map<String, SlaveInstanceDetails> slaveInstancesDetailsByInstanceId = new HashMap<>();
 
@@ -108,6 +141,9 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
             }
 
             this.slaveInstancesDetailsByInstanceId = new HashMap<>(slaveInstancesDetailsByInstanceId);
+
+            removeOldSlaveInstances(instances);
+            addNewSlaveInstances(instances);
         }
         else {
             LOGGER.error(String.format("Failed to get group %s instances. Errors: %s", groupId,
@@ -187,6 +223,9 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
                         LOGGER.error(String.format("Failed to remove slave from group: %s", groupId), e);
                     }
                 }
+                else {
+                    terminateOfflineSlaves(slave, slaveInstanceId);
+                }
             }
         }
         else {
@@ -256,8 +295,8 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
         }
         else {
             LOGGER.warn(String.format(
-                    "Failed to determine # of executors for instance type %s, defaulting to %s executor(s). Group ID: %s", vmSize,
-                    retVal, this.getGroupId()));
+                    "Failed to determine # of executors for instance type %s, defaulting to %s executor(s). Group ID: %s",
+                    vmSize, retVal, this.getGroupId()));
         }
 
         return retVal;

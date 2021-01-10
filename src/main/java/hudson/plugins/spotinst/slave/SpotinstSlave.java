@@ -1,11 +1,9 @@
 package hudson.plugins.spotinst.slave;
 
 import hudson.Extension;
-import hudson.model.Computer;
-import hudson.model.Descriptor;
-import hudson.model.Node;
-import hudson.model.Slave;
+import hudson.model.*;
 import hudson.plugins.spotinst.cloud.BaseSpotinstCloud;
+import hudson.slaves.ComputerLauncher;
 import hudson.slaves.JNLPLauncher;
 import hudson.slaves.NodeProperty;
 import jenkins.model.Jenkins;
@@ -40,20 +38,20 @@ public class SpotinstSlave extends Slave {
     //region Constructor
     public SpotinstSlave(BaseSpotinstCloud spotinstCloud, String name, String elastigroupId, String instanceId,
                          String instanceType, String label, String idleTerminationMinutes, String workspaceDir,
-                         String numOfExecutors, Mode mode, String tunnel, Boolean shouldUseWebsocket, String vmargs,
-                         List<NodeProperty<?>> nodeProperties, Boolean shouldRetriggerBuilds) throws Descriptor.FormException, IOException {
-        super(name, "Elastigroup Id: " + elastigroupId, workspaceDir, numOfExecutors, mode, label,
-              new SpotinstComputerLauncher(tunnel, vmargs, shouldUseWebsocket, shouldRetriggerBuilds),
+                         String numOfExecutors, Mode mode, ComputerLauncher launcher,
+                         List<NodeProperty<?>> nodeProperties) throws Descriptor.FormException, IOException {
+
+
+        super(name, "Elastigroup Id: " + elastigroupId, workspaceDir, numOfExecutors, mode, label, launcher,
               new SpotinstRetentionStrategy(idleTerminationMinutes), nodeProperties);
 
+        this.spotinstCloud = spotinstCloud;
         this.elastigroupId = elastigroupId;
         this.instanceType = instanceType;
         this.instanceId = instanceId;
         this.workspaceDir = workspaceDir;
         this.usage = SlaveUsageEnum.fromMode(mode);
         this.createdAt = new Date();
-
-        this.spotinstCloud = spotinstCloud;
         groupUrl = spotinstCloud.getCloudUrl();
     }
     //endregion
@@ -182,6 +180,7 @@ public class SpotinstSlave extends Slave {
 
         if (isTerminated) {
             LOGGER.info(String.format("Instance: %s terminated successfully", getInstanceId()));
+            removeIfInPending();
             try {
                 Jenkins.getInstance().removeNode(this);
             }
@@ -199,6 +198,7 @@ public class SpotinstSlave extends Slave {
 
         if (isTerminated) {
             LOGGER.info(String.format("Instance: %s terminated successfully", getInstanceId()));
+            removeIfInPending();
         }
         else {
             LOGGER.error(String.format("Failed to terminate instance: %s", getInstanceId()));
@@ -212,6 +212,17 @@ public class SpotinstSlave extends Slave {
         }
 
         return isTerminated;
+    }
+
+    private void removeIfInPending() {
+        String            instanceId        = getInstanceId();
+        BaseSpotinstCloud cloud             = this.getSpotinstCloud();
+        Boolean           isInstancePending = cloud.isInstancePending(instanceId);
+
+        if (isInstancePending) {
+            cloud.removeInstanceFromPending(instanceId);
+            LOGGER.info(String.format("Instance: %s removed from pending instances after termination", instanceId));
+        }
     }
 
     public boolean isSlavePending() {
