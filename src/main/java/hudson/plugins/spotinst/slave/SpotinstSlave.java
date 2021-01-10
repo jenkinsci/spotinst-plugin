@@ -221,6 +221,7 @@ public class SpotinstSlave extends Slave {
 
         if (isInstancePending) {
             cloud.removeInstanceFromPending(instanceId);
+            //todo shibel - no need fot this log
             LOGGER.info(String.format("Instance: %s removed from pending instances after termination", instanceId));
         }
     }

@@ -49,6 +49,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
     private   Boolean                           shouldRetriggerBuilds;
     private   ComputerConnector                 computerConnector;
     private   ConnectionMethodEnum              connectionMethod;
+    //todo shibel - remove?
     private   String                            credentialsId;
     private   Boolean                           shouldUsePrivateIp;
     //endregion
@@ -199,11 +200,13 @@ public abstract class BaseSpotinstCloud extends Cloud {
                     }
                 }
             }
+
             connectOfflineSshAgents();
         }
     }
 
     private void connectOfflineSshAgents() {
+        //todo shibel - no need to pass 'pendingInstances' its a member
         List<SpotinstSlave> offlineAgents = getOfflineSshAgents(pendingInstances);
 
         if (offlineAgents.size() > 0) {
@@ -232,6 +235,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
         SpotinstComputer computerForAgent = (SpotinstComputer) offlineAgent.toComputer();
 
         if (computerForAgent != null) {
+            //todo shibel - 'getComputerConnector' can return null? (maybe case when the user changed the cloud to be JNLP)
             ComputerConnector connector        = getComputerConnector();
             ComputerLauncher  computerLauncher = computerForAgent.getLauncher();
 
@@ -275,6 +279,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
                 if (agent != null) {
                     SpotinstComputer computerForAgent = (SpotinstComputer) agent.getComputer();
 
+                    //todo shibel - what about case when the agent is still trying to connect (the last iteartion of the monitor called connect)
                     if (computerForAgent != null) {
                         if (computerForAgent.isOnline()) {
                             LOGGER.info(String.format("Agent %s is already online, no need to handle", instanceId));
@@ -441,6 +446,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
         String           instanceId = this.name;
         String           ipAddress;
 
+        //todo shibel - convention - only one return in method
         if (instanceDetailsById == null) {
             LOGGER.info(String.format(
                     "no details about instance %s in instanceDetailsById map, not initializing launcher yet.",
@@ -463,14 +469,17 @@ public abstract class BaseSpotinstCloud extends Cloud {
                         shouldRetriggerBuilds);
             }
             catch (InterruptedException e) {
+                //todo shibel - print error?
                 String preformatted = "Creating SSHComputerLauncher for SpotinstSlave (instance %s) was interrupted";
                 LOGGER.error(String.format(preformatted, instanceId));
             }
         }
         else {
+            //todo shibel - do not print log with 'null'
             String preformatted = "SSH-cloud instance %s does not have an IP yet, setting launcher to null for now.";
             LOGGER.info(String.format(preformatted, instanceId));
         }
+
         return retVal;
     }
 
