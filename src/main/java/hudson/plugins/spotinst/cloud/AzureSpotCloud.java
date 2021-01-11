@@ -4,6 +4,7 @@ import hudson.Extension;
 import hudson.model.Node;
 import hudson.plugins.spotinst.api.infra.ApiResponse;
 import hudson.plugins.spotinst.api.infra.JsonMapper;
+import hudson.plugins.spotinst.common.ConnectionMethodEnum;
 import hudson.plugins.spotinst.common.Constants;
 import hudson.plugins.spotinst.model.azure.AzureGroupVm;
 import hudson.plugins.spotinst.model.azure.AzureScaleUpResultNewVm;
@@ -13,6 +14,7 @@ import hudson.plugins.spotinst.repos.RepoManager;
 import hudson.plugins.spotinst.slave.SlaveInstanceDetails;
 import hudson.plugins.spotinst.slave.SlaveUsageEnum;
 import hudson.plugins.spotinst.slave.SpotinstSlave;
+import hudson.slaves.ComputerConnector;
 import hudson.slaves.EnvironmentVariablesNodeProperty;
 import hudson.tools.ToolLocationNodeProperty;
 import jenkins.model.Jenkins;
@@ -38,18 +40,20 @@ public class AzureSpotCloud extends BaseSpotinstCloud {
     public AzureSpotCloud(String groupId, String labelString, String idleTerminationMinutes, String workspaceDir,
                           SlaveUsageEnum usage, String tunnel, Boolean shouldUseWebsocket,
                           Boolean shouldRetriggerBuilds, String vmargs,
-                          EnvironmentVariablesNodeProperty environmentVariables,
-                          ToolLocationNodeProperty toolLocations, String accountId) {
+                          EnvironmentVariablesNodeProperty environmentVariables, ToolLocationNodeProperty toolLocations,
+                          String accountId, ConnectionMethodEnum connectionMethod, ComputerConnector computerConnector,
+                          Boolean shouldUsePrivateIp) {
         super(groupId, labelString, idleTerminationMinutes, workspaceDir, usage, tunnel, shouldUseWebsocket,
-              shouldRetriggerBuilds, vmargs, environmentVariables, toolLocations, accountId);
+              shouldRetriggerBuilds, vmargs, environmentVariables, toolLocations, accountId, connectionMethod,
+              computerConnector, shouldUsePrivateIp);
     }
     //endregion
 
     // region Override Methods
     @Override
     List<SpotinstSlave> scaleUp(ProvisionRequest request) {
-        List<SpotinstSlave> retVal = new LinkedList<>();
-        IAzureVmGroupRepo azureVmGroupRepo = RepoManager.getInstance().getAzureVmGroupRepo();
+        List<SpotinstSlave> retVal           = new LinkedList<>();
+        IAzureVmGroupRepo   azureVmGroupRepo = RepoManager.getInstance().getAzureVmGroupRepo();
         ApiResponse<List<AzureScaleUpResultNewVm>> scaleUpResponse =
                 azureVmGroupRepo.scaleUp(groupId, request.getExecutors(), this.accountId);
 
@@ -112,9 +116,6 @@ public class AzureSpotCloud extends BaseSpotinstCloud {
 
             LOGGER.info(String.format("There are %s instances in group %s", vms.size(), groupId));
 
-            addNewSlaveInstances(vms);
-            removeOldSlaveInstances(vms);
-
             Map<String, SlaveInstanceDetails> slaveInstancesDetailsByInstanceId = new HashMap<>();
 
             for (AzureGroupVm vm : vms) {
@@ -123,11 +124,41 @@ public class AzureSpotCloud extends BaseSpotinstCloud {
             }
 
             this.slaveInstancesDetailsByInstanceId = new HashMap<>(slaveInstancesDetailsByInstanceId);
+
+            removeOldSlaveInstances(vms);
+            addNewSlaveInstances(vms);
         }
         else {
             LOGGER.error(String.format("Failed to get group %s instances. Errors: %s", groupId,
                                        instancesResponse.getErrors()));
         }
+    }
+
+    @Override
+    public Map<String, String> getInstanceIpsById() {
+        Map<String, String> retVal = new HashMap<>();
+
+        IAzureVmGroupRepo               awsGroupRepo      = RepoManager.getInstance().getAzureVmGroupRepo();
+        ApiResponse<List<AzureGroupVm>> instancesResponse = awsGroupRepo.getGroupVms(groupId, this.accountId);
+
+        if (instancesResponse.isRequestSucceed()) {
+            List<AzureGroupVm> instances = instancesResponse.getValue();
+
+            for (AzureGroupVm instance : instances) {
+                if (this.getShouldUsePrivateIp()) {
+                    retVal.put(instance.getVmName(), instance.getPrivateIp());
+                }
+                else {
+                    retVal.put(instance.getVmName(), instance.getPublicIp());
+                }
+            }
+        }
+        else {
+            LOGGER.error(String.format("Failed to get group %s instances. Errors: %s", groupId,
+                                       instancesResponse.getErrors()));
+        }
+
+        return retVal;
     }
     //endregion
 
@@ -162,8 +193,8 @@ public class AzureSpotCloud extends BaseSpotinstCloud {
             for (SpotinstSlave slave : allGroupsSlaves) {
                 String slaveInstanceId = slave.getInstanceId();
 
-                Boolean slaveIdNotNull       = slaveInstanceId != null;
-                Boolean slaveExistsInEg      = elastigroupVmIds.contains(slaveInstanceId);
+                Boolean slaveIdNotNull  = slaveInstanceId != null;
+                Boolean slaveExistsInEg = elastigroupVmIds.contains(slaveInstanceId);
 
                 if (slaveIdNotNull && BooleanUtils.isFalse(slaveExistsInEg)) {
                     LOGGER.info(String.format("Slave for instance: %s is no longer running in group: %s, removing it",
@@ -175,6 +206,9 @@ public class AzureSpotCloud extends BaseSpotinstCloud {
                     catch (IOException e) {
                         LOGGER.error(String.format("Failed to remove slave from group: %s", groupId), e);
                     }
+                }
+                else {
+                    terminateOfflineSlaves(slave, slaveInstanceId);
                 }
             }
         }
@@ -236,8 +270,8 @@ public class AzureSpotCloud extends BaseSpotinstCloud {
         else {
             retVal = defaultExecutors;
             LOGGER.warn(String.format(
-                    "Failed to determine # of executors for instance type %s, defaulting to %s executor(s). Group ID: %s", vmSize,
-                    defaultExecutors, this.getGroupId()));
+                    "Failed to determine # of executors for instance type %s, defaulting to %s executor(s). Group ID: %s",
+                    vmSize, defaultExecutors, this.getGroupId()));
         }
 
         return retVal;

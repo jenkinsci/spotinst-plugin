@@ -41,6 +41,12 @@ termination"
 [SpotinstPlugin-Versionhistory]
 == Version history
 
+[SpotinstPlugin-Version2.1.5(Jan11,2021)]
+=== Version 2.1.5 (Jan 11, 2021)
+
+* Added support for connecting agents with SSH
+* Performance improvements
+
 [SpotinstPlugin-Version2.1.4(Dec14,2020)]
 === Version 2.1.4 (Dec 14, 2020)
 
