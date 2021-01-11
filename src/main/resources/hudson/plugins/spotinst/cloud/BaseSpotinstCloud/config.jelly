@@ -1,5 +1,5 @@
 <?jelly escape-by-default='true'?>
-<j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form" xmlns:st="jelly:stapler">
+<j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form" xmlns:st="jelly:stapler" xmlns:c="/lib/credentials">
     <f:entry>
         <img style="height:32px;"
              src="https://spotinst-public.s3.amazonaws.com/assets/emails/welcome-email/spot_large.png"/>
@@ -16,18 +16,53 @@
     <f:entry title="${%Idle minutes before termination}" field="idleTerminationMinutes">
         <f:textbox/>
     </f:entry>
-    <f:entry title="${%Remote root directory}" field="workspaceDir">
+    <f:entry title="${%Remote root directory}" field="workspaceDir" description='For SSH clouds, root directory must be specified and must exist on the agent in order for it to connect. For JNLP clouds the default may vary. Using an absolute path is recommended.'>
         <f:textbox/>
     </f:entry>
+    <f:block><span style="display: block; margin-bottom: 1em;"></span></f:block>
     <f:entry title="Usage" field="usage">
         <f:enum>${it.name()}</f:enum>
     </f:entry>
-    <f:entry title="${%Tunnel connection through}" field="tunnel">
-        <f:textbox/>
-    </f:entry>
-    <f:entry title="${%Use WebSocket}" field="shouldUseWebsocket">
-        <f:checkbox/>
-    </f:entry>
+
+
+    <j:choose>
+      <j:when test="${descriptor.toString().contains('AzureSpotinstCloud') == false}">
+          <f:radioBlock checked="${instance == null || instance.connectionMethod == null || instance.connectionMethod == 'JNLP'}" name="connectionMethod" title="Connect with JNLP" value="JNLP" inline="true">
+              <f:entry title="${%Tunnel connection through}" field="tunnel">
+                <f:textbox />
+              </f:entry>
+              <f:entry title="${%Use WebSocket}" field="shouldUseWebsocket">
+                <f:checkbox/>
+              </f:entry>
+          </f:radioBlock>
+
+          <f:radioBlock checked="${instance.connectionMethod == 'SSH'}" name="connectionMethod" title="Connect with SSH" value="SSH" inline="true">
+            <f:entry title="Use Private IP" field="shouldUsePrivateIp" id="usePrivateIP">
+              <f:checkbox checked="${(instance != null) &amp;&amp; (instance.shouldUsePrivateIp)}"/>
+            </f:entry>
+            <f:entry title="${%Launcher}" id="launcherList" style="margin-bottom:-2em;">
+             <f:dropdownDescriptorSelector field="computerConnector" descriptors="${descriptor.getComputerConnectorDescriptors()}" />
+            </f:entry>
+          </f:radioBlock>
+      </j:when>
+      <j:otherwise>
+        <f:entry title="${%Tunnel connection through}" field="tunnel">
+          <f:textbox />
+        </f:entry>
+        <f:entry title="${%Use WebSocket}" field="shouldUseWebsocket">
+          <f:checkbox/>
+        </f:entry>
+      </j:otherwise>
+    </j:choose>
+
+
+
+
+    <f:entry><span style="display:block; margin-bottom: 0.5em;"></span></f:entry>
+
+
+
+
     <f:entry title="${%Retrigger Builds on Node Interruption}" field="shouldRetriggerBuilds">
       <f:checkbox checked="${instance == null || instance.shouldRetriggerBuilds == null || instance.shouldRetriggerBuilds}"/>
     </f:entry>

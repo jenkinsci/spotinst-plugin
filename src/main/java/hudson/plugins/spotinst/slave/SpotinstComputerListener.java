@@ -2,8 +2,7 @@ package hudson.plugins.spotinst.slave;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Extension;
-import hudson.model.Computer;
-import hudson.model.TaskListener;
+import hudson.model.*;
 import hudson.slaves.ComputerListener;
 import hudson.slaves.OfflineCause;
 import org.slf4j.Logger;
@@ -44,6 +43,9 @@ public class SpotinstComputerListener extends ComputerListener {
     @Override
     public void onOffline(@NonNull Computer c, OfflineCause cause) {
         LOGGER.info(String.format("Computer went offline, Cause: %s.", cause));
+        //  TODO shibel: investigate if we are inadvertently triggering afterDisconnect twice.
+        //      See SlaveComputer#setChannel, which itself calls afterDisconnect in the callback it sets,
+        //      but then SlaveComputer#disconnect does that as well.
         c.disconnect(cause);
         super.onOffline(c, cause);
     }

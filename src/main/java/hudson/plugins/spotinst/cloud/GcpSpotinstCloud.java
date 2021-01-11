@@ -4,6 +4,7 @@ import hudson.Extension;
 import hudson.model.Node;
 import hudson.plugins.spotinst.api.infra.ApiResponse;
 import hudson.plugins.spotinst.api.infra.JsonMapper;
+import hudson.plugins.spotinst.common.ConnectionMethodEnum;
 import hudson.plugins.spotinst.model.gcp.GcpGroupInstance;
 import hudson.plugins.spotinst.model.gcp.GcpMachineType;
 import hudson.plugins.spotinst.model.gcp.GcpResultNewInstance;
@@ -13,6 +14,7 @@ import hudson.plugins.spotinst.repos.RepoManager;
 import hudson.plugins.spotinst.slave.SlaveInstanceDetails;
 import hudson.plugins.spotinst.slave.SlaveUsageEnum;
 import hudson.plugins.spotinst.slave.SpotinstSlave;
+import hudson.slaves.ComputerConnector;
 import hudson.slaves.EnvironmentVariablesNodeProperty;
 import hudson.tools.ToolLocationNodeProperty;
 import jenkins.model.Jenkins;
@@ -38,11 +40,15 @@ public class GcpSpotinstCloud extends BaseSpotinstCloud {
     //region Constructors
     @DataBoundConstructor
     public GcpSpotinstCloud(String groupId, String labelString, String idleTerminationMinutes, String workspaceDir,
-                            SlaveUsageEnum usage, String tunnel, Boolean shouldUseWebsocket, Boolean shouldRetriggerBuilds, String vmargs,
+                            SlaveUsageEnum usage, String tunnel, Boolean shouldUseWebsocket,
+                            Boolean shouldRetriggerBuilds, String vmargs,
                             EnvironmentVariablesNodeProperty environmentVariables,
-                            ToolLocationNodeProperty toolLocations, String accountId) {
-        super(groupId, labelString, idleTerminationMinutes, workspaceDir, usage, tunnel, shouldUseWebsocket, shouldRetriggerBuilds, vmargs, environmentVariables,
-              toolLocations, accountId);
+                            ToolLocationNodeProperty toolLocations, String accountId,
+                            ConnectionMethodEnum connectionMethod, ComputerConnector computerConnector,
+                            Boolean shouldUsePrivateIp) {
+        super(groupId, labelString, idleTerminationMinutes, workspaceDir, usage, tunnel, shouldUseWebsocket,
+              shouldRetriggerBuilds, vmargs, environmentVariables, toolLocations, accountId, connectionMethod,
+              computerConnector, shouldUsePrivateIp);
     }
     //endregion
 
@@ -119,9 +125,6 @@ public class GcpSpotinstCloud extends BaseSpotinstCloud {
 
             LOGGER.info(String.format("There are %s instances in group %s", instances.size(), groupId));
 
-            addNewGcpSlaveInstances(instances);
-            removeOldGcpSlaveInstances(instances);
-
             Map<String, SlaveInstanceDetails> slaveInstancesDetailsByInstanceId = new HashMap<>();
 
             for (GcpGroupInstance instance : instances) {
@@ -130,11 +133,41 @@ public class GcpSpotinstCloud extends BaseSpotinstCloud {
             }
 
             this.slaveInstancesDetailsByInstanceId = new HashMap<>(slaveInstancesDetailsByInstanceId);
+
+            removeOldGcpSlaveInstances(instances);
+            addNewGcpSlaveInstances(instances);
         }
         else {
             LOGGER.error(String.format("Failed to get group %s instances. Errors: %s", groupId,
                                        instancesResponse.getErrors()));
         }
+    }
+
+    @Override
+    public Map<String, String> getInstanceIpsById() {
+        Map<String, String> retVal = new HashMap<>();
+
+        IGcpGroupRepo                       awsGroupRepo      = RepoManager.getInstance().getGcpGroupRepo();
+        ApiResponse<List<GcpGroupInstance>> instancesResponse = awsGroupRepo.getGroupInstances(groupId, this.accountId);
+
+        if (instancesResponse.isRequestSucceed()) {
+            List<GcpGroupInstance> instances = instancesResponse.getValue();
+
+            for (GcpGroupInstance instance : instances) {
+                if (this.getShouldUsePrivateIp()) {
+                    retVal.put(instance.getInstanceName(), instance.getPrivateIpAddress());
+                }
+                else {
+                    retVal.put(instance.getInstanceName(), instance.getPublicIpAddress());
+                }
+            }
+        }
+        else {
+            LOGGER.error(String.format("Failed to get group %s instances. Errors: %s", groupId,
+                                       instancesResponse.getErrors()));
+        }
+
+        return retVal;
     }
 
     @Override
@@ -194,6 +227,9 @@ public class GcpSpotinstCloud extends BaseSpotinstCloud {
                 catch (IOException e) {
                     LOGGER.error(String.format("Failed to remove slave from group: %s", groupId), e);
                 }
+            }
+            else {
+                terminateOfflineSlaves(slave, slaveInstanceId);
             }
         }
     }
