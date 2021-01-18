@@ -383,7 +383,11 @@ public enum AwsInstanceTypeEnum {
     R6GD8xlarge("r6gd.8xlarge", 32),
     R6GD12xlarge("r6gd.12xlarge", 48),
     R6GD16xlarge("r6gd.16xlarge", 64),
-    R6GDMetal("r6gd.metal", 64);
+    R6GDMetal("r6gd.metal", 64),
+
+    G4AD4xlarge("g4ad.4xlarge", 16),
+    G4AD8xlarge("g4ad.8xlarge", 32),
+    G4AD16xlarge("g4ad.16xlarge", 64);
 
     private String  value;
     private Integer executors;
