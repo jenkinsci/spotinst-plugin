@@ -83,6 +83,8 @@ public class SpotinstCloudTest {
         AwsSpotinstCloud spotinstCloud =
                 new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, SlaveUsageEnum.NORMAL, "", false, true, "", null,
                                      null, null, null, null, null);
+
+        jenkinsRule.jenkins.clouds.add(spotinstCloud);
         Map<String, PendingInstance> pendingInstances = new HashMap<>();
         pendingInstances.put("sir-1", buildPendingInstance("sir-1", PendingInstance.StatusEnum.PENDING, 2));
         spotinstCloud.setPendingInstances(pendingInstances);
@@ -114,7 +116,7 @@ public class SpotinstCloudTest {
         BaseSpotinstCloud spotCloud =
                 new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, null, "", true, null, null, null, null, null,
                                      null, null, false);
-
+        jenkinsRule.jenkins.clouds.add(spotCloud);
         assertEquals(spotCloud.getConnectionMethod(), ConnectionMethodEnum.JNLP);
 
         AwsInstanceTypeEnum   vmSizeBasicA2 = AwsInstanceTypeEnum.C4Large;
@@ -148,7 +150,7 @@ public class SpotinstCloudTest {
         BaseSpotinstCloud spotCloud =
                 new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, null, "", true, null, null, null, null, null,
                                      ConnectionMethodEnum.SSH, getSSHConnector(), false);
-
+        jenkinsRule.jenkins.clouds.add(spotCloud);
         assertEquals(spotCloud.getConnectionMethod(), ConnectionMethodEnum.SSH);
 
         AwsInstanceTypeEnum   vmSizeBasicA2 = AwsInstanceTypeEnum.C4Large;
@@ -193,7 +195,7 @@ public class SpotinstCloudTest {
         BaseSpotinstCloud spotCloud =
                 new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, null, "", true, null, null, null, null, null,
                                      ConnectionMethodEnum.SSH, getSSHConnector(), false);
-
+        jenkinsRule.jenkins.clouds.add(spotCloud);
         assertEquals(spotCloud.getConnectionMethod(), ConnectionMethodEnum.SSH);
 
         AwsInstanceTypeEnum   vmSizeBasicA2 = AwsInstanceTypeEnum.C4Large;
@@ -288,6 +290,7 @@ public class SpotinstCloudTest {
         GcpSpotinstCloud spotinstCloud =
                 new GcpSpotinstCloud(groupId, "", "20", "/tmp", null, "", false, true, "", null, null, null, null,
                                      null, null);
+        jenkinsRule.jenkins.clouds.add(spotinstCloud);
         Map<String, PendingInstance> pendingInstances = new HashMap<>();
         pendingInstances.put("sin-1", buildPendingInstance("sin-1", PendingInstance.StatusEnum.PENDING, 2));
         spotinstCloud.setPendingInstances(pendingInstances);
@@ -380,6 +383,7 @@ public class SpotinstCloudTest {
         BaseSpotinstCloud spotinstCloud =
                 new AzureSpotCloud(groupId, "", "20", "/tmp", null, "", false, true, "", null, null, null, null,
                                    null, null);
+        jenkinsRule.jenkins.clouds.add(spotinstCloud);
         Map<String, PendingInstance> pendingInstances = new HashMap<>();
         pendingInstances.put("vm-1", buildPendingInstance("vm-1", PendingInstance.StatusEnum.PENDING, 2));
         spotinstCloud.setPendingInstances(pendingInstances);
@@ -413,7 +417,7 @@ public class SpotinstCloudTest {
         BaseSpotinstCloud spotinstCloud =
                 new AzureSpotCloud(groupId, "", "20", "/tmp", null, "", false, true, "", null, null, null, null,
                                    null, null);
-
+        jenkinsRule.jenkins.clouds.add(spotinstCloud);
         AzureScaleUpResultNewVm newSpot = new AzureScaleUpResultNewVm();
         newSpot.setVmName("vm-2");
         newSpot.setLifeCycle("spot");
@@ -438,7 +442,7 @@ public class SpotinstCloudTest {
         BaseSpotinstCloud spotinstCloud =
                 new AzureSpotCloud(groupId, "", "20", "/tmp", null, "", false, true, "", null, null, null, null,
                                    null, null);
-
+        jenkinsRule.jenkins.clouds.add(spotinstCloud);
         AzureVmSizeEnum vmSizeBasicA1 = AzureVmSizeEnum.BASIC_A1;
         AzureVmSizeEnum vmSizeBasicA2 = AzureVmSizeEnum.BASIC_A2;
 
@@ -474,6 +478,7 @@ public class SpotinstCloudTest {
         BaseSpotinstCloud spotinstCloud =
                 new AzureSpotCloud(groupId, "", "20", "/tmp", null, "", false, true, "", null, null, null, null,
                                    null, null);
+        jenkinsRule.jenkins.clouds.add(spotinstCloud);
         Map<String, PendingInstance> pendingInstances = new HashMap<>();
         pendingInstances.put("vm-1", buildPendingInstance("vm-1", PendingInstance.StatusEnum.PENDING, 2));
         spotinstCloud.setPendingInstances(pendingInstances);
@@ -512,6 +517,7 @@ public class SpotinstCloudTest {
                 new AzureSpotCloud(groupId, "", "20", "/tmp", null, "", false, true, "", null, null, null, null,
                                    null, null);
 
+        jenkinsRule.jenkins.clouds.add(spotCloud);
         assertEquals(spotCloud.getConnectionMethod(), ConnectionMethodEnum.JNLP);
 
         AzureVmSizeEnum         vmSizeBasicA2 = AzureVmSizeEnum.BASIC_A2;
@@ -547,7 +553,7 @@ public class SpotinstCloudTest {
                 new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, null, "", true, null, null, null, null, null,
                                      ConnectionMethodEnum.SSH, getSSHConnector(), false);
 
-
+        jenkinsRule.jenkins.clouds.add(cloud);
         AwsInstanceTypeEnum   vmSizeBasicA2 = AwsInstanceTypeEnum.C4Large;
         AwsScaleResultNewSpot newSpot       = new AwsScaleResultNewSpot();
         newSpot.setInstanceId("i-2");
