@@ -46,6 +46,7 @@ termination"
 
 * Fix issue: some nodes disconnecting abruptly
 * Performance improvements
+* Add AWS instance types
 
 [SpotinstPlugin-Version2.1.6(Jan18,2021)]
 === Version 2.1.6 (Jan 18, 2021)
