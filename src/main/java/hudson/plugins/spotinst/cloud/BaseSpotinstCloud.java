@@ -287,7 +287,8 @@ public abstract class BaseSpotinstCloud extends Cloud {
                         }
                     }
                     else {
-                        LOGGER.warn(String.format("Agent %s does not have a computer", instanceId));
+                        String msg = "Agent %s does not have a computer - agent isn't necessarily an SSH agent - SpotinstCloud connection type is: %s";
+                        LOGGER.warn(String.format(msg, instanceId, this.getConnectionMethod()));
                     }
 
                 }
@@ -404,7 +405,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
 
         try {
             ComputerLauncher launcher = buildLauncherForAgent(id);
-            slave = new SpotinstSlave(this, id, groupId, id, instanceType, labelString, idleTerminationMinutes,
+            slave = new SpotinstSlave(id, groupId, id, instanceType, labelString, idleTerminationMinutes,
                                       workspaceDir, numOfExecutors, mode, launcher, nodeProperties);
 
         }
