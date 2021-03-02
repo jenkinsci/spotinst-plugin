@@ -368,6 +368,15 @@ public enum AwsInstanceTypeEnum {
     C6G16xlarge("c6g.16xlarge", 64),
     C6GMetal("c6g.metal", 64),
 
+    C6GNMedium("c6gn.medium", 1),
+    C6GNLarge("c6gn.large", 2),
+    C6GNXlarge("c6gn.xlarge", 4),
+    C6GN2xlarge("c6gn.2xlarge", 8),
+    C6GN4xlarge("c6gn.4xlarge", 16),
+    C6GN8xlarge("c6gn.8xlarge", 32),
+    C6GN12xlarge("c6gn.12xlarge", 48),
+    C6GN16xlarge("c6gn.16xlarge", 64),
+
     R6GMedium("r6g.medium", 1),
     R6GLarge("r6g.large", 2),
     R6GXlarge("r6g.xlarge", 4),
