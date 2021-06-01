@@ -2,6 +2,7 @@ package hudson.plugins.spotinst.api.infra;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.*;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.StringEntity;
@@ -17,6 +18,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
+
+import static hudson.plugins.spotinst.common.Constants.*;
 
 public class RestClient {
 
@@ -64,7 +67,15 @@ public class RestClient {
     private static RestResponse sendRequest(HttpUriRequest urlRequest) throws ApiException {
         RestResponse retVal = null;
 
-        HttpClient httpclient = HttpClientBuilder.create().build();
+        RequestConfig.Builder configBuilder = RequestConfig.custom();
+
+        configBuilder.setConnectTimeout(REST_CLIENT_CONNECT_TIMEOUT_IN_SECONDS * 1000);
+        configBuilder.setConnectionRequestTimeout(REST_CLIENT_CONNECTION_REQUEST_TIMEOUT_IN_SECONDS * 1000);
+        configBuilder.setSocketTimeout(REST_CLIENT_SOCKET_TIMEOUT_IN_SECONDS * 1000);
+
+        RequestConfig config = configBuilder.build();
+
+        HttpClient httpclient = HttpClientBuilder.create().setDefaultRequestConfig(config).build();
 
         CloseableHttpResponse response = null;
         try {
