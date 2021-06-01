@@ -41,6 +41,11 @@ termination"
 [SpotinstPlugin-Versionhistory]
 == Version history
 
+[SpotinstPlugin-Version2.1.8(Jun1,2021)]
+=== Version 2.1.8 (Jun 1, 2021)
+
+* Add timeout to RestClient to handle process starvation in edge-cases
+
 [SpotinstPlugin-Version2.1.7(Feb10,2021)]
 === Version 2.1.7 (Feb 10, 2021)
 
