@@ -194,7 +194,6 @@ public class GcpSpotinstCloud extends BaseSpotinstCloud {
 
     //region Private Methods
     private SpotinstSlave handleNewGcpInstance(String instanceName, String machineType, String label) {
-        GcpMachineType enumMember = GcpMachineType.fromValue(machineType);
         LOGGER.info(String.format("Setting the # of executors for instance type: %s", machineType));
         Integer        executors  = getNumOfExecutors(machineType);
         addToPending(instanceName, executors, PendingInstance.StatusEnum.INSTANCE_INITIATING, label);
