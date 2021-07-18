@@ -40,8 +40,8 @@ termination"
 
 [SpotinstPlugin-Versionhistory]
 == Version history
-[SpotinstPlugin-Version2.2.0(Jul18,2021)]
-=== Version 2.2.0 (Jul 18, 2021)
+[SpotinstPlugin-Version2.2.1(Jul18,2021)]
+=== Version 2.2.1 (Jul 18, 2021)
 
 * Add ability to override the # of executors for all instance types
 
