@@ -69,8 +69,6 @@
     <f:entry title="${%JVM options}" field="vmargs">
         <f:textbox/>
     </f:entry>
-    <st:include class="${descriptor.clazz}" page="config-entries.jelly" />
-
     <f:optionalBlock name="environmentVariables" title ="Environment variables" checked="${instance.environmentVariables != null}">
       <f:entry title="${%List of key-value pairs}" field="envVar">
           <f:repeatable var="env" items="${instance.environmentVariables.envVars.entrySet()}">
@@ -116,6 +114,11 @@
 			</table>
 		</f:repeatable>
 	</f:entry>
-      	 </f:optionalBlock>
+ </f:optionalBlock>
+
+<f:property title="Global Instance Override" field="globalExecutorOverride"/>
+
+<st:include class="${descriptor.clazz}" page="config-entries.jelly" />
 
 </j:jelly>
+

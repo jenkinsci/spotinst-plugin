@@ -4,9 +4,7 @@ import hudson.DescriptorExtensionList;
 import hudson.model.*;
 import hudson.model.labels.LabelAtom;
 import hudson.plugins.spotinst.api.infra.JsonMapper;
-import hudson.plugins.spotinst.common.ConnectionMethodEnum;
-import hudson.plugins.spotinst.common.Constants;
-import hudson.plugins.spotinst.common.TimeUtils;
+import hudson.plugins.spotinst.common.*;
 import hudson.plugins.spotinst.slave.*;
 import hudson.plugins.sshslaves.SSHConnector;
 import hudson.slaves.*;
@@ -50,6 +48,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
     private   ComputerConnector                 computerConnector;
     private   ConnectionMethodEnum              connectionMethod;
     private   Boolean                           shouldUsePrivateIp;
+    private   SpotGlobalExecutorOverride        globalExecutorOverride;
     //endregion
 
     //region Constructor
@@ -59,7 +58,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
                              EnvironmentVariablesNodeProperty environmentVariables,
                              ToolLocationNodeProperty toolLocations, String accountId,
                              ConnectionMethodEnum connectionMethod, ComputerConnector computerConnector,
-                             Boolean shouldUsePrivateIp) {
+                             Boolean shouldUsePrivateIp, SpotGlobalExecutorOverride globalExecutorOverride) {
 
         super(groupId);
         this.groupId = groupId;
@@ -100,6 +99,14 @@ public abstract class BaseSpotinstCloud extends Cloud {
         }
 
         this.computerConnector = computerConnector;
+
+        if (globalExecutorOverride != null) {
+            this.globalExecutorOverride = globalExecutorOverride;
+        }
+        else {
+            this.globalExecutorOverride = new SpotGlobalExecutorOverride(false, 1);
+        }
+
     }
     //endregion
 
@@ -287,7 +294,8 @@ public abstract class BaseSpotinstCloud extends Cloud {
                         }
                     }
                     else {
-                        String msg = "Agent %s does not have a computer - agent isn't necessarily an SSH agent - SpotinstCloud connection type is: %s";
+                        String msg =
+                                "Agent %s does not have a computer - agent isn't necessarily an SSH agent - SpotinstCloud connection type is: %s";
                         LOGGER.warn(String.format(msg, instanceId, this.getConnectionMethod()));
                     }
 
@@ -380,6 +388,49 @@ public abstract class BaseSpotinstCloud extends Cloud {
 
         return retVal;
     }
+
+    private Integer getExecutorsFromGlobalOverride() {
+        Integer retVal = null;
+
+        boolean isOverrideEnabled = this.getGlobalExecutorOverride().getIsEnabled();
+
+        if (isOverrideEnabled) {
+            LOGGER.debug("Global Executor Override is enabled");
+            boolean isOverrideValid = isGlobalExecutorOverrideValid();
+
+            if (isOverrideValid) {
+                retVal = this.getGlobalExecutorOverride().getExecutors();
+            }
+            else {
+                LOGGER.warn(
+                        "Global Executor Override is enabled but invalid, reverting to the default instance type executors number");
+            }
+        }
+
+        return retVal;
+    }
+
+    private boolean isGlobalExecutorOverrideValid() {
+        boolean retVal            = false;
+        Integer overrideExecutors = this.getGlobalExecutorOverride().getExecutors();
+
+        String warningMsg = String.format("Global Executor Override executors attribute has an invalid value %s",
+                                          overrideExecutors);
+
+        if (overrideExecutors != null) {
+            if (overrideExecutors > 0) {
+                retVal = true;
+            }
+            else {
+                LOGGER.warn(warningMsg);
+            }
+        }
+        else {
+            LOGGER.warn(warningMsg);
+        }
+
+        return retVal;
+    }
     //endregion
 
     //region Protected Methods
@@ -405,8 +456,8 @@ public abstract class BaseSpotinstCloud extends Cloud {
 
         try {
             ComputerLauncher launcher = buildLauncherForAgent(id);
-            slave = new SpotinstSlave(id, groupId, id, instanceType, labelString, idleTerminationMinutes,
-                                      workspaceDir, numOfExecutors, mode, launcher, nodeProperties);
+            slave = new SpotinstSlave(id, groupId, id, instanceType, labelString, idleTerminationMinutes, workspaceDir,
+                                      numOfExecutors, mode, launcher, nodeProperties);
 
         }
         catch (Descriptor.FormException | IOException e) {
@@ -478,7 +529,6 @@ public abstract class BaseSpotinstCloud extends Cloud {
         return retVal;
     }
 
-
     protected List<SpotinstSlave> getAllSpotinstSlaves() {
         LOGGER.info(String.format("Getting all existing slaves for group: %s", groupId));
 
@@ -529,6 +579,37 @@ public abstract class BaseSpotinstCloud extends Cloud {
 
         retVal.setPendingExecutors(pendingExecutors);
         retVal.setInitiatingExecutors(initiatingExecutors);
+
+        return retVal;
+    }
+
+    protected Integer getNumOfExecutors(String instanceType) {
+        Integer retVal;
+
+        Integer globalOverrideExecutorsNumber = getExecutorsFromGlobalOverride();
+
+        if (globalOverrideExecutorsNumber != null) {
+            LOGGER.debug(String.format("Overriding executors for instance type %s to be %s", instanceType,
+                                       globalOverrideExecutorsNumber));
+            retVal = globalOverrideExecutorsNumber;
+        }
+        else {
+            Integer defaultNumberOfExecutors = getDefaultExecutorsNumber(instanceType);
+
+            if (defaultNumberOfExecutors != null) {
+                retVal = defaultNumberOfExecutors;
+            }
+            else {
+                retVal = 1;
+                String warningMsg = String.format(
+                        "Failed to determine # of executors for instance type %s, defaulting to %s executor(s). Group ID: %s",
+                        instanceType, retVal, this.getGroupId());
+                LOGGER.warn(warningMsg);
+
+            }
+        }
+
+        LOGGER.debug(String.format("instance type executors number was set to %s", retVal));
 
         return retVal;
     }
@@ -635,6 +716,24 @@ public abstract class BaseSpotinstCloud extends Cloud {
     public void setShouldUsePrivateIp(Boolean shouldUsePrivateIp) {
         this.shouldUsePrivateIp = shouldUsePrivateIp;
     }
+
+    public SpotGlobalExecutorOverride getGlobalExecutorOverride() {
+        SpotGlobalExecutorOverride retVal;
+        // default for clouds that were configured before introducing this field
+        if (this.globalExecutorOverride == null) {
+            retVal = new SpotGlobalExecutorOverride(false, 1);
+            this.globalExecutorOverride = retVal;
+        }
+        else {
+            retVal = this.globalExecutorOverride;
+        }
+
+        return retVal;
+    }
+
+    public void setGlobalExecutorOverride(SpotGlobalExecutorOverride globalExecutorOverride) {
+        this.globalExecutorOverride = globalExecutorOverride;
+    }
     //endregion
 
     //region Abstract Methods
@@ -647,6 +746,8 @@ public abstract class BaseSpotinstCloud extends Cloud {
     public abstract void syncGroupInstances();
 
     public abstract Map<String, String> getInstanceIpsById();
+
+    protected abstract Integer getDefaultExecutorsNumber(String instanceType);
     //endregion
 
     //region Abstract Class

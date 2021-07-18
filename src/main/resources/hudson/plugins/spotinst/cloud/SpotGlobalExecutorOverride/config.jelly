@@ -1,0 +1,11 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form" xmlns:i="jelly:fmt">
+  <f:optionalBlock checked="${it.isEnabled}" title="Override default number of executors" field="isEnabled" inline="true">
+    <f:entry title="Default executor count:">
+      <f:number value="${it.executors}" field="executors" clazz="required positive-number" min="1" checkMessage="Required field. You haven't specified a positive number - this will setting will be ignored."/>
+      <f:description><b>All</b> nodes will have this number of executors, <b>except</b> nodes defined with specific weights under "Instance type weight" below (for clouds that support instance type weight).</f:description>
+      <f:description>A valid positive number must be supplied in this field for this feature to take effect. </f:description>
+      <f:description>Only applies to nodes spun after changing this setting. </f:description>
+    </f:entry>
+  </f:optionalBlock>
+</j:jelly>

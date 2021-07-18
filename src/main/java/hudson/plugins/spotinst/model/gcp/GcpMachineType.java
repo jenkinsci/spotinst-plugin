@@ -1,9 +1,11 @@
 package hudson.plugins.spotinst.model.gcp;
 
+import hudson.plugins.spotinst.common.ISpotInstanceTypeEnum;
+
 /**
  * Created by ohadmuchnik on 29/08/2016.
  */
-public enum GcpMachineType {
+public enum GcpMachineType implements ISpotInstanceTypeEnum {
 
     N1Standard1("n1-standard-1", 1),
     N1Standard2("n1-standard-2", 2),

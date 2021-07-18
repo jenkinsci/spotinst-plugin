@@ -1,12 +1,13 @@
 package hudson.plugins.spotinst.model.azure;
 
+import hudson.plugins.spotinst.common.ISpotInstanceTypeEnum;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * Created by ohadmuchnik on 21/06/2017.
  */
-public enum AzureScaleSetSizeEnum {
+public enum AzureScaleSetSizeEnum implements ISpotInstanceTypeEnum {
 
     BASIC_A0("basic_a0", 1),
     BASIC_A1("basic_a1", 1),
@@ -78,8 +79,8 @@ public enum AzureScaleSetSizeEnum {
     STANDARD_A10("standard_a10", 8),
     STANDARD_A11("standard_a11", 16);
 
-    private String  value;
-    private Integer executors;
+    protected String  value;
+    protected Integer executors;
     private static final Logger LOGGER = LoggerFactory.getLogger(AzureScaleSetSizeEnum.class);
 
     private AzureScaleSetSizeEnum(String value, Integer executors) {

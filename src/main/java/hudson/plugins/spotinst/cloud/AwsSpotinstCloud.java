@@ -33,8 +33,8 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
     private static final Logger LOGGER    = LoggerFactory.getLogger(AwsSpotinstCloud.class);
     private static final String CLOUD_URL = "aws/ec2";
 
-    private Map<AwsInstanceTypeEnum, Integer>      executorsForInstanceType;
-    private List<? extends SpotinstInstanceWeight> executorsForTypes;
+    protected Map<AwsInstanceTypeEnum, Integer>      executorsForInstanceType;
+    private   List<? extends SpotinstInstanceWeight> executorsForTypes;
     //endregion
 
     //region Constructor
@@ -45,11 +45,11 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
                             EnvironmentVariablesNodeProperty environmentVariables,
                             ToolLocationNodeProperty toolLocations, String accountId,
                             ConnectionMethodEnum connectionMethod, ComputerConnector computerConnector,
-                            Boolean shouldUsePrivateIp) {
+                            Boolean shouldUsePrivateIp, SpotGlobalExecutorOverride globalExecutorOverride) {
 
         super(groupId, labelString, idleTerminationMinutes, workspaceDir, usage, tunnel, shouldUseWebsocket,
               shouldRetriggerBuilds, vmargs, environmentVariables, toolLocations, accountId, connectionMethod,
-              computerConnector, shouldUsePrivateIp);
+              computerConnector, shouldUsePrivateIp, globalExecutorOverride);
 
         this.executorsForTypes = new LinkedList<>();
         executorsForInstanceType = new HashMap<>();
@@ -183,14 +183,29 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
     public String getCloudUrl() {
         return CLOUD_URL;
     }
+
+    @Override
+    protected Integer getDefaultExecutorsNumber(String instanceType) {
+        Integer retVal;
+        LOGGER.info(String.format("Getting the # of default executors for instance type: %s", instanceType));
+        AwsInstanceTypeEnum enumMember = AwsInstanceTypeEnum.fromValue(instanceType);
+
+        if (enumMember != null) {
+            retVal = enumMember.getExecutors();
+        }
+        else {
+            retVal = null;
+        }
+
+        return retVal;
+    }
     //endregion
 
     //region Private Methods
-    private Integer getNumOfExecutors(String instanceType) {
-        LOGGER.info(String.format("Determining the # of executors for instance type: %s", instanceType));
-
-        Integer             retVal = 1;
-        AwsInstanceTypeEnum type   = AwsInstanceTypeEnum.fromValue(instanceType);
+    @Override
+    protected Integer getNumOfExecutors(String instanceType) {
+        Integer             retVal;
+        AwsInstanceTypeEnum type = AwsInstanceTypeEnum.fromValue(instanceType);
 
         if (type != null) {
             if (executorsForInstanceType.containsKey(type)) {
@@ -198,14 +213,11 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
                 LOGGER.info(String.format("We have a weight definition for this type of %s", retVal));
             }
             else {
-                retVal = type.getExecutors();
-                LOGGER.info(String.format("Using the default value of %s", retVal));
+                retVal = super.getNumOfExecutors(instanceType);
             }
         }
         else {
-            LOGGER.warn(String.format(
-                    "Failed to determine # of executors for instance type %s, defaulting to %s executor(s). Group ID: %s",
-                    instanceType, retVal, this.getGroupId()));
+            retVal = super.getNumOfExecutors(instanceType);
         }
 
         return retVal;
@@ -240,7 +252,7 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
     }
 
     private SpotinstSlave handleNewAwsInstance(String instanceId, String instanceType, String label) {
-        Integer executors = getNumOfExecutors(instanceType);
+        Integer             executors  = getNumOfExecutors(instanceType);
         addToPending(instanceId, executors, PendingInstance.StatusEnum.INSTANCE_INITIATING, label);
         SpotinstSlave retVal = buildSpotinstSlave(instanceId, instanceType, String.valueOf(executors));
 

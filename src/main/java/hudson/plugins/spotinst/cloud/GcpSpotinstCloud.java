@@ -45,10 +45,10 @@ public class GcpSpotinstCloud extends BaseSpotinstCloud {
                             EnvironmentVariablesNodeProperty environmentVariables,
                             ToolLocationNodeProperty toolLocations, String accountId,
                             ConnectionMethodEnum connectionMethod, ComputerConnector computerConnector,
-                            Boolean shouldUsePrivateIp) {
+                            Boolean shouldUsePrivateIp, SpotGlobalExecutorOverride globalExecutorOverride) {
         super(groupId, labelString, idleTerminationMinutes, workspaceDir, usage, tunnel, shouldUseWebsocket,
               shouldRetriggerBuilds, vmargs, environmentVariables, toolLocations, accountId, connectionMethod,
-              computerConnector, shouldUsePrivateIp);
+              computerConnector, shouldUsePrivateIp, globalExecutorOverride);
     }
     //endregion
 
@@ -175,11 +175,28 @@ public class GcpSpotinstCloud extends BaseSpotinstCloud {
         return "gcp/gce";
     }
 
+    @Override
+    protected Integer getDefaultExecutorsNumber(String instanceType) {
+        Integer retVal;
+        LOGGER.info(String.format("Getting the # of default executors for instance type: %s", instanceType));
+        GcpMachineType enumMember = GcpMachineType.fromValue(instanceType);
+
+        if (enumMember != null) {
+            retVal = enumMember.getExecutors();
+        }
+        else {
+            retVal = null;
+        }
+
+        return retVal;
+    }
     //endregion
 
     //region Private Methods
     private SpotinstSlave handleNewGcpInstance(String instanceName, String machineType, String label) {
-        Integer executors = GcpMachineType.fromValue(machineType).getExecutors();
+        GcpMachineType enumMember = GcpMachineType.fromValue(machineType);
+        LOGGER.info(String.format("Setting the # of executors for instance type: %s", machineType));
+        Integer        executors  = getNumOfExecutors(machineType);
         addToPending(instanceName, executors, PendingInstance.StatusEnum.INSTANCE_INITIATING, label);
         SpotinstSlave retVal = buildSpotinstSlave(instanceName, machineType, String.valueOf(executors));
 

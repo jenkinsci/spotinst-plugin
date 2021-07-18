@@ -68,7 +68,7 @@ public class SpotinstCloudTest {
         String groupId = "sig-1";
         BaseSpotinstCloud spotinstCloud =
                 new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, SlaveUsageEnum.NORMAL, "", false, true, "", null,
-                                     null, null, null, null, null);
+                                     null, null, null, null, null, null);
         Map<String, PendingInstance> pendingInstances = new HashMap<>();
         pendingInstances.put("sir-1", buildPendingInstance("sir-1", PendingInstance.StatusEnum.PENDING, 2));
         spotinstCloud.setPendingInstances(pendingInstances);
@@ -82,7 +82,7 @@ public class SpotinstCloudTest {
         String groupId = "sig-1";
         AwsSpotinstCloud spotinstCloud =
                 new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, SlaveUsageEnum.NORMAL, "", false, true, "", null,
-                                     null, null, null, null, null);
+                                     null, null, null, null, null, null);
 
         jenkinsRule.jenkins.clouds.add(spotinstCloud);
         Map<String, PendingInstance> pendingInstances = new HashMap<>();
@@ -115,7 +115,7 @@ public class SpotinstCloudTest {
         String groupId = "sig-1";
         BaseSpotinstCloud spotCloud =
                 new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, null, "", true, null, null, null, null, null,
-                                     null, null, false);
+                                     null, null, false, null);
         jenkinsRule.jenkins.clouds.add(spotCloud);
         assertEquals(spotCloud.getConnectionMethod(), ConnectionMethodEnum.JNLP);
 
@@ -149,7 +149,7 @@ public class SpotinstCloudTest {
         String groupId = "sig-1";
         BaseSpotinstCloud spotCloud =
                 new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, null, "", true, null, null, null, null, null,
-                                     ConnectionMethodEnum.SSH, getSSHConnector(), false);
+                                     ConnectionMethodEnum.SSH, getSSHConnector(), false, null);
         jenkinsRule.jenkins.clouds.add(spotCloud);
         assertEquals(spotCloud.getConnectionMethod(), ConnectionMethodEnum.SSH);
 
@@ -194,7 +194,7 @@ public class SpotinstCloudTest {
         String groupId = "sig-1";
         BaseSpotinstCloud spotCloud =
                 new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, null, "", true, null, null, null, null, null,
-                                     ConnectionMethodEnum.SSH, getSSHConnector(), false);
+                                     ConnectionMethodEnum.SSH, getSSHConnector(), false, null);
         jenkinsRule.jenkins.clouds.add(spotCloud);
         assertEquals(spotCloud.getConnectionMethod(), ConnectionMethodEnum.SSH);
 
@@ -243,7 +243,7 @@ public class SpotinstCloudTest {
         String groupId = "sig-1";
         BaseSpotinstCloud spotCloud =
                 new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, null, "", true, null, null, null, null, null,
-                                     null, null, null);
+                                     null, null, null, null);
 
         assertEquals(spotCloud.getShouldUsePrivateIp(), false);
     }
@@ -253,7 +253,7 @@ public class SpotinstCloudTest {
         String groupId = "sig-1";
         BaseSpotinstCloud spotCloud =
                 new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, null, "", true, null, null, null, null, null,
-                                     null, null, true);
+                                     null, null, true, null);
 
         assertEquals(spotCloud.getShouldUsePrivateIp(), true);
     }
@@ -263,7 +263,7 @@ public class SpotinstCloudTest {
         String groupId = "sig-1";
         BaseSpotinstCloud spotCloud =
                 new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, null, "", true, null, null, null, null, null,
-                                     null, null, false);
+                                     null, null, false, null);
 
         assertEquals(spotCloud.getShouldUsePrivateIp(), false);
     }
@@ -274,7 +274,7 @@ public class SpotinstCloudTest {
     public void testGcpProvision_whenThereArePendingInsatcnesForAllExecutors_thenShouldNotSacleUp() {
         String groupId = "sig-1";
         BaseSpotinstCloud spotinstCloud =
-                new GcpSpotinstCloud(groupId, "", "20", "/tmp", null, "", false, true, "", null, null, null, null,
+                new GcpSpotinstCloud(groupId, "", "20", "/tmp", null, "", false, true, "", null, null, null, null, null,
                                      null, null);
         Map<String, PendingInstance> pendingInstances = new HashMap<>();
         pendingInstances.put("sin-1", buildPendingInstance("sin-1", PendingInstance.StatusEnum.PENDING, 2));
@@ -288,7 +288,7 @@ public class SpotinstCloudTest {
     public void testGcpProvision_whenThereArePendingInsatcnesForPartOfTheExecutors_thenShouldSacleUpTheRest() {
         String groupId = "sig-1";
         GcpSpotinstCloud spotinstCloud =
-                new GcpSpotinstCloud(groupId, "", "20", "/tmp", null, "", false, true, "", null, null, null, null,
+                new GcpSpotinstCloud(groupId, "", "20", "/tmp", null, "", false, true, "", null, null, null, null, null,
                                      null, null);
         jenkinsRule.jenkins.clouds.add(spotinstCloud);
         Map<String, PendingInstance> pendingInstances = new HashMap<>();
@@ -322,7 +322,7 @@ public class SpotinstCloudTest {
     public void testAzureProvision_whenThereArePendingInsatcnesForAllExecutors_thenShouldNotSacleUp() {
         String groupId = "sig-1";
         BaseSpotinstCloud spotinstCloud =
-                new AzureSpotinstCloud(groupId, "", "20", "/tmp", null, "", false, false, "", null, null, null,
+                new AzureSpotinstCloud(groupId, "", "20", "/tmp", null, "", false, false, "", null, null, null, null,
                                        null, null, null);
         Map<String, PendingInstance> pendingInstances = new HashMap<>();
         pendingInstances.put("q3213", buildPendingInstance(groupId, PendingInstance.StatusEnum.PENDING, 1));
@@ -337,7 +337,7 @@ public class SpotinstCloudTest {
     public void testAzureProvision_whenThereArePendingInsatcnesForPartOfTheExecutors_thenShouldSacleUpTheRest() {
         String groupId = "sig-1";
         AzureSpotinstCloud spotinstCloud =
-                new AzureSpotinstCloud(groupId, "", "20", "/tmp", null, "", false, false, "", null, null, null,
+                new AzureSpotinstCloud(groupId, "", "20", "/tmp", null, "", false, false, "", null, null, null, null,
                                        null, null, null);
         Map<String, PendingInstance> pendingInstances = new HashMap<>();
         pendingInstances.put("asda", buildPendingInstance(groupId, PendingInstance.StatusEnum.PENDING, 1));
@@ -365,7 +365,7 @@ public class SpotinstCloudTest {
     public void testAzureV3Provision_whenThereArePendingInstancesForAllExecutors_thenShouldNotScaleUp() {
         String groupId = "sig-1";
         BaseSpotinstCloud spotinstCloud =
-                new AzureSpotCloud(groupId, "", "20", "/tmp", null, "", false, true, "", null, null, null, null,
+                new AzureSpotCloud(groupId, "", "20", "/tmp", null, "", false, true, "", null, null, null, null, null,
                                    null, null);
 
         Map<String, PendingInstance> pendingInstances = new HashMap<>();
@@ -381,7 +381,7 @@ public class SpotinstCloudTest {
     public void testAzureV3Provision_whenThereArePendingInstancesForPartOfTheExecutors_thenShouldScaleUpTheRest() {
         String groupId = "sig-1";
         BaseSpotinstCloud spotinstCloud =
-                new AzureSpotCloud(groupId, "", "20", "/tmp", null, "", false, true, "", null, null, null, null,
+                new AzureSpotCloud(groupId, "", "20", "/tmp", null, "", false, true, "", null, null, null, null, null,
                                    null, null);
         jenkinsRule.jenkins.clouds.add(spotinstCloud);
         Map<String, PendingInstance> pendingInstances = new HashMap<>();
@@ -415,7 +415,7 @@ public class SpotinstCloudTest {
     public void testAzureV3Provision_whenUnrecognizedVmSize_thenDefaultTo1Executor() {
         String groupId = "sig-1";
         BaseSpotinstCloud spotinstCloud =
-                new AzureSpotCloud(groupId, "", "20", "/tmp", null, "", false, true, "", null, null, null, null,
+                new AzureSpotCloud(groupId, "", "20", "/tmp", null, "", false, true, "", null, null, null, null, null,
                                    null, null);
         jenkinsRule.jenkins.clouds.add(spotinstCloud);
         AzureScaleUpResultNewVm newSpot = new AzureScaleUpResultNewVm();
@@ -440,7 +440,7 @@ public class SpotinstCloudTest {
     public void testAzureV3Provision_whenNewInstancesAreLaunched_thenTheirSizeIsAccountedForInNodes() {
         String groupId = "sig-1";
         BaseSpotinstCloud spotinstCloud =
-                new AzureSpotCloud(groupId, "", "20", "/tmp", null, "", false, true, "", null, null, null, null,
+                new AzureSpotCloud(groupId, "", "20", "/tmp", null, "", false, true, "", null, null, null, null, null,
                                    null, null);
         jenkinsRule.jenkins.clouds.add(spotinstCloud);
         AzureVmSizeEnum vmSizeBasicA1 = AzureVmSizeEnum.BASIC_A1;
@@ -476,7 +476,7 @@ public class SpotinstCloudTest {
     public void testAzureV3Provision_whenNewInstancesAreLaunched_thenTheirSizeIsAccountedForInPendingInstances() {
         String groupId = "sig-1";
         BaseSpotinstCloud spotinstCloud =
-                new AzureSpotCloud(groupId, "", "20", "/tmp", null, "", false, true, "", null, null, null, null,
+                new AzureSpotCloud(groupId, "", "20", "/tmp", null, "", false, true, "", null, null, null, null, null,
                                    null, null);
         jenkinsRule.jenkins.clouds.add(spotinstCloud);
         Map<String, PendingInstance> pendingInstances = new HashMap<>();
@@ -514,7 +514,7 @@ public class SpotinstCloudTest {
     public void testAzureV3Cloud_whenNoConnectionMethodIsProvided_thenDefaultIsJNLP() {
         String groupId = "sig-1";
         BaseSpotinstCloud spotCloud =
-                new AzureSpotCloud(groupId, "", "20", "/tmp", null, "", false, true, "", null, null, null, null,
+                new AzureSpotCloud(groupId, "", "20", "/tmp", null, "", false, true, "", null, null, null, null, null,
                                    null, null);
 
         jenkinsRule.jenkins.clouds.add(spotCloud);
@@ -542,16 +542,651 @@ public class SpotinstCloudTest {
         }
 
     }
+    // endregion
+
+    // region Global Executor Override
+    @Test
+    public void testGlobalExecutorOverride_whenIsPassedAsNullInCloudConstructor_ThenDefaultIsNotEnabledAndExecutors1() {
+        String                     groupId        = "sig-1";
+        SpotGlobalExecutorOverride globalOverride = null;
+        BaseSpotinstCloud cloud =
+                new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, null, "", true, null, null, null, null, null,
+                                     ConnectionMethodEnum.SSH, getSSHConnector(), false, globalOverride);
+
+        jenkinsRule.jenkins.clouds.add(cloud);
+        assertNotNull(cloud.getGlobalExecutorOverride());
+        assertFalse(cloud.getGlobalExecutorOverride().getIsEnabled());
+        assertEquals(cloud.getGlobalExecutorOverride().getExecutors().intValue(), 1);
+
+    }
+
+    //      enabled
+    @Test
+    public void testGlobalExecutorOverride_whenIsEnabledAndInstanceTypeIsMatchedInEnum_thenShouldUseGlobalOverrideValue() {
+        String                     groupId        = "sig-1";
+        SpotGlobalExecutorOverride globalOverride = new SpotGlobalExecutorOverride(true, 23);
+        BaseSpotinstCloud cloud =
+                new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, null, "", true, null, null, null, null, null,
+                                     ConnectionMethodEnum.SSH, getSSHConnector(), false, globalOverride);
+
+        jenkinsRule.jenkins.clouds.add(cloud);
+        AwsScaleResultNewSpot newSpot = new AwsScaleResultNewSpot();
+        newSpot.setInstanceId("i-2");
+        newSpot.setInstanceType("c4.large");
+
+        AwsGroupInstance incomingInstance = new AwsGroupInstance();
+        incomingInstance.setInstanceId(newSpot.getInstanceId());
+        incomingInstance.setInstanceType(newSpot.getInstanceType());
+
+        List<AwsGroupInstance> result = Collections.singletonList(incomingInstance);
+
+        Mockito.when(
+                RepoManager.getInstance().getAwsGroupRepo().getGroupInstances(Mockito.anyString(), Mockito.anyString()))
+               .thenReturn(new ApiResponse<>(result));
+
+
+        List<AwsScaleResultNewSpot> spots         = Collections.singletonList(newSpot);
+        AwsScaleUpResult            scaleUpResult = new AwsScaleUpResult();
+        scaleUpResult.setNewSpotRequests(spots);
+
+        Mockito.when(RepoManager.getInstance().getAwsGroupRepo()
+                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString()))
+               .thenReturn(new ApiResponse<>(scaleUpResult));
+
+        cloud.provision(null, 1);
+
+        SpotinstSlave agent = (SpotinstSlave) Jenkins.get().getNode(newSpot.getInstanceId());
+        assertEquals(agent.getNumExecutors(), globalOverride.getExecutors().intValue());
+
+    }
+
+    @Test
+    public void testGlobalExecutorOverride_whenIsEnabledAndInstanceTypeIsNotMatchedInEnum_thenShouldUseGlobalOverrideValue() {
+        String                     groupId        = "sig-1";
+        SpotGlobalExecutorOverride globalOverride = new SpotGlobalExecutorOverride(true, 23);
+        BaseSpotinstCloud cloud =
+                new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, null, "", true, null, null, null, null, null,
+                                     ConnectionMethodEnum.SSH, getSSHConnector(), false, globalOverride);
+
+        jenkinsRule.jenkins.clouds.add(cloud);
+        AwsScaleResultNewSpot newSpot = new AwsScaleResultNewSpot();
+        newSpot.setInstanceId("i-2");
+        newSpot.setInstanceType("c4.large.unmatch");
+
+        AwsGroupInstance incomingInstance = new AwsGroupInstance();
+        incomingInstance.setInstanceId(newSpot.getInstanceId());
+        incomingInstance.setInstanceType(newSpot.getInstanceType());
+
+        List<AwsGroupInstance> result = Collections.singletonList(incomingInstance);
+
+        Mockito.when(
+                RepoManager.getInstance().getAwsGroupRepo().getGroupInstances(Mockito.anyString(), Mockito.anyString()))
+               .thenReturn(new ApiResponse<>(result));
+
+
+        List<AwsScaleResultNewSpot> spots         = Collections.singletonList(newSpot);
+        AwsScaleUpResult            scaleUpResult = new AwsScaleUpResult();
+        scaleUpResult.setNewSpotRequests(spots);
+
+        Mockito.when(RepoManager.getInstance().getAwsGroupRepo()
+                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString()))
+               .thenReturn(new ApiResponse<>(scaleUpResult));
+
+        cloud.provision(null, 1);
+
+        SpotinstSlave agent = (SpotinstSlave) Jenkins.get().getNode(newSpot.getInstanceId());
+        assertEquals(agent.getNumExecutors(), globalOverride.getExecutors().intValue());
+
+    }
+
+    @Test
+    public void testGlobalExecutorOverride_whenIsEnabledAndInstanceTypeIsInInstanceTypeWeights_thenShouldUseTypeWeight() {
+        String                     groupId        = "sig-1";
+        SpotGlobalExecutorOverride globalOverride = new SpotGlobalExecutorOverride(true, 23);
+
+        int expectedExecutors = 90;
+        List<SpotinstInstanceWeight> executorForTypes =
+                Collections.singletonList(new SpotinstInstanceWeight(AwsInstanceTypeEnum.C4Large, expectedExecutors));
+
+        BaseSpotinstCloud cloud =
+                new AwsSpotinstCloud(groupId, "", "20", "/tmp", executorForTypes, null, "", true, null, null, null,
+                                     null, null, ConnectionMethodEnum.SSH, getSSHConnector(), false, globalOverride);
+
+        jenkinsRule.jenkins.clouds.add(cloud);
+        AwsScaleResultNewSpot newSpot = new AwsScaleResultNewSpot();
+        newSpot.setInstanceId("i-2");
+        newSpot.setInstanceType("c4.large");
+
+        AwsGroupInstance incomingInstance = new AwsGroupInstance();
+        incomingInstance.setInstanceId(newSpot.getInstanceId());
+        incomingInstance.setInstanceType(newSpot.getInstanceType());
+
+        List<AwsGroupInstance> result = Collections.singletonList(incomingInstance);
+
+        Mockito.when(
+                RepoManager.getInstance().getAwsGroupRepo().getGroupInstances(Mockito.anyString(), Mockito.anyString()))
+               .thenReturn(new ApiResponse<>(result));
+
+
+        List<AwsScaleResultNewSpot> spots         = Collections.singletonList(newSpot);
+        AwsScaleUpResult            scaleUpResult = new AwsScaleUpResult();
+        scaleUpResult.setNewSpotRequests(spots);
+
+        Mockito.when(RepoManager.getInstance().getAwsGroupRepo()
+                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString()))
+               .thenReturn(new ApiResponse<>(scaleUpResult));
+
+        cloud.provision(null, 1);
+
+        SpotinstSlave agent = (SpotinstSlave) Jenkins.get().getNode(newSpot.getInstanceId());
+        assertEquals(agent.getNumExecutors(), expectedExecutors);
+
+    }
+
+
+    //      disabled
+    @Test
+    public void testGlobalExecutorOverride_whenIsDisabledAndInstanceTypeIsNotMatchedInEnum_thenShouldUse1() {
+        String                     groupId        = "sig-1";
+        SpotGlobalExecutorOverride globalOverride = new SpotGlobalExecutorOverride(false, 23);
+        BaseSpotinstCloud cloud =
+                new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, null, "", true, null, null, null, null, null,
+                                     ConnectionMethodEnum.SSH, getSSHConnector(), false, globalOverride);
+
+        jenkinsRule.jenkins.clouds.add(cloud);
+        AwsScaleResultNewSpot newSpot = new AwsScaleResultNewSpot();
+        newSpot.setInstanceId("i-2");
+        newSpot.setInstanceType("c4.large.unmatch");
+
+        AwsGroupInstance incomingInstance = new AwsGroupInstance();
+        incomingInstance.setInstanceId(newSpot.getInstanceId());
+        incomingInstance.setInstanceType(newSpot.getInstanceType());
+
+        List<AwsGroupInstance> result = Collections.singletonList(incomingInstance);
+
+        Mockito.when(
+                RepoManager.getInstance().getAwsGroupRepo().getGroupInstances(Mockito.anyString(), Mockito.anyString()))
+               .thenReturn(new ApiResponse<>(result));
+
+
+        List<AwsScaleResultNewSpot> spots         = Collections.singletonList(newSpot);
+        AwsScaleUpResult            scaleUpResult = new AwsScaleUpResult();
+        scaleUpResult.setNewSpotRequests(spots);
+
+        Mockito.when(RepoManager.getInstance().getAwsGroupRepo()
+                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString()))
+               .thenReturn(new ApiResponse<>(scaleUpResult));
+
+        cloud.provision(null, 1);
+
+        SpotinstSlave agent = (SpotinstSlave) Jenkins.get().getNode(newSpot.getInstanceId());
+        assertEquals(agent.getNumExecutors(), 1);
+
+    }
+
+    @Test
+    public void testGlobalExecutorOverride_whenIsDisabledAndInstanceTypeIsMatchedInEnum_thenShouldUseEnumValue() {
+        String                     groupId        = "sig-1";
+        SpotGlobalExecutorOverride globalOverride = new SpotGlobalExecutorOverride(false, 23);
+        BaseSpotinstCloud cloud =
+                new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, null, "", true, null, null, null, null, null,
+                                     ConnectionMethodEnum.SSH, getSSHConnector(), false, globalOverride);
+
+        jenkinsRule.jenkins.clouds.add(cloud);
+        AwsScaleResultNewSpot newSpot = new AwsScaleResultNewSpot();
+        newSpot.setInstanceId("i-2");
+        newSpot.setInstanceType("c4.large");
+
+        AwsGroupInstance incomingInstance = new AwsGroupInstance();
+        incomingInstance.setInstanceId(newSpot.getInstanceId());
+        incomingInstance.setInstanceType(newSpot.getInstanceType());
+
+        List<AwsGroupInstance> result = Collections.singletonList(incomingInstance);
+
+        Mockito.when(
+                RepoManager.getInstance().getAwsGroupRepo().getGroupInstances(Mockito.anyString(), Mockito.anyString()))
+               .thenReturn(new ApiResponse<>(result));
+
+
+        List<AwsScaleResultNewSpot> spots         = Collections.singletonList(newSpot);
+        AwsScaleUpResult            scaleUpResult = new AwsScaleUpResult();
+        scaleUpResult.setNewSpotRequests(spots);
+
+        Mockito.when(RepoManager.getInstance().getAwsGroupRepo()
+                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString()))
+               .thenReturn(new ApiResponse<>(scaleUpResult));
+
+        cloud.provision(null, 1);
+
+        SpotinstSlave agent = (SpotinstSlave) Jenkins.get().getNode(newSpot.getInstanceId());
+        assertEquals(agent.getNumExecutors(), AwsInstanceTypeEnum.C4Large.getExecutors().intValue());
+
+    }
+
+    @Test
+    public void testGlobalExecutorOverride_whenIsDisabledAndInstanceTypeIsInInstanceTypeWeights_thenShouldUseTypeWeight() {
+        String groupId = "sig-1";
+
+        SpotGlobalExecutorOverride globalOverride = new SpotGlobalExecutorOverride(false, 23);
+
+        int expectedExecutors = 90;
+        List<SpotinstInstanceWeight> executorForTypes =
+                Collections.singletonList(new SpotinstInstanceWeight(AwsInstanceTypeEnum.C4Large, expectedExecutors));
+
+        BaseSpotinstCloud cloud =
+                new AwsSpotinstCloud(groupId, "", "20", "/tmp", executorForTypes, null, "", true, null, null, null,
+                                     null, null, ConnectionMethodEnum.SSH, getSSHConnector(), false, globalOverride);
+
+        jenkinsRule.jenkins.clouds.add(cloud);
+        AwsScaleResultNewSpot newSpot = new AwsScaleResultNewSpot();
+        newSpot.setInstanceId("i-2");
+        newSpot.setInstanceType("c4.large");
+
+        AwsGroupInstance incomingInstance = new AwsGroupInstance();
+        incomingInstance.setInstanceId(newSpot.getInstanceId());
+        incomingInstance.setInstanceType(newSpot.getInstanceType());
+
+        List<AwsGroupInstance> result = Collections.singletonList(incomingInstance);
+
+        Mockito.when(
+                RepoManager.getInstance().getAwsGroupRepo().getGroupInstances(Mockito.anyString(), Mockito.anyString()))
+               .thenReturn(new ApiResponse<>(result));
+
+
+        List<AwsScaleResultNewSpot> spots         = Collections.singletonList(newSpot);
+        AwsScaleUpResult            scaleUpResult = new AwsScaleUpResult();
+        scaleUpResult.setNewSpotRequests(spots);
+
+        Mockito.when(RepoManager.getInstance().getAwsGroupRepo()
+                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString()))
+               .thenReturn(new ApiResponse<>(scaleUpResult));
+
+        cloud.provision(null, 1);
+
+        SpotinstSlave agent = (SpotinstSlave) Jenkins.get().getNode(newSpot.getInstanceId());
+        assertEquals(agent.getNumExecutors(), expectedExecutors);
+
+    }
+
+    //      invalid
+    @Test
+    public void testGlobalExecutorOverride_whenIsInvalidNegativeAndInstanceTypeIsMatchedInEnum_thenShouldUseEnumValue() {
+        String                     groupId        = "sig-1";
+        SpotGlobalExecutorOverride globalOverride = new SpotGlobalExecutorOverride(true, -23);
+        BaseSpotinstCloud cloud =
+                new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, null, "", true, null, null, null, null, null,
+                                     ConnectionMethodEnum.SSH, getSSHConnector(), false, globalOverride);
+
+        jenkinsRule.jenkins.clouds.add(cloud);
+        AwsScaleResultNewSpot newSpot = new AwsScaleResultNewSpot();
+        newSpot.setInstanceId("i-2");
+        newSpot.setInstanceType("c4.large");
+
+        AwsGroupInstance incomingInstance = new AwsGroupInstance();
+        incomingInstance.setInstanceId(newSpot.getInstanceId());
+        incomingInstance.setInstanceType(newSpot.getInstanceType());
+
+        List<AwsGroupInstance> result = Collections.singletonList(incomingInstance);
+
+        Mockito.when(
+                RepoManager.getInstance().getAwsGroupRepo().getGroupInstances(Mockito.anyString(), Mockito.anyString()))
+               .thenReturn(new ApiResponse<>(result));
+
+
+        List<AwsScaleResultNewSpot> spots         = Collections.singletonList(newSpot);
+        AwsScaleUpResult            scaleUpResult = new AwsScaleUpResult();
+        scaleUpResult.setNewSpotRequests(spots);
+
+        Mockito.when(RepoManager.getInstance().getAwsGroupRepo()
+                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString()))
+               .thenReturn(new ApiResponse<>(scaleUpResult));
+
+        cloud.provision(null, 1);
+
+        SpotinstSlave agent = (SpotinstSlave) Jenkins.get().getNode(newSpot.getInstanceId());
+        assertEquals(agent.getNumExecutors(), AwsInstanceTypeEnum.C4Large.getExecutors().intValue());
+
+    }
+
+    @Test
+    public void testGlobalExecutorOverride_whenIsInvalidNegativeAndInstanceTypeIsNotMatchedInEnum_thenShouldUse1() {
+        String                     groupId        = "sig-1";
+        SpotGlobalExecutorOverride globalOverride = new SpotGlobalExecutorOverride(true, -23);
+        BaseSpotinstCloud cloud =
+                new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, null, "", true, null, null, null, null, null,
+                                     ConnectionMethodEnum.SSH, getSSHConnector(), false, globalOverride);
+
+        jenkinsRule.jenkins.clouds.add(cloud);
+        AwsScaleResultNewSpot newSpot = new AwsScaleResultNewSpot();
+        newSpot.setInstanceId("i-2");
+        newSpot.setInstanceType("c4.large.unmatched");
+
+        AwsGroupInstance incomingInstance = new AwsGroupInstance();
+        incomingInstance.setInstanceId(newSpot.getInstanceId());
+        incomingInstance.setInstanceType(newSpot.getInstanceType());
+
+        List<AwsGroupInstance> result = Collections.singletonList(incomingInstance);
+
+        Mockito.when(
+                RepoManager.getInstance().getAwsGroupRepo().getGroupInstances(Mockito.anyString(), Mockito.anyString()))
+               .thenReturn(new ApiResponse<>(result));
+
+
+        List<AwsScaleResultNewSpot> spots         = Collections.singletonList(newSpot);
+        AwsScaleUpResult            scaleUpResult = new AwsScaleUpResult();
+        scaleUpResult.setNewSpotRequests(spots);
+
+        Mockito.when(RepoManager.getInstance().getAwsGroupRepo()
+                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString()))
+               .thenReturn(new ApiResponse<>(scaleUpResult));
+
+        cloud.provision(null, 1);
+
+        SpotinstSlave agent = (SpotinstSlave) Jenkins.get().getNode(newSpot.getInstanceId());
+        assertEquals(agent.getNumExecutors(), 1);
+
+    }
+
+    @Test
+    public void testGlobalExecutorOverride_whenIsInvalidNegativeAndInstanceTypeIsInInstanceTypeWeights_thenShouldUseTypeWeight() {
+        String groupId = "sig-1";
+
+        SpotGlobalExecutorOverride globalOverride = new SpotGlobalExecutorOverride(false, -23);
+
+        int expectedExecutors = 90;
+        List<SpotinstInstanceWeight> executorForTypes =
+                Collections.singletonList(new SpotinstInstanceWeight(AwsInstanceTypeEnum.C4Large, expectedExecutors));
+
+        BaseSpotinstCloud cloud =
+                new AwsSpotinstCloud(groupId, "", "20", "/tmp", executorForTypes, null, "", true, null, null, null,
+                                     null, null, ConnectionMethodEnum.SSH, getSSHConnector(), false, globalOverride);
+
+        jenkinsRule.jenkins.clouds.add(cloud);
+        AwsScaleResultNewSpot newSpot = new AwsScaleResultNewSpot();
+        newSpot.setInstanceId("i-2");
+        newSpot.setInstanceType("c4.large");
+
+        AwsGroupInstance incomingInstance = new AwsGroupInstance();
+        incomingInstance.setInstanceId(newSpot.getInstanceId());
+        incomingInstance.setInstanceType(newSpot.getInstanceType());
+
+        List<AwsGroupInstance> result = Collections.singletonList(incomingInstance);
+
+        Mockito.when(
+                RepoManager.getInstance().getAwsGroupRepo().getGroupInstances(Mockito.anyString(), Mockito.anyString()))
+               .thenReturn(new ApiResponse<>(result));
+
+
+        List<AwsScaleResultNewSpot> spots         = Collections.singletonList(newSpot);
+        AwsScaleUpResult            scaleUpResult = new AwsScaleUpResult();
+        scaleUpResult.setNewSpotRequests(spots);
+
+        Mockito.when(RepoManager.getInstance().getAwsGroupRepo()
+                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString()))
+               .thenReturn(new ApiResponse<>(scaleUpResult));
+
+        cloud.provision(null, 1);
+
+        SpotinstSlave agent = (SpotinstSlave) Jenkins.get().getNode(newSpot.getInstanceId());
+        assertEquals(agent.getNumExecutors(), expectedExecutors);
+
+    }
+
+    @Test
+    public void testGlobalExecutorOverride_whenIsInvalidNullAndInstanceTypeIsMatchedInEnum_thenShouldUseEnumValue() {
+        String                     groupId        = "sig-1";
+        SpotGlobalExecutorOverride globalOverride = new SpotGlobalExecutorOverride(true, null);
+        BaseSpotinstCloud cloud =
+                new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, null, "", true, null, null, null, null, null,
+                                     ConnectionMethodEnum.SSH, getSSHConnector(), false, globalOverride);
+
+        jenkinsRule.jenkins.clouds.add(cloud);
+        AwsScaleResultNewSpot newSpot = new AwsScaleResultNewSpot();
+        newSpot.setInstanceId("i-2");
+        newSpot.setInstanceType("c4.large");
+
+        AwsGroupInstance incomingInstance = new AwsGroupInstance();
+        incomingInstance.setInstanceId(newSpot.getInstanceId());
+        incomingInstance.setInstanceType(newSpot.getInstanceType());
+
+        List<AwsGroupInstance> result = Collections.singletonList(incomingInstance);
+
+        Mockito.when(
+                RepoManager.getInstance().getAwsGroupRepo().getGroupInstances(Mockito.anyString(), Mockito.anyString()))
+               .thenReturn(new ApiResponse<>(result));
+
+
+        List<AwsScaleResultNewSpot> spots         = Collections.singletonList(newSpot);
+        AwsScaleUpResult            scaleUpResult = new AwsScaleUpResult();
+        scaleUpResult.setNewSpotRequests(spots);
+
+        Mockito.when(RepoManager.getInstance().getAwsGroupRepo()
+                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString()))
+               .thenReturn(new ApiResponse<>(scaleUpResult));
+
+        cloud.provision(null, 1);
+
+        SpotinstSlave agent = (SpotinstSlave) Jenkins.get().getNode(newSpot.getInstanceId());
+        assertEquals(agent.getNumExecutors(), AwsInstanceTypeEnum.C4Large.getExecutors().intValue());
+
+    }
+
+    @Test
+    public void testGlobalExecutorOverride_whenIsInvalidNullAndInstanceTypeIsNotMatchedInEnum_thenShouldUse1() {
+        String                     groupId        = "sig-1";
+        SpotGlobalExecutorOverride globalOverride = new SpotGlobalExecutorOverride(true, null);
+        BaseSpotinstCloud cloud =
+                new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, null, "", true, null, null, null, null, null,
+                                     ConnectionMethodEnum.SSH, getSSHConnector(), false, globalOverride);
+
+        jenkinsRule.jenkins.clouds.add(cloud);
+        AwsScaleResultNewSpot newSpot = new AwsScaleResultNewSpot();
+        newSpot.setInstanceId("i-2");
+        newSpot.setInstanceType("c4.large.unmatched");
+
+        AwsGroupInstance incomingInstance = new AwsGroupInstance();
+        incomingInstance.setInstanceId(newSpot.getInstanceId());
+        incomingInstance.setInstanceType(newSpot.getInstanceType());
+
+        List<AwsGroupInstance> result = Collections.singletonList(incomingInstance);
+
+        Mockito.when(
+                RepoManager.getInstance().getAwsGroupRepo().getGroupInstances(Mockito.anyString(), Mockito.anyString()))
+               .thenReturn(new ApiResponse<>(result));
+
+
+        List<AwsScaleResultNewSpot> spots         = Collections.singletonList(newSpot);
+        AwsScaleUpResult            scaleUpResult = new AwsScaleUpResult();
+        scaleUpResult.setNewSpotRequests(spots);
+
+        Mockito.when(RepoManager.getInstance().getAwsGroupRepo()
+                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString()))
+               .thenReturn(new ApiResponse<>(scaleUpResult));
+
+        cloud.provision(null, 1);
+
+        SpotinstSlave agent = (SpotinstSlave) Jenkins.get().getNode(newSpot.getInstanceId());
+        assertEquals(agent.getNumExecutors(), 1);
+
+    }
+
+    @Test
+    public void testGlobalExecutorOverride_whenIsInvalidNullAndInstanceTypeIsInInstanceTypeWeights_thenShouldUseTypeWeight() {
+        String groupId = "sig-1";
+
+        SpotGlobalExecutorOverride globalOverride = new SpotGlobalExecutorOverride(false, null);
+
+        int expectedExecutors = 90;
+        List<SpotinstInstanceWeight> executorForTypes =
+                Collections.singletonList(new SpotinstInstanceWeight(AwsInstanceTypeEnum.C4Large, expectedExecutors));
+
+        BaseSpotinstCloud cloud =
+                new AwsSpotinstCloud(groupId, "", "20", "/tmp", executorForTypes, null, "", true, null, null, null,
+                                     null, null, ConnectionMethodEnum.SSH, getSSHConnector(), false, globalOverride);
+
+        jenkinsRule.jenkins.clouds.add(cloud);
+        AwsScaleResultNewSpot newSpot = new AwsScaleResultNewSpot();
+        newSpot.setInstanceId("i-2");
+        newSpot.setInstanceType("c4.large");
+
+        AwsGroupInstance incomingInstance = new AwsGroupInstance();
+        incomingInstance.setInstanceId(newSpot.getInstanceId());
+        incomingInstance.setInstanceType(newSpot.getInstanceType());
+
+        List<AwsGroupInstance> result = Collections.singletonList(incomingInstance);
+
+        Mockito.when(
+                RepoManager.getInstance().getAwsGroupRepo().getGroupInstances(Mockito.anyString(), Mockito.anyString()))
+               .thenReturn(new ApiResponse<>(result));
+
+
+        List<AwsScaleResultNewSpot> spots         = Collections.singletonList(newSpot);
+        AwsScaleUpResult            scaleUpResult = new AwsScaleUpResult();
+        scaleUpResult.setNewSpotRequests(spots);
+
+        Mockito.when(RepoManager.getInstance().getAwsGroupRepo()
+                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString()))
+               .thenReturn(new ApiResponse<>(scaleUpResult));
+
+        cloud.provision(null, 1);
+
+        SpotinstSlave agent = (SpotinstSlave) Jenkins.get().getNode(newSpot.getInstanceId());
+        assertEquals(agent.getNumExecutors(), expectedExecutors);
+
+    }
+
+
+    //      null
+    @Test
+    public void testGlobalExecutorOverride_whenIsNullAndInstanceTypeIsMatchedInEnum_thenShouldUseEnumValue() {
+        String groupId = "sig-1";
+        BaseSpotinstCloud cloud =
+                new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, null, "", true, null, null, null, null, null,
+                                     ConnectionMethodEnum.SSH, getSSHConnector(), false, null);
+
+        jenkinsRule.jenkins.clouds.add(cloud);
+        AwsScaleResultNewSpot newSpot = new AwsScaleResultNewSpot();
+        newSpot.setInstanceId("i-2");
+        newSpot.setInstanceType("c4.large");
+
+        AwsGroupInstance incomingInstance = new AwsGroupInstance();
+        incomingInstance.setInstanceId(newSpot.getInstanceId());
+        incomingInstance.setInstanceType(newSpot.getInstanceType());
+
+        List<AwsGroupInstance> result = Collections.singletonList(incomingInstance);
+
+        Mockito.when(
+                RepoManager.getInstance().getAwsGroupRepo().getGroupInstances(Mockito.anyString(), Mockito.anyString()))
+               .thenReturn(new ApiResponse<>(result));
+
+
+        List<AwsScaleResultNewSpot> spots         = Collections.singletonList(newSpot);
+        AwsScaleUpResult            scaleUpResult = new AwsScaleUpResult();
+        scaleUpResult.setNewSpotRequests(spots);
+
+        Mockito.when(RepoManager.getInstance().getAwsGroupRepo()
+                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString()))
+               .thenReturn(new ApiResponse<>(scaleUpResult));
+
+        cloud.provision(null, 1);
+
+        SpotinstSlave agent = (SpotinstSlave) Jenkins.get().getNode(newSpot.getInstanceId());
+        assertEquals(agent.getNumExecutors(), AwsInstanceTypeEnum.C4Large.getExecutors().intValue());
+
+    }
+
+    @Test
+    public void testGlobalExecutorOverride_whenIsNullAndInstanceTypeIsNotMatchedInEnum_thenShouldUse1() {
+        String groupId = "sig-1";
+        BaseSpotinstCloud cloud =
+                new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, null, "", true, null, null, null, null, null,
+                                     ConnectionMethodEnum.SSH, getSSHConnector(), false, null);
+
+        jenkinsRule.jenkins.clouds.add(cloud);
+        AwsScaleResultNewSpot newSpot = new AwsScaleResultNewSpot();
+        newSpot.setInstanceId("i-2");
+        newSpot.setInstanceType("c4.large.unmatched");
+
+        AwsGroupInstance incomingInstance = new AwsGroupInstance();
+        incomingInstance.setInstanceId(newSpot.getInstanceId());
+        incomingInstance.setInstanceType(newSpot.getInstanceType());
+
+        List<AwsGroupInstance> result = Collections.singletonList(incomingInstance);
+
+        Mockito.when(
+                RepoManager.getInstance().getAwsGroupRepo().getGroupInstances(Mockito.anyString(), Mockito.anyString()))
+               .thenReturn(new ApiResponse<>(result));
+
+
+        List<AwsScaleResultNewSpot> spots         = Collections.singletonList(newSpot);
+        AwsScaleUpResult            scaleUpResult = new AwsScaleUpResult();
+        scaleUpResult.setNewSpotRequests(spots);
+
+        Mockito.when(RepoManager.getInstance().getAwsGroupRepo()
+                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString()))
+               .thenReturn(new ApiResponse<>(scaleUpResult));
+
+        cloud.provision(null, 1);
+
+        SpotinstSlave agent = (SpotinstSlave) Jenkins.get().getNode(newSpot.getInstanceId());
+        assertEquals(agent.getNumExecutors(), 1);
+
+    }
+
+    @Test
+    public void testGlobalExecutorOverride_whenIsNullAndInstanceTypeIsInInstanceTypeWeights_thenShouldUseTypeWeight() {
+        String groupId = "sig-1";
+
+        SpotGlobalExecutorOverride globalOverride = null;
+
+        int expectedExecutors = 90;
+        List<SpotinstInstanceWeight> executorForTypes =
+                Collections.singletonList(new SpotinstInstanceWeight(AwsInstanceTypeEnum.C4Large, expectedExecutors));
+
+        BaseSpotinstCloud cloud =
+                new AwsSpotinstCloud(groupId, "", "20", "/tmp", executorForTypes, null, "", true, null, null, null,
+                                     null, null, ConnectionMethodEnum.SSH, getSSHConnector(), false, globalOverride);
+
+        jenkinsRule.jenkins.clouds.add(cloud);
+        AwsScaleResultNewSpot newSpot = new AwsScaleResultNewSpot();
+        newSpot.setInstanceId("i-2");
+        newSpot.setInstanceType("c4.large");
+
+        AwsGroupInstance incomingInstance = new AwsGroupInstance();
+        incomingInstance.setInstanceId(newSpot.getInstanceId());
+        incomingInstance.setInstanceType(newSpot.getInstanceType());
+
+        List<AwsGroupInstance> result = Collections.singletonList(incomingInstance);
+
+        Mockito.when(
+                RepoManager.getInstance().getAwsGroupRepo().getGroupInstances(Mockito.anyString(), Mockito.anyString()))
+               .thenReturn(new ApiResponse<>(result));
+
+
+        List<AwsScaleResultNewSpot> spots         = Collections.singletonList(newSpot);
+        AwsScaleUpResult            scaleUpResult = new AwsScaleUpResult();
+        scaleUpResult.setNewSpotRequests(spots);
+
+        Mockito.when(RepoManager.getInstance().getAwsGroupRepo()
+                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString()))
+               .thenReturn(new ApiResponse<>(scaleUpResult));
+
+        cloud.provision(null, 1);
+
+        SpotinstSlave agent = (SpotinstSlave) Jenkins.get().getNode(newSpot.getInstanceId());
+        assertEquals(agent.getNumExecutors(), expectedExecutors);
+
+    }
     //endregion
 
 
-    //region SpotinstSalve
+    //region "SpotinstSlave"
     @Test
     public void testSpotinstSlaveTermination_ifAgentInPendingInstances_thenAgentIsRemovedFromPendingInstances() {
         String groupId = "sig-1";
         BaseSpotinstCloud cloud =
                 new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, null, "", true, null, null, null, null, null,
-                                     ConnectionMethodEnum.SSH, getSSHConnector(), false);
+                                     ConnectionMethodEnum.SSH, getSSHConnector(), false, null);
 
         jenkinsRule.jenkins.clouds.add(cloud);
         AwsInstanceTypeEnum   vmSizeBasicA2 = AwsInstanceTypeEnum.C4Large;
@@ -604,7 +1239,7 @@ public class SpotinstCloudTest {
     public void testAzureSpotinstCloud_DescriptorReturnsAzureSpotinstCloudString() {
         String groupId = "sig-1";
         BaseSpotinstCloud spotinstCloud =
-                new AzureSpotinstCloud(groupId, "", "20", "/tmp", null, "", false, false, "", null, null, null,
+                new AzureSpotinstCloud(groupId, "", "20", "/tmp", null, "", false, false, "", null, null, null, null,
                                        null, null, null);
 
         assertTrue(spotinstCloud.getDescriptor().toString().contains("AzureSpotinstCloud"));
