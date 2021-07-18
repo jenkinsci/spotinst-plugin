@@ -41,10 +41,10 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
                               EnvironmentVariablesNodeProperty environmentVariables,
                               ToolLocationNodeProperty toolLocations, String accountId,
                               ConnectionMethodEnum connectionMethod, ComputerConnector computerConnector,
-                              Boolean shouldUsePrivateIp) {
+                              Boolean shouldUsePrivateIp, SpotGlobalExecutorOverride globalExecutorOverride) {
         super(groupId, labelString, idleTerminationMinutes, workspaceDir, usage, tunnel, shouldUseWebsocket,
               shouldRetriggerBuilds, vmargs, environmentVariables, toolLocations, accountId, connectionMethod,
-              computerConnector, shouldUsePrivateIp);
+              computerConnector, shouldUsePrivateIp, globalExecutorOverride);
     }
     //endregion
 
@@ -183,6 +183,23 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
     public String getCloudUrl() {
         return "azure/compute";
     }
+
+    @Override
+    protected Integer getDefaultExecutorsNumber(String instanceType) {
+        Integer retVal;
+        LOGGER.info(String.format("Getting the # of default executors for instance type: %s", instanceType));
+        AzureScaleSetSizeEnum enumMember = AzureScaleSetSizeEnum.fromValue(instanceType);
+
+        if (enumMember != null) {
+            retVal = enumMember.getExecutors();
+        }
+        else {
+            retVal = null;
+        }
+
+        return retVal;
+    }
+
     //endregion
 
     //region Private Methods
@@ -262,8 +279,10 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
         SpotinstSlave slave = null;
 
         if (instance.getInstanceId() != null) {
-            Integer executors = getNumOfExecutors(instance.getVmSize());
-            slave = buildSpotinstSlave(instance.getInstanceId(), instance.getVmSize(), String.valueOf(executors));
+            String                vmSize     = instance.getVmSize();
+            LOGGER.info(String.format("Setting the # of executors for instance type: %s", vmSize));
+            Integer               executors  = getNumOfExecutors(vmSize);
+            slave = buildSpotinstSlave(instance.getInstanceId(), vmSize, String.valueOf(executors));
         }
 
         if (slave != null) {
@@ -282,24 +301,6 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
             String key = pendingInstances.entrySet().iterator().next().getKey();
             pendingInstances.remove(key);
         }
-    }
-
-    private Integer getNumOfExecutors(String vmSize) {
-        LOGGER.info(String.format("Determining the # of executors for instance type: %s", vmSize));
-
-        Integer               retVal     = 1;
-        AzureScaleSetSizeEnum vmSizeEnum = AzureScaleSetSizeEnum.fromValue(vmSize);
-
-        if (vmSizeEnum != null) {
-            retVal = vmSizeEnum.getExecutors();
-        }
-        else {
-            LOGGER.warn(String.format(
-                    "Failed to determine # of executors for instance type %s, defaulting to %s executor(s). Group ID: %s",
-                    vmSize, retVal, this.getGroupId()));
-        }
-
-        return retVal;
     }
 
     private void addToGroupPending(ProvisionRequest request) {

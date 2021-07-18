@@ -42,10 +42,10 @@ public class AzureSpotCloud extends BaseSpotinstCloud {
                           Boolean shouldRetriggerBuilds, String vmargs,
                           EnvironmentVariablesNodeProperty environmentVariables, ToolLocationNodeProperty toolLocations,
                           String accountId, ConnectionMethodEnum connectionMethod, ComputerConnector computerConnector,
-                          Boolean shouldUsePrivateIp) {
+                          Boolean shouldUsePrivateIp, SpotGlobalExecutorOverride globalExecutorOverride) {
         super(groupId, labelString, idleTerminationMinutes, workspaceDir, usage, tunnel, shouldUseWebsocket,
               shouldRetriggerBuilds, vmargs, environmentVariables, toolLocations, accountId, connectionMethod,
-              computerConnector, shouldUsePrivateIp);
+              computerConnector, shouldUsePrivateIp, globalExecutorOverride);
     }
     //endregion
 
@@ -160,6 +160,23 @@ public class AzureSpotCloud extends BaseSpotinstCloud {
 
         return retVal;
     }
+
+    @Override
+    protected Integer getDefaultExecutorsNumber(String instanceType) {
+        Integer retVal;
+        LOGGER.info(String.format("Getting the # of default executors for instance type: %s", instanceType));
+        AzureVmSizeEnum enumMember = AzureVmSizeEnum.fromValue(instanceType);
+
+        if (enumMember != null) {
+            retVal = enumMember.getExecutors();
+        }
+        else {
+            retVal = null;
+        }
+
+        return retVal;
+    }
+
     //endregion
 
     //region Private Methods
@@ -176,7 +193,7 @@ public class AzureSpotCloud extends BaseSpotinstCloud {
     }
 
     private SpotinstSlave handleNewVm(String vmName, String vmSize, String label) {
-        Integer executors = getNumOfExecutors(vmSize);
+        Integer         executors  = getNumOfExecutors(vmSize);
         addToPending(vmName, executors, PendingInstance.StatusEnum.PENDING, label);
         SpotinstSlave retVal = buildSpotinstSlave(vmName, vmSize, String.valueOf(executors));
         return retVal;
@@ -243,8 +260,9 @@ public class AzureSpotCloud extends BaseSpotinstCloud {
         SpotinstSlave slave = null;
 
         if (vm.getVmName() != null) {
-            Integer executors = getNumOfExecutors(vm.getVmSize());
-            slave = buildSpotinstSlave(vm.getVmName(), vm.getVmSize(), String.valueOf(executors));
+            String          vmSize     = vm.getVmSize();
+            Integer         executors  = getNumOfExecutors(vmSize);
+            slave = buildSpotinstSlave(vm.getVmName(), vmSize, String.valueOf(executors));
         }
 
         if (slave != null) {
@@ -257,25 +275,6 @@ public class AzureSpotCloud extends BaseSpotinstCloud {
         }
     }
 
-    private Integer getNumOfExecutors(String vmSize) {
-        LOGGER.info(String.format("Determining # of executors for instance type: %s", vmSize));
-
-        Integer         retVal;
-        Integer         defaultExecutors = 1;
-        AzureVmSizeEnum vmSizeEnum       = AzureVmSizeEnum.fromValue(vmSize);
-
-        if (vmSizeEnum != null) {
-            retVal = vmSizeEnum.getExecutors();
-        }
-        else {
-            retVal = defaultExecutors;
-            LOGGER.warn(String.format(
-                    "Failed to determine # of executors for instance type %s, defaulting to %s executor(s). Group ID: %s",
-                    vmSize, defaultExecutors, this.getGroupId()));
-        }
-
-        return retVal;
-    }
 
     private Boolean isSlaveExistForInstance(AzureGroupVm vm) {
         Boolean retVal = false;

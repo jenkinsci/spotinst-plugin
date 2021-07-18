@@ -1,12 +1,13 @@
 package hudson.plugins.spotinst.model.azure;
 
+import hudson.plugins.spotinst.common.ISpotInstanceTypeEnum;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * Created by Shibel Karmi Mansour on 07/12/2020.
  */
-public enum AzureVmSizeEnum {
+public enum AzureVmSizeEnum implements ISpotInstanceTypeEnum {
     BASIC_A0("basic_a0",1),
     BASIC_A1("basic_a1",1),
     BASIC_A2("basic_a2",2),

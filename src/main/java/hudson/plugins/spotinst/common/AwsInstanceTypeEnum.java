@@ -6,7 +6,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Created by ohadmuchnik on 26/05/2016.
  */
-public enum AwsInstanceTypeEnum {
+public enum AwsInstanceTypeEnum implements ISpotInstanceTypeEnum {
 
     T1Micro("t1.micro", 1),
 
