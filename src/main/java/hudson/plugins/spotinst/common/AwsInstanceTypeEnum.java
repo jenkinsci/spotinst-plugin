@@ -345,7 +345,7 @@ public enum AwsInstanceTypeEnum implements ISpotInstanceTypeEnum {
     C5A16xlarge("c5a.16xlarge", 64),
     C5A24xlarge("c5a.24xlarge", 96),
 
-    C5ADlarge("c5ad.large",3),
+    C5ADlarge("c5ad.large",2),
     C5ADxlarge("c5ad.xlarge",4),
     C5AD2xlarge("c5ad.2xlarge",8),
     C5AD4xlarge("c5ad.4xlarge",16),
