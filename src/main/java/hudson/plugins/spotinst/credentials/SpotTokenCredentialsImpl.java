@@ -1,17 +1,27 @@
-package hudson.plugins.spotinst.cloud;
+package hudson.plugins.spotinst.credentials;
 
 
 
 import com.cloudbees.plugins.credentials.impl.BaseStandardCredentials;
 import hudson.Extension;
+import hudson.plugins.spotinst.credentials.SpotTokenCredentials;
+import hudson.security.ACL;
 import hudson.util.Secret;
+import io.jenkins.cli.shaded.org.apache.sshd.common.util.GenericUtils;
+import jenkins.model.Jenkins;
 import org.jenkins.ui.icon.Icon;
 import org.jenkins.ui.icon.IconSet;
 import org.jenkins.ui.icon.IconType;
+import org.jetbrains.annotations.Nullable;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 import javax.annotation.CheckForNull;
 
+import java.util.Collections;
+
+import static com.cloudbees.plugins.credentials.CredentialsMatchers.firstOrNull;
+import static com.cloudbees.plugins.credentials.CredentialsMatchers.withId;
+import static com.cloudbees.plugins.credentials.CredentialsProvider.lookupCredentials;
 import static com.cloudbees.plugins.credentials.CredentialsScope.SYSTEM;
 
 public class SpotTokenCredentialsImpl extends BaseStandardCredentials
@@ -20,6 +30,7 @@ public class SpotTokenCredentialsImpl extends BaseStandardCredentials
     private static final long serialVersionUID = 1L;
 
     private final Secret secret;
+    private final String id;
 
     @DataBoundConstructor
     public SpotTokenCredentialsImpl(
@@ -29,6 +40,7 @@ public class SpotTokenCredentialsImpl extends BaseStandardCredentials
 
         super(SYSTEM, id, description);
         this.secret = secret;
+        this.id = id;
     }
 
     @Override
@@ -79,5 +91,14 @@ public class SpotTokenCredentialsImpl extends BaseStandardCredentials
         }
     }
 
-
+//        @Nullable
+//        public SpotTokenCredentials getCredentialsId() {
+//            return firstOrNull(
+//                    lookupCredentials(
+//                            SpotTokenCredentials.class,
+//                            Jenkins.get(),
+//                            ACL.SYSTEM,
+//                            Collections.emptyList()),
+//                    withId(GenericUtils.trimToEmpty("liron-token")));
+//        }
 }

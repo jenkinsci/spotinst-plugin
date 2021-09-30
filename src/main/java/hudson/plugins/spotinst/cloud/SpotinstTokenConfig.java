@@ -72,6 +72,8 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
     }
 
     public void setSpotinstToken(String spotinstToken) {
+        //Secret secret = getSecret();
+
         this.spotinstToken = spotinstToken;
         SpotinstContext.getInstance().setSpotinstToken(spotinstToken);
     }

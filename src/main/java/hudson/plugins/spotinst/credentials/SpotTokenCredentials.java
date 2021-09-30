@@ -1,4 +1,4 @@
-package hudson.plugins.spotinst.cloud;
+package hudson.plugins.spotinst.credentials;
 
 
 
