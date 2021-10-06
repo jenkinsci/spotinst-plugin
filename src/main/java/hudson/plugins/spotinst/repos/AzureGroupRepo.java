@@ -4,7 +4,9 @@ import hudson.plugins.spotinst.api.SpotinstApi;
 import hudson.plugins.spotinst.api.infra.ApiException;
 import hudson.plugins.spotinst.api.infra.ApiResponse;
 import hudson.plugins.spotinst.api.infra.ExceptionHelper;
+import hudson.plugins.spotinst.cloud.SpotSecretToken;
 import hudson.plugins.spotinst.model.azure.AzureGroupInstance;
+import hudson.util.Secret;
 
 import java.util.List;
 
@@ -13,11 +15,11 @@ import java.util.List;
  */
 public class AzureGroupRepo implements IAzureGroupRepo {
     @Override
-    public ApiResponse<List<AzureGroupInstance>> getGroupInstances(String groupId, String accountId) {
+    public ApiResponse<List<AzureGroupInstance>> getGroupInstances(String groupId, String accountId, Secret token) {
         ApiResponse<List<AzureGroupInstance>> retVal;
 
         try {
-            List<AzureGroupInstance> instances = SpotinstApi.getAzureGroupInstances(groupId, accountId);
+            List<AzureGroupInstance> instances = SpotinstApi.getAzureGroupInstances(groupId, accountId, token);
 
             retVal = new ApiResponse<>(instances);
 
@@ -30,11 +32,11 @@ public class AzureGroupRepo implements IAzureGroupRepo {
     }
 
     @Override
-    public ApiResponse<Boolean> detachInstance(String groupId, String instanceId, String accountId) {
+    public ApiResponse<Boolean> detachInstance(String groupId, String instanceId, String accountId, Secret token) {
         ApiResponse<Boolean> retVal;
 
         try {
-            Boolean isDetached = SpotinstApi.azureDetachInstance(groupId, instanceId, accountId);
+            Boolean isDetached = SpotinstApi.azureDetachInstance(groupId, instanceId, accountId, token);
 
             retVal = new ApiResponse<>(isDetached);
 
@@ -47,11 +49,11 @@ public class AzureGroupRepo implements IAzureGroupRepo {
     }
 
     @Override
-    public ApiResponse<Boolean> scaleUp(String groupId, Integer adjustment, String accountId) {
+    public ApiResponse<Boolean> scaleUp(String groupId, Integer adjustment, String accountId, Secret token) {
         ApiResponse<Boolean> retVal;
 
         try {
-            Boolean isSccueed = SpotinstApi.azureScaleUp(groupId, adjustment, accountId);
+            Boolean isSccueed = SpotinstApi.azureScaleUp(groupId, adjustment, accountId, token);
 
             retVal = new ApiResponse<>(isSccueed);
 

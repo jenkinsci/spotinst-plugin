@@ -44,6 +44,16 @@
              <f:dropdownDescriptorSelector field="computerConnector" descriptors="${descriptor.getComputerConnectorDescriptors()}" />
             </f:entry>
           </f:radioBlock>
+
+          <f:radioBlock checked="${instance == null || instance.credentialsMethod == null || instance.credentialsMethod == 'GlobalConfiguration'}" name="credentialsMethod" title="Use Global Configuration Token" value="GlobalConfiguration" inline="true">
+          </f:radioBlock>
+
+          <f:radioBlock checked="${instance.credentialsMethod == 'CredentialsStore'}" name="credentialsMethod" title="Use Credentials Store Token" value="CredentialsStore" inline="true">
+          <f:entry field="credentialsId" title="${%Spot Token}">
+          <c:select />
+          </f:entry>
+          </f:radioBlock>
+
       </j:when>
       <j:otherwise>
         <f:entry title="${%Tunnel connection through}" field="tunnel">

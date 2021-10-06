@@ -4,8 +4,10 @@ import hudson.plugins.spotinst.api.SpotinstApi;
 import hudson.plugins.spotinst.api.infra.ApiException;
 import hudson.plugins.spotinst.api.infra.ApiResponse;
 import hudson.plugins.spotinst.api.infra.ExceptionHelper;
+import hudson.plugins.spotinst.cloud.SpotSecretToken;
 import hudson.plugins.spotinst.model.gcp.GcpGroupInstance;
 import hudson.plugins.spotinst.model.gcp.GcpScaleUpResult;
+import hudson.util.Secret;
 
 import java.util.List;
 
@@ -14,11 +16,11 @@ import java.util.List;
  */
 public class GcpGroupRepo implements IGcpGroupRepo {
     @Override
-    public ApiResponse<List<GcpGroupInstance>> getGroupInstances(String groupId, String accountId) {
+    public ApiResponse<List<GcpGroupInstance>> getGroupInstances(String groupId, String accountId, Secret token) {
         ApiResponse<List<GcpGroupInstance>> retVal;
 
         try {
-            List<GcpGroupInstance> instances = SpotinstApi.getGcpGroupInstances(groupId, accountId);
+            List<GcpGroupInstance> instances = SpotinstApi.getGcpGroupInstances(groupId, accountId, token);
 
             retVal = new ApiResponse<>(instances);
 
@@ -31,11 +33,11 @@ public class GcpGroupRepo implements IGcpGroupRepo {
     }
 
     @Override
-    public ApiResponse<Boolean> detachInstance(String groupId, String instanceId, String accountId) {
+    public ApiResponse<Boolean> detachInstance(String groupId, String instanceId, String accountId, Secret token) {
         ApiResponse<Boolean> retVal;
 
         try {
-            Boolean isDetached = SpotinstApi.gcpDetachInstance(groupId, instanceId, accountId);
+            Boolean isDetached = SpotinstApi.gcpDetachInstance(groupId, instanceId, accountId, token);
 
             retVal = new ApiResponse<>(isDetached);
 
@@ -48,11 +50,11 @@ public class GcpGroupRepo implements IGcpGroupRepo {
     }
 
     @Override
-    public ApiResponse<GcpScaleUpResult> scaleUp(String groupId, Integer adjustment, String accountId) {
+    public ApiResponse<GcpScaleUpResult> scaleUp(String groupId, Integer adjustment, String accountId, Secret token) {
         ApiResponse<GcpScaleUpResult> retVal;
 
         try {
-            GcpScaleUpResult scaleUpResult = SpotinstApi.gcpScaleUp(groupId, adjustment, accountId);
+            GcpScaleUpResult scaleUpResult = SpotinstApi.gcpScaleUp(groupId, adjustment, accountId, token);
 
             retVal = new ApiResponse<>(scaleUpResult);
 

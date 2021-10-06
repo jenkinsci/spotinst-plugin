@@ -4,9 +4,11 @@ import hudson.Plugin;
 import hudson.PluginWrapper;
 import hudson.plugins.spotinst.api.infra.*;
 import hudson.plugins.spotinst.common.SpotinstContext;
+import hudson.plugins.spotinst.cloud.SpotSecretToken;
 import hudson.plugins.spotinst.model.aws.*;
 import hudson.plugins.spotinst.model.azure.*;
 import hudson.plugins.spotinst.model.gcp.*;
+import hudson.util.Secret;
 import jenkins.model.Jenkins;
 import org.apache.commons.httpclient.HttpStatus;
 import org.slf4j.Logger;
@@ -66,9 +68,9 @@ public class SpotinstApi {
     }
 
     //region AWS
-    public static List<AwsGroupInstance> getAwsGroupInstances(String groupId, String accountId) throws ApiException {
+    public static List<AwsGroupInstance> getAwsGroupInstances(String groupId, String accountId, Secret token) throws ApiException {
         List<AwsGroupInstance> retVal      = new LinkedList<>();
-        Map<String, String>    headers     = buildHeaders();
+        Map<String, String>    headers     = buildHeaders(token);
         Map<String, String>    queryParams = buildQueryParams(accountId);
 
         RestResponse response =
@@ -83,9 +85,9 @@ public class SpotinstApi {
         return retVal;
     }
 
-    public static AwsScaleUpResult awsScaleUp(String groupId, int adjustment, String accountId) throws ApiException {
+    public static AwsScaleUpResult awsScaleUp(String groupId, int adjustment, String accountId, Secret token) throws ApiException {
         AwsScaleUpResult    retVal      = null;
-        Map<String, String> headers     = buildHeaders();
+        Map<String, String> headers     = buildHeaders(token);
         Map<String, String> queryParams = buildQueryParams(accountId);
         queryParams.put(QUERY_PARAM_ADJUSTMENT, String.valueOf(adjustment));
 
@@ -101,8 +103,8 @@ public class SpotinstApi {
         return retVal;
     }
 
-    public static Boolean awsDetachInstance(String instanceId, String accountId) throws ApiException {
-        Map<String, String> headers     = buildHeaders();
+    public static Boolean awsDetachInstance(String instanceId, String accountId, Secret token) throws ApiException {
+        Map<String, String> headers     = buildHeaders(token);
         Map<String, String> queryParams = buildQueryParams(accountId);
 
         AwsDetachInstancesRequest request = new AwsDetachInstancesRequest();
@@ -123,10 +125,10 @@ public class SpotinstApi {
     //endregion
 
     //region GCP
-    public static GcpScaleUpResult gcpScaleUp(String groupId, int adjustment, String accountId) throws ApiException {
+    public static GcpScaleUpResult gcpScaleUp(String groupId, int adjustment, String accountId, Secret token) throws ApiException {
 
         GcpScaleUpResult    retVal  = null;
-        Map<String, String> headers = buildHeaders();
+        Map<String, String> headers = buildHeaders(token);
 
         Map<String, String> queryParams = buildQueryParams(accountId);
         queryParams.put(QUERY_PARAM_ADJUSTMENT, String.valueOf(adjustment));
@@ -143,8 +145,8 @@ public class SpotinstApi {
         return retVal;
     }
 
-    public static Boolean gcpDetachInstance(String groupId, String instanceName, String accountId) throws ApiException {
-        Map<String, String> headers     = buildHeaders();
+    public static Boolean gcpDetachInstance(String groupId, String instanceName, String accountId, Secret token) throws ApiException {
+        Map<String, String> headers     = buildHeaders(token);
         Map<String, String> queryParams = buildQueryParams(accountId);
 
         GcpDetachInstancesRequest request = new GcpDetachInstancesRequest();
@@ -163,9 +165,9 @@ public class SpotinstApi {
         return retVal;
     }
 
-    public static List<GcpGroupInstance> getGcpGroupInstances(String groupId, String accountId) throws ApiException {
+    public static List<GcpGroupInstance> getGcpGroupInstances(String groupId, String accountId, Secret token) throws ApiException {
         List<GcpGroupInstance> retVal      = new LinkedList<>();
-        Map<String, String>    headers     = buildHeaders();
+        Map<String, String>    headers     = buildHeaders(token);
         Map<String, String>    queryParams = buildQueryParams(accountId);
 
         RestResponse response =
@@ -183,9 +185,9 @@ public class SpotinstApi {
 
     //region Azure Scale Sets
     public static List<AzureGroupInstance> getAzureGroupInstances(String groupId,
-                                                                  String accountId) throws ApiException {
+                                                                  String accountId, Secret token) throws ApiException {
         List<AzureGroupInstance> retVal      = new LinkedList<>();
-        Map<String, String>      headers     = buildHeaders();
+        Map<String, String>      headers     = buildHeaders(token);
         Map<String, String>      queryParams = buildQueryParams(accountId);
 
         RestResponse response = RestClient
@@ -200,8 +202,8 @@ public class SpotinstApi {
         return retVal;
     }
 
-    public static Boolean azureScaleUp(String groupId, int adjustment, String accountId) throws ApiException {
-        Map<String, String> headers = buildHeaders();
+    public static Boolean azureScaleUp(String groupId, int adjustment, String accountId, Secret token) throws ApiException {
+        Map<String, String> headers = buildHeaders(token);
 
         Map<String, String> queryParams = buildQueryParams(accountId);
         queryParams.put("adjustment", String.valueOf(adjustment));
@@ -216,8 +218,8 @@ public class SpotinstApi {
         return retVal;
     }
 
-    public static Boolean azureDetachInstance(String groupId, String instanceId, String accountId) throws ApiException {
-        Map<String, String> headers     = buildHeaders();
+    public static Boolean azureDetachInstance(String groupId, String instanceId, String accountId, Secret token) throws ApiException {
+        Map<String, String> headers     = buildHeaders(token);
         Map<String, String> queryParams = buildQueryParams(accountId);
 
         AzureDetachInstancesRequest request = new AzureDetachInstancesRequest();
@@ -237,9 +239,9 @@ public class SpotinstApi {
     //endregion
 
     //region Azure VMs
-    public static AzureGroupStatus getAzureVmGroupStatus(String groupId, String accountId) throws ApiException {
+    public static AzureGroupStatus getAzureVmGroupStatus(String groupId, String accountId, Secret token) throws ApiException {
         AzureGroupStatus    retVal      = new AzureGroupStatus();
-        Map<String, String> headers     = buildHeaders();
+        Map<String, String> headers     = buildHeaders(token);
         Map<String, String> queryParams = buildQueryParams(accountId);
 
         RestResponse response = RestClient
@@ -256,9 +258,9 @@ public class SpotinstApi {
     }
 
     public static List<AzureScaleUpResultNewVm> azureVmScaleUp(String groupId, int adjustment,
-                                                               String accountId) throws ApiException {
+                                                               String accountId, Secret token) throws ApiException {
         List<AzureScaleUpResultNewVm> retVal  = new LinkedList<>();
-        Map<String, String>           headers = buildHeaders();
+        Map<String, String>           headers = buildHeaders(token);
 
         Map<String, String> queryParams = buildQueryParams(accountId);
         queryParams.put("adjustment", String.valueOf(adjustment));
@@ -276,8 +278,8 @@ public class SpotinstApi {
         return retVal;
     }
 
-    public static Boolean azureVmDetach(String groupId, String vmId, String accountId) throws ApiException {    
-        Map<String, String> headers     = buildHeaders();
+    public static Boolean azureVmDetach(String groupId, String vmId, String accountId, Secret token) throws ApiException {
+        Map<String, String> headers     = buildHeaders(token);
         Map<String, String> queryParams = buildQueryParams(accountId);
 
         AzureDetachVMsRequest request = new AzureDetachVMsRequest();
@@ -312,9 +314,17 @@ public class SpotinstApi {
         return retVal;
     }
 
-    private static Map<String, String> buildHeaders() {
+    private static Map<String, String> buildHeaders(Secret token) {
+        String spotToken = SpotinstContext.getInstance().getSpotinstToken();
+
+        if(token != null){
+            spotToken = token.getPlainText();
+        }
+
         Map<String, String> headers = new HashMap<>();
-        headers.put(HEADER_AUTH, AUTH_PREFIX + SpotinstContext.getInstance().getSpotinstToken());
+        headers.put(HEADER_AUTH, AUTH_PREFIX + spotToken);
+        LOGGER.error(String.format("**********************************************************%nSpot Token from headers:%n%s%n**********************************************************", headers.get(HEADER_AUTH)));
+
         headers.put(HEADER_CONTENT_TYPE, CONTENT_TYPE);
         String userAgent = buildUserAgent();
 

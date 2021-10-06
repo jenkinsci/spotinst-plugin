@@ -6,6 +6,7 @@ import hudson.plugins.spotinst.api.infra.ApiResponse;
 import hudson.plugins.spotinst.api.infra.JsonMapper;
 import hudson.plugins.spotinst.common.ConnectionMethodEnum;
 import hudson.plugins.spotinst.common.Constants;
+import hudson.plugins.spotinst.common.CredentialsMethodEnum;
 import hudson.plugins.spotinst.model.azure.AzureGroupInstance;
 import hudson.plugins.spotinst.model.azure.AzureScaleSetSizeEnum;
 import hudson.plugins.spotinst.repos.IAzureGroupRepo;
@@ -54,7 +55,7 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
         List<SpotinstSlave> retVal = new LinkedList<>();
 
         IAzureGroupRepo      azureGroupRepo  = RepoManager.getInstance().getAzureGroupRepo();
-        ApiResponse<Boolean> scaleUpResponse = azureGroupRepo.scaleUp(groupId, request.getExecutors(), this.accountId);
+        ApiResponse<Boolean> scaleUpResponse = azureGroupRepo.scaleUp(groupId, request.getExecutors(), this.accountId, this.token);
 
         if (scaleUpResponse.isRequestSucceed()) {
             LOGGER.info(String.format("Scale up group %s succeeded", groupId));
@@ -73,7 +74,7 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
         Boolean         retVal         = false;
         IAzureGroupRepo azureGroupRepo = RepoManager.getInstance().getAzureGroupRepo();
         ApiResponse<Boolean> detachInstanceResponse =
-                azureGroupRepo.detachInstance(groupId, instanceId, this.accountId);
+                azureGroupRepo.detachInstance(groupId, instanceId, this.accountId, this.token);
 
         if (detachInstanceResponse.isRequestSucceed()) {
             LOGGER.info(String.format("Instance %s detached", instanceId));
@@ -98,7 +99,7 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
 
         IAzureGroupRepo awsGroupRepo = RepoManager.getInstance().getAzureGroupRepo();
         ApiResponse<List<AzureGroupInstance>> instancesResponse =
-                awsGroupRepo.getGroupInstances(groupId, this.accountId);
+                awsGroupRepo.getGroupInstances(groupId, this.accountId, this.token);
 
         if (instancesResponse.isRequestSucceed()) {
             List<AzureGroupInstance> instances = instancesResponse.getValue();
@@ -125,7 +126,7 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
     public void monitorInstances() {
         IAzureGroupRepo azureGroupRepo = RepoManager.getInstance().getAzureGroupRepo();
         ApiResponse<List<AzureGroupInstance>> instancesResponse =
-                azureGroupRepo.getGroupInstances(groupId, this.accountId);
+                azureGroupRepo.getGroupInstances(groupId, this.accountId, this.token);
 
         if (instancesResponse.isRequestSucceed()) {
             List<AzureGroupInstance> instances = instancesResponse.getValue();
@@ -198,6 +199,15 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
         }
 
         return retVal;
+    }
+
+    @Override
+    public void setCredentialsId(String credentialsId) {
+        this.credentialsId = credentialsId;
+    }
+    @Override
+    public void setCredentialsMethod(CredentialsMethodEnum credentialsMethod) {
+        this.credentialsMethod = credentialsMethod;
     }
 
     //endregion
