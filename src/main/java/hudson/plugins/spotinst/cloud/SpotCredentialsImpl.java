@@ -62,7 +62,6 @@ public class SpotCredentialsImpl extends BaseStandardCredentials
     }
     @Extension
     public static class DescriptorImpl extends BaseStandardCredentialsDescriptor {
-        //public static class DescriptorImpl extends ComputerConnectorDescriptor {
 
         public DescriptorImpl() {
         }

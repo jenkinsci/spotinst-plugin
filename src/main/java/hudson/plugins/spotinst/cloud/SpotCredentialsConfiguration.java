@@ -39,7 +39,7 @@ public class SpotCredentialsConfiguration
                         Jenkins.get(),
                         ACL.SYSTEM,
                         Collections.emptyList()),
-                withId(trimToEmpty(credentialsId)));
+                withId(trimToEmpty(this.credentialsId)));
     }
 
     @Override

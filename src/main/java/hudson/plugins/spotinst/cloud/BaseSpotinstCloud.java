@@ -54,7 +54,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
     protected String                            groupId;
     protected Map<String, PendingInstance>      pendingInstances;
     protected Map<String, SlaveInstanceDetails> slaveInstancesDetailsByInstanceId;
-    protected transient Secret             token;
+    protected  Secret             token;
     protected String                   credentialsId;
     protected   CredentialsMethodEnum      credentialsMethod;
     private String                           labelString;
@@ -193,7 +193,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
 
         this.credentialsId = credentialsId;
 
-        SpotCredentialsConfiguration sc = new SpotCredentialsConfiguration(credentialsId);
+        SpotCredentialsConfiguration sc = new SpotCredentialsConfiguration("2345a957-0901-40ad-843c-d2b0ce874e4e");
         this.token  = sc.getCredentials().getSecret();
         //this.token = getCredentials(this.credentialsId).getSecret();
 

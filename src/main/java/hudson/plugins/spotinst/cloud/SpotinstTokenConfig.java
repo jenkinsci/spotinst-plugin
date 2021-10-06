@@ -3,12 +3,21 @@ package hudson.plugins.spotinst.cloud;
 import hudson.Extension;
 import hudson.plugins.spotinst.api.SpotinstApi;
 import hudson.plugins.spotinst.common.SpotinstContext;
+import hudson.security.ACL;
 import hudson.util.FormValidation;
 import hudson.util.Secret;
 import jenkins.model.GlobalConfiguration;
+import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
+
+import java.util.Collections;
+
+import static com.cloudbees.plugins.credentials.CredentialsMatchers.firstOrNull;
+import static com.cloudbees.plugins.credentials.CredentialsMatchers.withId;
+import static com.cloudbees.plugins.credentials.CredentialsProvider.lookupCredentials;
+import static org.apache.commons.lang3.StringUtils.trimToEmpty;
 
 /**
  * Created by ohadmuchnik on 18/07/2016.
@@ -47,17 +56,24 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
         int isValid = validateToken(spotinstToken, accountId);
 
         FormValidation result;
-        SpotCredentialsConfiguration s = new SpotCredentialsConfiguration("liron-token-10");
-        SpotSecretToken sp = s.getCredentials();
-        Secret sec = sp.getSecret();
-        String tok = sec.getPlainText();
+
+        SpotSecretToken spotSecret = firstOrNull(
+                lookupCredentials(
+                        SpotSecretToken.class,
+                        Jenkins.get(),
+                        ACL.SYSTEM,
+                        Collections.emptyList()),
+                withId(trimToEmpty("2345a957-0901-40ad-843c-d2b0ce874e4e")));
+
+        Secret sec = spotSecret.getSecret();
+        String tok = sec.getEncryptedValue();
         switch (isValid) {
             case 0: {
                 result = FormValidation.okWithMarkup("<div style=\"color:green\">The token is valid " + tok + "</div>");
                 break;
             }
             case 1: {
-                result = FormValidation.error("Invalid token " + tok);
+                result = FormValidation.error("Invalid token " + tok );
                 break;
             }
             default: {
