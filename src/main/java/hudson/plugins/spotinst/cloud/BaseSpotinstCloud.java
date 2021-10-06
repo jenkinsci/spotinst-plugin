@@ -144,6 +144,85 @@ public abstract class BaseSpotinstCloud extends Cloud {
 
         readResolve();
     }
+
+    public BaseSpotinstCloud(String groupId, String labelString, String idleTerminationMinutes, String workspaceDir,
+                             SlaveUsageEnum usage, String tunnel, Boolean shouldUseWebsocket,
+                             Boolean shouldRetriggerBuilds, String vmargs,
+                             EnvironmentVariablesNodeProperty environmentVariables,
+                             ToolLocationNodeProperty toolLocations, String accountId,
+                             ConnectionMethodEnum connectionMethod, ComputerConnector computerConnector,
+                             Boolean shouldUsePrivateIp, SpotGlobalExecutorOverride globalExecutorOverride, CredentialsMethodEnum credentialsMethod, String credentialsId) {
+
+        super(groupId);
+        this.groupId = groupId;
+        this.accountId = accountId;
+        this.labelString = labelString;
+        this.idleTerminationMinutes = idleTerminationMinutes;
+        this.workspaceDir = workspaceDir;
+        this.pendingInstances = new HashMap<>();
+        labelSet = Label.parse(labelString);
+
+        if (usage != null) {
+            this.usage = usage;
+        }
+        else {
+            this.usage = SlaveUsageEnum.NORMAL;
+        }
+
+        this.shouldRetriggerBuilds = shouldRetriggerBuilds == null || BooleanUtils.isTrue(shouldRetriggerBuilds);
+        this.tunnel = tunnel;
+        this.shouldUseWebsocket = shouldUseWebsocket;
+        this.vmargs = vmargs;
+        this.environmentVariables = environmentVariables;
+        this.toolLocations = toolLocations;
+        this.slaveInstancesDetailsByInstanceId = new HashMap<>();
+
+        if (connectionMethod != null) {
+            this.connectionMethod = connectionMethod;
+        }
+        else {
+            this.connectionMethod = ConnectionMethodEnum.JNLP;
+        }
+
+        if (credentialsMethod != null) {
+            this.credentialsMethod = credentialsMethod;
+        }
+        else {
+            this.credentialsMethod = credentialsMethod.GlobalConfiguration;
+        }
+
+        this.credentialsId = credentialsId;
+
+        SpotCredentialsConfiguration sc = new SpotCredentialsConfiguration(credentialsId);
+        this.token  = sc.getCredentials().getSecret();
+        //this.token = getCredentials(this.credentialsId).getSecret();
+
+        if(this.token.getPlainText() != null){
+            LOGGER.info(String.format("**********************************************************%nthis.token.getPlainText() is NOT null%n**********************************************************"));
+            LOGGER.info(this.token.getPlainText().toString());
+        }
+        else{
+            LOGGER.info(String.format("**********************************************************%nthis.token.getPlainText() is null%n**********************************************************"));
+        }
+
+        if (shouldUsePrivateIp != null) {
+            this.shouldUsePrivateIp = shouldUsePrivateIp;
+        }
+        else {
+            this.shouldUsePrivateIp = false;
+        }
+
+        this.computerConnector = computerConnector;
+
+        if (globalExecutorOverride != null) {
+            this.globalExecutorOverride = globalExecutorOverride;
+        }
+        else {
+            this.globalExecutorOverride = new SpotGlobalExecutorOverride(false, 1);
+        }
+
+        //readResolve();
+    }
     //endregion
 
     //region Overridden Public Methods

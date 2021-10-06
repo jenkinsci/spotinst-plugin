@@ -64,11 +64,11 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
                             EnvironmentVariablesNodeProperty environmentVariables,
                             ToolLocationNodeProperty toolLocations, String accountId,
                             ConnectionMethodEnum connectionMethod, ComputerConnector computerConnector,
-                            Boolean shouldUsePrivateIp, SpotGlobalExecutorOverride globalExecutorOverride) {
+                            Boolean shouldUsePrivateIp, SpotGlobalExecutorOverride globalExecutorOverride, CredentialsMethodEnum credentialsMethod, String credentialsId) {
 
         super(groupId, labelString, idleTerminationMinutes, workspaceDir, usage, tunnel, shouldUseWebsocket,
               shouldRetriggerBuilds, vmargs, environmentVariables, toolLocations, accountId, connectionMethod,
-              computerConnector, shouldUsePrivateIp, globalExecutorOverride);
+              computerConnector, shouldUsePrivateIp, globalExecutorOverride, credentialsMethod, credentialsId);
 
         this.executorsForTypes = new LinkedList<>();
         executorsForInstanceType = new HashMap<>();
@@ -219,14 +219,14 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
         return retVal;
     }
 
-    @Override
-    public void setCredentialsId(String credentialsId) {
-        this.credentialsId = credentialsId;
-    }
-    @Override
-    public void setCredentialsMethod(CredentialsMethodEnum credentialsMethod) {
-        this.credentialsMethod = credentialsMethod;
-    }
+//    @Override
+//    public void setCredentialsId(String credentialsId) {
+//        this.credentialsId = credentialsId;
+//    }
+//    @Override
+//    public void setCredentialsMethod(CredentialsMethodEnum credentialsMethod) {
+//        this.credentialsMethod = credentialsMethod;
+//    }
 
 //    @Override
 //    protected AWSCredentialsProvider createCredentialsProvider() {
