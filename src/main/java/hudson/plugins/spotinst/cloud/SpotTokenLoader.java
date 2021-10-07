@@ -45,6 +45,6 @@ public class SpotTokenLoader
                         Jenkins.get(),
                         ACL.SYSTEM,
                         Collections.emptyList()),
-                withId(trimToEmpty("06.10|18:45")));
+                withId(trimToEmpty(adminCredentialsId)));
     }
 }

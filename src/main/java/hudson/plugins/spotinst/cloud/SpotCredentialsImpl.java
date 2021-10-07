@@ -88,7 +88,7 @@ public class SpotCredentialsImpl extends BaseStandardCredentials
 
         @Override
         public String getDisplayName() {
-            return "Spot token";
+            return "Spot secret";
         }
 
         @Override

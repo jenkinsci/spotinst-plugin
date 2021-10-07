@@ -9,12 +9,12 @@ import hudson.util.Secret;
 public interface SpotTokenCredentialsLoader extends StandardCredentials {
 
     Secret getSecret();
-
+    String getDisplayName();
     class NameProvider extends CredentialsNameProvider<SpotTokenCredentialsLoaderImpl> {
 
         @Override
         public String getName(SpotTokenCredentialsLoaderImpl spotTokenCredentials) {
-            return spotTokenCredentials.getDescription() + " - Spot token Loader";
+            return spotTokenCredentials.getDisplayName();
         }
     }
 }

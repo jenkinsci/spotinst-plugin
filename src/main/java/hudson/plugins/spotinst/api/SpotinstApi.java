@@ -315,10 +315,8 @@ public class SpotinstApi {
         return retVal;
     }
 
-    private static Map<String, String> buildHeaders(Secret fake) {
-        SpotTokenLoader            spotTokenLoader            = new SpotTokenLoader("06.10|18:45", "06.10|18:45");
-        SpotTokenCredentialsLoader spotTokenCredentialsLoader = spotTokenLoader.getAdminCredentials();
-        String                     token                      = spotTokenCredentialsLoader.getSecret().getPlainText();
+    private static Map<String, String> buildHeaders(Secret secret) {
+        String                     token                      = secret.getPlainText();
         Map<String, String>        headers                    = new HashMap<>();
         headers.put(HEADER_AUTH, AUTH_PREFIX + token);
         headers.put(HEADER_CONTENT_TYPE, CONTENT_TYPE);

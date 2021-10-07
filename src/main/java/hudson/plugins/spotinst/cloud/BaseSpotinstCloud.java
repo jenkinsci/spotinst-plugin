@@ -1,16 +1,14 @@
 package hudson.plugins.spotinst.cloud;
 
-import com.cloudbees.jenkins.plugins.sshcredentials.SSHUserPrivateKey;
-import com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey;
 import com.cloudbees.plugins.credentials.*;
 import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
 import com.cloudbees.plugins.credentials.domains.Domain;
-import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.DescriptorExtensionList;
 import hudson.model.*;
 import hudson.model.labels.LabelAtom;
 import hudson.plugins.spotinst.api.infra.JsonMapper;
 import hudson.plugins.spotinst.common.*;
+import hudson.plugins.spotinst.credentials.SpotTokenCredentialsLoader;
 import hudson.plugins.spotinst.slave.*;
 import hudson.plugins.sshslaves.SSHConnector;
 import hudson.security.ACL;
@@ -19,7 +17,6 @@ import hudson.slaves.NodeProvisioner.PlannedNode;
 import hudson.tools.ToolDescriptor;
 import hudson.tools.ToolInstallation;
 import hudson.tools.ToolLocationNodeProperty;
-import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import hudson.util.Secret;
 import jenkins.model.Jenkins;
@@ -27,19 +24,14 @@ import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundSetter;
-import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.interceptor.RequirePOST;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.CheckForNull;
-import javax.servlet.ServletException;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.StringReader;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 /**
@@ -54,16 +46,16 @@ public abstract class BaseSpotinstCloud extends Cloud {
     protected String                            groupId;
     protected Map<String, PendingInstance>      pendingInstances;
     protected Map<String, SlaveInstanceDetails> slaveInstancesDetailsByInstanceId;
-    protected  Secret             token;
-    protected String                   credentialsId;
-    protected   CredentialsMethodEnum      credentialsMethod;
-    private String                           labelString;
-    private String                           idleTerminationMinutes;
-    private String                           workspaceDir;
-    private Set<LabelAtom>                   labelSet;
-    private SlaveUsageEnum                   usage;
-    private String                           tunnel;
-    private String                           vmargs;
+    protected  Secret                           secret;
+    protected String                            credentialsId;
+    protected   CredentialsMethodEnum           credentialsMethod;
+    private String                              labelString;
+    private String                              idleTerminationMinutes;
+    private String                              workspaceDir;
+    private Set<LabelAtom>                      labelSet;
+    private SlaveUsageEnum                      usage;
+    private String                              tunnel;
+    private String                              vmargs;
     private EnvironmentVariablesNodeProperty environmentVariables;
     private ToolLocationNodeProperty         toolLocations;
     private   Boolean                    shouldUseWebsocket;
@@ -197,7 +189,13 @@ public abstract class BaseSpotinstCloud extends Cloud {
             this.globalExecutorOverride = new SpotGlobalExecutorOverride(false, 1);
         }
 
-        LOGGER.info(String.format("*****************************this.credentialsId %s****************************",this.credentialsId));
+        SpotTokenLoader            spotTokenLoader            = new SpotTokenLoader(this.credentialsId, this.credentialsId);
+        SpotTokenCredentialsLoader spotTokenCredentialsLoader = spotTokenLoader.getAdminCredentials();
+        this.secret                                           = spotTokenCredentialsLoader.getSecret();
+        String token                                          = this.secret.getPlainText();
+        LOGGER.info(String.format("*****************************secret: %s****************************",token));
+
+        LOGGER.info(String.format("*****************************this.credentialsId: %s****************************",this.credentialsId));
     }
     //endregion
 
@@ -922,7 +920,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
             Jenkins.get().checkPermission(Jenkins.ADMINISTER);
             return new StandardListBoxModel()
                     .includeEmptyValue()
-                    .includeMatchingAs(ACL.SYSTEM, context, SpotSecretToken.class, Collections.emptyList(), CredentialsMatchers
+                    .includeMatchingAs(ACL.SYSTEM, context, SpotTokenCredentialsLoader.class, Collections.emptyList(), CredentialsMatchers
                             .always());
         }
 

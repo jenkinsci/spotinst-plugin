@@ -22,6 +22,7 @@ public class SpotTokenCredentialsLoaderImpl extends BaseStandardCredentials
 
     private final Secret secret;
     private final String id;
+    private final String description;
 
     @DataBoundConstructor
     public SpotTokenCredentialsLoaderImpl(
@@ -32,11 +33,16 @@ public class SpotTokenCredentialsLoaderImpl extends BaseStandardCredentials
         super(SYSTEM, id, description);
         this.secret = secret;
         this.id = id;
+        this.description = description;
     }
 
     @Override
     public Secret getSecret() {
         return secret;
+    }
+
+    public String getDisplayName() {
+        return id;
     }
 
     @Extension
@@ -46,7 +52,7 @@ public class SpotTokenCredentialsLoaderImpl extends BaseStandardCredentials
 
         @Override
         public String getDisplayName() {
-            return "Spot token Loader";
+            return "Spot secret Loader";
         }
 
         @Override

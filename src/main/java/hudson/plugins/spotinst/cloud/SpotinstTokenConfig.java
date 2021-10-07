@@ -48,11 +48,11 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
         FormValidation result;
         switch (isValid) {
             case 0: {
-                result = FormValidation.okWithMarkup("<div style=\"color:green\">The token is valid</div>");
+                result = FormValidation.okWithMarkup("<div style=\"color:green\">The secret is valid</div>");
                 break;
             }
             case 1: {
-                result = FormValidation.error("Invalid token");
+                result = FormValidation.error("Invalid secret");
                 break;
             }
             default: {
