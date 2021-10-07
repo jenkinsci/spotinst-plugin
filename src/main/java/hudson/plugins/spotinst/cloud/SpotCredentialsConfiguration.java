@@ -14,7 +14,7 @@ import static com.cloudbees.plugins.credentials.CredentialsMatchers.firstOrNull;
 import static com.cloudbees.plugins.credentials.CredentialsMatchers.withId;
 import static com.cloudbees.plugins.credentials.CredentialsProvider.lookupCredentials;
 import static java.util.Objects.requireNonNull;
-import static org.apache.commons.lang3.StringUtils.*;
+import static org.apache.commons.lang.StringUtils.trimToEmpty;
 
 public class SpotCredentialsConfiguration
         extends AbstractDescribableImpl<SpotCredentialsConfiguration> implements ExtensionPoint {

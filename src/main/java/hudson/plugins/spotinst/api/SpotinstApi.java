@@ -3,8 +3,9 @@ package hudson.plugins.spotinst.api;
 import hudson.Plugin;
 import hudson.PluginWrapper;
 import hudson.plugins.spotinst.api.infra.*;
+import hudson.plugins.spotinst.cloud.SpotTokenLoader;
 import hudson.plugins.spotinst.common.SpotinstContext;
-import hudson.plugins.spotinst.cloud.SpotSecretToken;
+import hudson.plugins.spotinst.credentials.SpotTokenCredentialsLoader;
 import hudson.plugins.spotinst.model.aws.*;
 import hudson.plugins.spotinst.model.azure.*;
 import hudson.plugins.spotinst.model.gcp.*;
@@ -314,17 +315,12 @@ public class SpotinstApi {
         return retVal;
     }
 
-    private static Map<String, String> buildHeaders(Secret token) {
-        String spotToken = SpotinstContext.getInstance().getSpotinstToken();
-
-        if(token != null){
-            spotToken = token.getPlainText();
-        }
-
-        Map<String, String> headers = new HashMap<>();
-        headers.put(HEADER_AUTH, AUTH_PREFIX + spotToken);
-        LOGGER.error(String.format("**********************************************************%nSpot Token from headers:%n%s%n**********************************************************", headers.get(HEADER_AUTH)));
-
+    private static Map<String, String> buildHeaders(Secret fake) {
+        SpotTokenLoader            spotTokenLoader            = new SpotTokenLoader("06.10|18:45", "06.10|18:45");
+        SpotTokenCredentialsLoader spotTokenCredentialsLoader = spotTokenLoader.getAdminCredentials();
+        String                     token                      = spotTokenCredentialsLoader.getSecret().getPlainText();
+        Map<String, String>        headers                    = new HashMap<>();
+        headers.put(HEADER_AUTH, AUTH_PREFIX + token);
         headers.put(HEADER_CONTENT_TYPE, CONTENT_TYPE);
         String userAgent = buildUserAgent();
 

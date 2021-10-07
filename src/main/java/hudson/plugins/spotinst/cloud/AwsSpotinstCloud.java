@@ -57,6 +57,33 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
     //endregion
 
     //region Constructor
+//    @DataBoundConstructor
+//    public AwsSpotinstCloud(String groupId, String labelString, String idleTerminationMinutes, String workspaceDir,
+//                            List<? extends SpotinstInstanceWeight> executorsForTypes, SlaveUsageEnum usage,
+//                            String tunnel, Boolean shouldUseWebsocket, Boolean shouldRetriggerBuilds, String vmargs,
+//                            EnvironmentVariablesNodeProperty environmentVariables,
+//                            ToolLocationNodeProperty toolLocations, String accountId,
+//                            ConnectionMethodEnum connectionMethod, ComputerConnector computerConnector,
+//                            Boolean shouldUsePrivateIp, SpotGlobalExecutorOverride globalExecutorOverride) {
+//
+//        super(groupId, labelString, idleTerminationMinutes, workspaceDir, usage, tunnel, shouldUseWebsocket,
+//              shouldRetriggerBuilds, vmargs, environmentVariables, toolLocations, accountId, connectionMethod,
+//              computerConnector, shouldUsePrivateIp, globalExecutorOverride);
+//
+//        this.executorsForTypes = new LinkedList<>();
+//        executorsForInstanceType = new HashMap<>();
+//
+//        if (executorsForTypes != null) {
+//            this.executorsForTypes = executorsForTypes;
+//
+//            for (SpotinstInstanceWeight executors : executorsForTypes) {
+//                if (executors.getExecutors() != null) {
+//                    executorsForInstanceType.put(executors.getAwsInstanceType(), executors.getExecutors());
+//                }
+//            }
+//        }
+//    }
+
     @DataBoundConstructor
     public AwsSpotinstCloud(String groupId, String labelString, String idleTerminationMinutes, String workspaceDir,
                             List<? extends SpotinstInstanceWeight> executorsForTypes, SlaveUsageEnum usage,
@@ -64,11 +91,11 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
                             EnvironmentVariablesNodeProperty environmentVariables,
                             ToolLocationNodeProperty toolLocations, String accountId,
                             ConnectionMethodEnum connectionMethod, ComputerConnector computerConnector,
-                            Boolean shouldUsePrivateIp, SpotGlobalExecutorOverride globalExecutorOverride) {
+                            Boolean shouldUsePrivateIp, SpotGlobalExecutorOverride globalExecutorOverride, CredentialsMethodEnum credentialsMethod, String credentialsId) {
 
         super(groupId, labelString, idleTerminationMinutes, workspaceDir, usage, tunnel, shouldUseWebsocket,
               shouldRetriggerBuilds, vmargs, environmentVariables, toolLocations, accountId, connectionMethod,
-              computerConnector, shouldUsePrivateIp, globalExecutorOverride);
+              computerConnector, shouldUsePrivateIp, globalExecutorOverride, credentialsMethod, credentialsId);
 
         this.executorsForTypes = new LinkedList<>();
         executorsForInstanceType = new HashMap<>();
@@ -218,20 +245,6 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
 
         return retVal;
     }
-
-    @Override
-    public void setCredentialsId(String credentialsId) {
-        this.credentialsId = credentialsId;
-    }
-    @Override
-    public void setCredentialsMethod(CredentialsMethodEnum credentialsMethod) {
-        this.credentialsMethod = credentialsMethod;
-    }
-
-//    @Override
-//    protected AWSCredentialsProvider createCredentialsProvider() {
-//        return createCredentialsProvider(isUseInstanceProfileForCredentials(), getCredentialsId(), getRoleArn(), getRoleSessionName(), getRegion());
-//    }
     //endregion
 
     //region Private Methods
