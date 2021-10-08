@@ -1,5 +1,5 @@
 <?jelly escape-by-default='true'?>
-<j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form">
+<j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form" xmlns:c="/lib/credentials">
 
     <f:section title="Spot">
 
@@ -9,16 +9,24 @@
                      src="https://spotinst-public.s3.amazonaws.com/assets/emails/welcome-email/spot_large.png"/>
             </td>
             <td>
-                <f:entry title="Spot Personal Access Token" field="spotinstToken">
+                <f:radioBlock checked="${instance == null || instance.credentialsMethod == null || instance.credentialsMethod == 'GlobalConfiguration'}" name="credentialsMethod" title="Use plain text token" value="GlobalConfiguration" inline="true">
+                    <f:entry title="Spot Personal Access Token" field="spotinstToken">
 
-                    <f:textbox/>
-                </f:entry>
-                <f:entry title="${%Spot Account ID}" field="accountId">
-                    <f:textbox/>
-                </f:entry>
+                        <f:textbox/>
+                    </f:entry>
+                    <f:entry title="${%Spot Account ID}" field="accountId">
+                        <f:textbox/>
+                    </f:entry>
 
-                <f:validateButton title="${%Validate Token}" progress="${%Checking...}" method="validateToken"
-                                  with="spotinstToken,accountId"/>
+                    <f:validateButton title="${%Validate Token}" progress="${%Checking...}" method="validateToken"
+                                      with="spotinstToken,accountId"/>
+                </f:radioBlock>
+
+                <f:radioBlock checked="${instance.credentialsMethod == 'CredentialsStore'}" name="credentialsMethod" title="Use Credentials Store token" value="CredentialsStore" inline="true">
+                    <f:entry field="credentialsId">
+                        <c:select />
+                    </f:entry>
+                </f:radioBlock>
             </td>
         </tr>
     </f:section>
