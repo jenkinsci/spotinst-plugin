@@ -9,8 +9,8 @@ import hudson.util.Secret;
 import org.kohsuke.stapler.DataBoundConstructor;
 import javax.annotation.CheckForNull;
 
-public class SpotTokenCredentialsLoaderImpl extends BaseStandardCredentials
-        implements SpotTokenCredentialsLoader {
+public class SpotTokenCredentialsImpl extends BaseStandardCredentials
+        implements SpotTokenCredentials {
 
     private static final long serialVersionUID = 1L;
 
@@ -19,7 +19,7 @@ public class SpotTokenCredentialsLoaderImpl extends BaseStandardCredentials
     private final String description;
 
     @DataBoundConstructor
-    public SpotTokenCredentialsLoaderImpl(
+    public SpotTokenCredentialsImpl(
             @CheckForNull String id,
             @CheckForNull String description,
             Secret secret, CredentialsScope scope) {
@@ -46,7 +46,7 @@ public class SpotTokenCredentialsLoaderImpl extends BaseStandardCredentials
 
         @Override
         public String getDisplayName() {
-            return "Spot secret Loader";
+            return "Spot Personal Access Token";
         }
 
         @Override

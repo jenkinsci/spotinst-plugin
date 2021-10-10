@@ -5,15 +5,15 @@ import com.cloudbees.plugins.credentials.NameWith;
 import com.cloudbees.plugins.credentials.common.StandardCredentials;
 import hudson.util.Secret;
 
-@NameWith(SpotTokenCredentialsLoader.NameProvider.class)
-public interface SpotTokenCredentialsLoader extends StandardCredentials {
+@NameWith(SpotTokenCredentials.NameProvider.class)
+public interface SpotTokenCredentials extends StandardCredentials {
 
     Secret getSecret();
     String getDisplayName();
-    class NameProvider extends CredentialsNameProvider<SpotTokenCredentialsLoaderImpl> {
+    class NameProvider extends CredentialsNameProvider<SpotTokenCredentialsImpl> {
 
         @Override
-        public String getName(SpotTokenCredentialsLoaderImpl spotTokenCredentials) {
+        public String getName(SpotTokenCredentialsImpl spotTokenCredentials) {
             return spotTokenCredentials.getDisplayName();
         }
     }

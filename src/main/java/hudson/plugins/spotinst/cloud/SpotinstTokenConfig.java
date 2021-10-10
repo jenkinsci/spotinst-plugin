@@ -1,6 +1,5 @@
 package hudson.plugins.spotinst.cloud;
 
-import com.cloudbees.plugins.credentials.Credentials;
 import com.cloudbees.plugins.credentials.CredentialsMatchers;
 import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
 import hudson.Extension;
@@ -8,8 +7,8 @@ import hudson.model.ItemGroup;
 import hudson.plugins.spotinst.api.SpotinstApi;
 import hudson.plugins.spotinst.common.CredentialsMethodEnum;
 import hudson.plugins.spotinst.common.SpotinstContext;
-import hudson.plugins.spotinst.credentials.SpotTokenCredentialsLoader;
-import hudson.plugins.spotinst.credentials.SpotTokenCredentialsLoaderImpl;
+import hudson.plugins.spotinst.credentials.SpotTokenCredentials;
+import hudson.plugins.spotinst.credentials.CredentialsStoreReader;
 import hudson.security.ACL;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
@@ -26,8 +25,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
-import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Created by ohadmuchnik on 18/07/2016.
@@ -41,17 +38,11 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
     private String accountId;
     private CredentialsMethodEnum credentialsMethod;
     private String                credentialsId;
+    private String  credentialsStoreSpotToken;
     //endregion
 
     public SpotinstTokenConfig() {
         load();
-        SpotinstContext.getInstance().setSpotinstToken(spotinstToken);
-        SpotinstContext.getInstance().setAccountId(accountId);
-    }
-
-    public SpotinstTokenConfig(String credentialsId) {
-        load();
-        this.credentialsId = credentialsId;
         SpotinstContext.getInstance().setSpotinstToken(spotinstToken);
         SpotinstContext.getInstance().setAccountId(accountId);
     }
@@ -61,29 +52,24 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
         spotinstToken = json.getString("spotinstToken");
         accountId = json.getString("accountId");
         credentialsId = json.getString("credentialsId");
-        String credentialsStoreSpotToken = null;
 
         try {
-        SpotTokenLoader            spotTokenLoader            = new SpotTokenLoader(credentialsId, credentialsId);
-        SpotTokenCredentialsLoader spotTokenCredentialsLoader = spotTokenLoader.getAdminCredentials();
-        Secret secret = spotTokenCredentialsLoader.getSecret();
+        CredentialsStoreReader credentialsStoreReader = new CredentialsStoreReader(credentialsId, credentialsId);
+        SpotTokenCredentials   spotTokenCredentials   = credentialsStoreReader.getSpotToken();
+        Secret                 secret                 = spotTokenCredentials.getSecret();
         credentialsStoreSpotToken = secret.getPlainText();
         }
         catch (Exception e) {
-            LOGGER.info(String.format("token was not loaded from credentials store."));
+            LOGGER.info("token was not loaded from credentials store.");
         }
 
-        //TODO - what happens when restart jenkins, which token shouls be save (the one that saved will appear in the plain text box)
         save();
 
         if(credentialsStoreSpotToken != null){
             SpotinstContext.getInstance().setSpotinstToken(credentialsStoreSpotToken);
-            LOGGER.info("*********** credentialsStoreSpotToken ");
-
         }
         else{
             SpotinstContext.getInstance().setSpotinstToken(spotinstToken);
-            LOGGER.info("*********** spotinstToken ");
         }
 
         SpotinstContext.getInstance().setAccountId(accountId);
@@ -94,6 +80,25 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
     private static int validateToken(String token, String accountId) {
         int retVal = SpotinstApi.validateToken(token, accountId);
         return retVal;
+    }
+
+    public FormValidation doValidateCredentialsStoreToken(@QueryParameter("credentialsId") String credentialsId,
+                                                          @QueryParameter("accountId") String accountId) {
+        FormValidation result;
+
+        try {
+            CredentialsStoreReader credentialsStoreReader = new CredentialsStoreReader(credentialsId, credentialsId);
+            SpotTokenCredentials   spotTokenCredentials   = credentialsStoreReader.getSpotToken();
+            Secret                 secret                 = spotTokenCredentials.getSecret();
+            String                 token                  = secret.getPlainText();
+            result = doValidateToken(token, accountId);
+        }
+        catch (Exception e) {
+            LOGGER.error(e.getMessage());
+            result = FormValidation.warning("Failed to process the validation, please try again");
+        }
+
+        return result;
     }
 
     public FormValidation doValidateToken(@QueryParameter("spotinstToken") String spotinstToken,
@@ -159,12 +164,7 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
         Jenkins.get().checkPermission(Jenkins.ADMINISTER);
         return new StandardListBoxModel()
                 .includeEmptyValue()
-                .includeMatchingAs(ACL.SYSTEM, context, SpotTokenCredentialsLoader.class, Collections.emptyList(), CredentialsMatchers
+                .includeMatchingAs(ACL.SYSTEM, context, SpotTokenCredentials.class, Collections.emptyList(), CredentialsMatchers
                         .always());
-    }
-
-    public List getCredentialsDescriptors() {
-        return Jenkins.get().getDescriptorList(Credentials.class).stream()
-                      .filter(x -> x.isSubTypeOf(SpotTokenCredentialsLoaderImpl.class)).collect(Collectors.toList());
     }
 }

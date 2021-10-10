@@ -1,7 +1,6 @@
-package hudson.plugins.spotinst.cloud;
+package hudson.plugins.spotinst.credentials;
 
 import hudson.model.AbstractDescribableImpl;
-import hudson.plugins.spotinst.credentials.SpotTokenCredentialsLoader;
 import hudson.security.ACL;
 import jenkins.model.Jenkins;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -15,22 +14,18 @@ import static java.util.Objects.requireNonNull;
 import static org.apache.commons.lang.StringUtils.isBlank;
 import static org.apache.commons.lang.StringUtils.trimToEmpty;
 
-public class SpotTokenLoader
-        extends AbstractDescribableImpl<SpotTokenLoader> {
+public class CredentialsStoreReader
+        extends AbstractDescribableImpl<CredentialsStoreReader> {
 
-    private final String adminCredentialsId;
+    private final String credentialsId;
     private final String id;
 
     @DataBoundConstructor
-    public SpotTokenLoader(
-            String adminCredentialsId,
+    public CredentialsStoreReader(
+            String credentialsId,
             @Nullable String id) {
-        this.adminCredentialsId = requireNonNull(adminCredentialsId);
+        this.credentialsId = requireNonNull(credentialsId);
         this.id = isBlank(id) ? UUID.randomUUID().toString() : id;
-    }
-
-    public String getAdminCredentialsId() {
-        return adminCredentialsId;
     }
 
     public String getId() {
@@ -38,13 +33,13 @@ public class SpotTokenLoader
     }
 
     @Nullable
-    public SpotTokenCredentialsLoader getAdminCredentials() {
+    public SpotTokenCredentials getSpotToken() {
         return firstOrNull(
                 lookupCredentials(
-                        SpotTokenCredentialsLoader.class,
+                        SpotTokenCredentials.class,
                         Jenkins.get(),
                         ACL.SYSTEM,
                         Collections.emptyList()),
-                withId(trimToEmpty(adminCredentialsId)));
+                withId(trimToEmpty(credentialsId)));
     }
 }
