@@ -40,6 +40,11 @@ termination"
 
 [SpotinstPlugin-Versionhistory]
 == Version history
+[SpotinstPlugin-Version2.2.4(Sep26,2021)]
+=== Version 2.2.4 (Sep 26, 2021)
+
+* Add AWS instance type
+
 [SpotinstPlugin-Version2.2.1(Jul18,2021)]
 === Version 2.2.1 (Jul 18, 2021)
 
