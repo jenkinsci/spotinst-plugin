@@ -12,7 +12,7 @@
                 <f:entry title="Spot Personal Access Token"></f:entry>
                 <f:radioBlock checked="${instance == null || instance.credentialsMethod == null || instance.credentialsMethod == 'GlobalConfiguration'}" name="credentialsMethod" title="Plain Text Token" value="GlobalConfiguration" inline="true">
                     <f:entry field="spotinstToken">
-                        <f:textbox/>
+                        <f:password/>
                     </f:entry>
                 </f:radioBlock>
 

@@ -73,18 +73,20 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
             LOGGER.info(String.format("token was not loaded from credentials store."));
         }
 
+        //TODO - what happens when restart jenkins, which token shouls be save (the one that saved will appear in the plain text box)
         save();
 
         if(credentialsStoreSpotToken != null){
             SpotinstContext.getInstance().setSpotinstToken(credentialsStoreSpotToken);
+            LOGGER.info("*********** credentialsStoreSpotToken ");
 
         }
         else{
             SpotinstContext.getInstance().setSpotinstToken(spotinstToken);
+            LOGGER.info("*********** spotinstToken ");
         }
 
         SpotinstContext.getInstance().setAccountId(accountId);
-
 
         return true;
     }
@@ -125,8 +127,6 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
     }
 
     public void setSpotinstToken(String spotinstToken) {
-        //Secret secret = getSecret();
-
         this.spotinstToken = spotinstToken;
         SpotinstContext.getInstance().setSpotinstToken(spotinstToken);
     }

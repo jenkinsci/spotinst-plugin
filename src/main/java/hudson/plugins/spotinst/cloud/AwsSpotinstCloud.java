@@ -6,7 +6,6 @@ import hudson.plugins.spotinst.api.infra.ApiResponse;
 import hudson.plugins.spotinst.api.infra.JsonMapper;
 import hudson.plugins.spotinst.common.AwsInstanceTypeEnum;
 import hudson.plugins.spotinst.common.ConnectionMethodEnum;
-import hudson.plugins.spotinst.common.CredentialsMethodEnum;
 import hudson.plugins.spotinst.model.aws.AwsGroupInstance;
 import hudson.plugins.spotinst.model.aws.AwsScaleResultNewInstance;
 import hudson.plugins.spotinst.model.aws.AwsScaleResultNewSpot;
@@ -46,11 +45,11 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
                             EnvironmentVariablesNodeProperty environmentVariables,
                             ToolLocationNodeProperty toolLocations, String accountId,
                             ConnectionMethodEnum connectionMethod, ComputerConnector computerConnector,
-                            Boolean shouldUsePrivateIp, SpotGlobalExecutorOverride globalExecutorOverride, CredentialsMethodEnum credentialsMethod, String credentialsId) {
+                            Boolean shouldUsePrivateIp, SpotGlobalExecutorOverride globalExecutorOverride) {
 
         super(groupId, labelString, idleTerminationMinutes, workspaceDir, usage, tunnel, shouldUseWebsocket,
               shouldRetriggerBuilds, vmargs, environmentVariables, toolLocations, accountId, connectionMethod,
-              computerConnector, shouldUsePrivateIp, globalExecutorOverride, credentialsMethod, credentialsId);
+              computerConnector, shouldUsePrivateIp, globalExecutorOverride);
 
         this.executorsForTypes = new LinkedList<>();
         executorsForInstanceType = new HashMap<>();
@@ -65,6 +64,7 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
             }
         }
     }
+
     //endregion
 
     //region Overrides
@@ -74,7 +74,7 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
 
         IAwsGroupRepo awsGroupRepo = RepoManager.getInstance().getAwsGroupRepo();
         ApiResponse<AwsScaleUpResult> scaleUpResponse =
-                awsGroupRepo.scaleUp(groupId, request.getExecutors(), this.accountId, this.secret);
+                awsGroupRepo.scaleUp(groupId, request.getExecutors(), this.accountId);
 
         if (scaleUpResponse.isRequestSucceed()) {
             AwsScaleUpResult scaleUpResult = scaleUpResponse.getValue();
@@ -109,7 +109,7 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
         Boolean retVal = false;
 
         IAwsGroupRepo        awsGroupRepo           = RepoManager.getInstance().getAwsGroupRepo();
-        ApiResponse<Boolean> detachInstanceResponse = awsGroupRepo.detachInstance(instanceId, this.accountId, this.secret);
+        ApiResponse<Boolean> detachInstanceResponse = awsGroupRepo.detachInstance(instanceId, this.accountId);
 
         if (detachInstanceResponse.isRequestSucceed()) {
             LOGGER.info(String.format("Instance %s detached", instanceId));
@@ -126,7 +126,7 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
     @Override
     public void syncGroupInstances() {
         IAwsGroupRepo                       awsGroupRepo      = RepoManager.getInstance().getAwsGroupRepo();
-        ApiResponse<List<AwsGroupInstance>> instancesResponse = awsGroupRepo.getGroupInstances(groupId, this.accountId, this.secret);
+        ApiResponse<List<AwsGroupInstance>> instancesResponse = awsGroupRepo.getGroupInstances(groupId, this.accountId);
 
         if (instancesResponse.isRequestSucceed()) {
             List<AwsGroupInstance> instances = instancesResponse.getValue();
@@ -157,7 +157,7 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
         Map<String, String> retVal = new HashMap<>();
 
         IAwsGroupRepo                       awsGroupRepo      = RepoManager.getInstance().getAwsGroupRepo();
-        ApiResponse<List<AwsGroupInstance>> instancesResponse = awsGroupRepo.getGroupInstances(groupId, this.accountId, this.secret);
+        ApiResponse<List<AwsGroupInstance>> instancesResponse = awsGroupRepo.getGroupInstances(groupId, this.accountId);
 
         if (instancesResponse.isRequestSucceed()) {
             List<AwsGroupInstance> instances = instancesResponse.getValue();

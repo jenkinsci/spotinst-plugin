@@ -5,7 +5,6 @@ import hudson.model.Node;
 import hudson.plugins.spotinst.api.infra.ApiResponse;
 import hudson.plugins.spotinst.api.infra.JsonMapper;
 import hudson.plugins.spotinst.common.ConnectionMethodEnum;
-import hudson.plugins.spotinst.common.CredentialsMethodEnum;
 import hudson.plugins.spotinst.model.gcp.GcpGroupInstance;
 import hudson.plugins.spotinst.model.gcp.GcpMachineType;
 import hudson.plugins.spotinst.model.gcp.GcpResultNewInstance;
@@ -59,7 +58,7 @@ public class GcpSpotinstCloud extends BaseSpotinstCloud {
         List<SpotinstSlave> retVal       = new LinkedList<>();
         IGcpGroupRepo       gcpGroupRepo = RepoManager.getInstance().getGcpGroupRepo();
         ApiResponse<GcpScaleUpResult> scaleUpResponse =
-                gcpGroupRepo.scaleUp(groupId, request.getExecutors(), this.accountId, this.secret);
+                gcpGroupRepo.scaleUp(groupId, request.getExecutors(), this.accountId);
 
         if (scaleUpResponse.isRequestSucceed()) {
             GcpScaleUpResult scaleUpResult = scaleUpResponse.getValue();
@@ -101,7 +100,7 @@ public class GcpSpotinstCloud extends BaseSpotinstCloud {
     public Boolean detachInstance(String instanceId) {
         Boolean              retVal                 = false;
         IGcpGroupRepo        gcpGroupRepo           = RepoManager.getInstance().getGcpGroupRepo();
-        ApiResponse<Boolean> detachInstanceResponse = gcpGroupRepo.detachInstance(groupId, instanceId, this.accountId, this.secret);
+        ApiResponse<Boolean> detachInstanceResponse = gcpGroupRepo.detachInstance(groupId, instanceId, this.accountId);
 
         if (detachInstanceResponse.isRequestSucceed()) {
             LOGGER.info(String.format("Instance %s detached", instanceId));
@@ -118,7 +117,7 @@ public class GcpSpotinstCloud extends BaseSpotinstCloud {
     @Override
     public void syncGroupInstances() {
         IGcpGroupRepo                       gcpGroupRepo      = RepoManager.getInstance().getGcpGroupRepo();
-        ApiResponse<List<GcpGroupInstance>> instancesResponse = gcpGroupRepo.getGroupInstances(groupId, this.accountId, this.secret);
+        ApiResponse<List<GcpGroupInstance>> instancesResponse = gcpGroupRepo.getGroupInstances(groupId, this.accountId);
 
         if (instancesResponse.isRequestSucceed()) {
 
@@ -149,7 +148,7 @@ public class GcpSpotinstCloud extends BaseSpotinstCloud {
         Map<String, String> retVal = new HashMap<>();
 
         IGcpGroupRepo                       awsGroupRepo      = RepoManager.getInstance().getGcpGroupRepo();
-        ApiResponse<List<GcpGroupInstance>> instancesResponse = awsGroupRepo.getGroupInstances(groupId, this.accountId, this.secret);
+        ApiResponse<List<GcpGroupInstance>> instancesResponse = awsGroupRepo.getGroupInstances(groupId, this.accountId);
 
         if (instancesResponse.isRequestSucceed()) {
             List<GcpGroupInstance> instances = instancesResponse.getValue();
@@ -191,16 +190,6 @@ public class GcpSpotinstCloud extends BaseSpotinstCloud {
 
         return retVal;
     }
-
-    @Override
-    public void setCredentialsId(String credentialsId) {
-        this.credentialsId = credentialsId;
-    }
-    @Override
-    public void setCredentialsMethod(CredentialsMethodEnum credentialsMethod) {
-        this.credentialsMethod = credentialsMethod;
-    }
-
     //endregion
 
     //region Private Methods

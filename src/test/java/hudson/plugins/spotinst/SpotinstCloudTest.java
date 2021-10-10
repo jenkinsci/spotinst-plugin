@@ -74,7 +74,7 @@ public class SpotinstCloudTest {
         spotinstCloud.setPendingInstances(pendingInstances);
         spotinstCloud.provision(null, 2);
         Mockito.verify(RepoManager.getInstance().getAwsGroupRepo(), Mockito.never())
-               .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString(), null);
+               .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString());
     }
 
     @Test
@@ -96,7 +96,7 @@ public class SpotinstCloudTest {
         newSpot.setInstanceType(AwsInstanceTypeEnum.C4Large.getValue());
         result.setNewSpotRequests(Arrays.asList(newSpot));
         Mockito.when(RepoManager.getInstance().getAwsGroupRepo()
-                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString(), null))
+                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString()))
                .thenReturn(new ApiResponse<>(result));
 
         spotinstCloud.provision(null, 4);
@@ -106,7 +106,7 @@ public class SpotinstCloudTest {
         ArgumentCaptor<String>  accountIdCapture = ArgumentCaptor.forClass(String.class);
 
         Mockito.verify(RepoManager.getInstance().getAwsGroupRepo(), Mockito.times(1))
-               .scaleUp(groupCapture.capture(), unitsCapture.capture(), accountIdCapture.capture(), null);
+               .scaleUp(groupCapture.capture(), unitsCapture.capture(), accountIdCapture.capture());
         assertEquals(unitsCapture.getValue().intValue(), 2);
     }
 
@@ -130,7 +130,7 @@ public class SpotinstCloudTest {
         result.setNewSpotRequests(spots);
 
         Mockito.when(RepoManager.getInstance().getAwsGroupRepo()
-                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString(), null))
+                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString()))
                .thenReturn(new ApiResponse<>(result));
 
         spotCloud.provision(null, 2);
@@ -169,7 +169,7 @@ public class SpotinstCloudTest {
         List<AwsGroupInstance> result = Collections.singletonList(incomingInstance);
 
         Mockito.when(
-                RepoManager.getInstance().getAwsGroupRepo().getGroupInstances(Mockito.anyString(), Mockito.anyString(), null))
+                RepoManager.getInstance().getAwsGroupRepo().getGroupInstances(Mockito.anyString(), Mockito.anyString()))
                .thenReturn(new ApiResponse<>(result));
 
 
@@ -178,7 +178,7 @@ public class SpotinstCloudTest {
         scaleUpResult.setNewSpotRequests(spots);
 
         Mockito.when(RepoManager.getInstance().getAwsGroupRepo()
-                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString(), null))
+                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString()))
                .thenReturn(new ApiResponse<>(scaleUpResult));
 
         spotCloud.provision(null, 1);
@@ -214,7 +214,7 @@ public class SpotinstCloudTest {
         List<AwsGroupInstance> result = Collections.singletonList(incomingInstance);
 
         Mockito.when(
-                RepoManager.getInstance().getAwsGroupRepo().getGroupInstances(Mockito.anyString(), Mockito.anyString(), null))
+                RepoManager.getInstance().getAwsGroupRepo().getGroupInstances(Mockito.anyString(), Mockito.anyString()))
                .thenReturn(new ApiResponse<>(result));
 
 
@@ -223,7 +223,7 @@ public class SpotinstCloudTest {
         scaleUpResult.setNewSpotRequests(spots);
 
         Mockito.when(RepoManager.getInstance().getAwsGroupRepo()
-                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString(), null))
+                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString()))
                .thenReturn(new ApiResponse<>(scaleUpResult));
 
         spotCloud.provision(null, 1);
@@ -281,7 +281,7 @@ public class SpotinstCloudTest {
         spotinstCloud.setPendingInstances(pendingInstances);
         spotinstCloud.provision(null, 2);
         Mockito.verify(RepoManager.getInstance().getGcpGroupRepo(), Mockito.never())
-               .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString(), null);
+               .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString());
     }
 
     @Test
@@ -302,7 +302,7 @@ public class SpotinstCloudTest {
         newInstance.setMachineType(GcpMachineType.F1Micro.getName());
         result.setNewInstances(Arrays.asList(newInstance));
         Mockito.when(RepoManager.getInstance().getGcpGroupRepo()
-                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString(), null))
+                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString()))
                .thenReturn(new ApiResponse<>(result));
 
         spotinstCloud.provision(null, 4);
@@ -312,7 +312,7 @@ public class SpotinstCloudTest {
 
         ArgumentCaptor<String> accountIdCapture = ArgumentCaptor.forClass(String.class);
         Mockito.verify(RepoManager.getInstance().getGcpGroupRepo(), Mockito.times(1))
-               .scaleUp(groupCapture.capture(), unitsCapture.capture(), accountIdCapture.capture(), null);
+               .scaleUp(groupCapture.capture(), unitsCapture.capture(), accountIdCapture.capture());
         assertEquals(unitsCapture.getValue().intValue(), 2);
     }
     //endregion
@@ -330,7 +330,7 @@ public class SpotinstCloudTest {
         spotinstCloud.setPendingInstances(pendingInstances);
         spotinstCloud.provision(null, 2);
         Mockito.verify(RepoManager.getInstance().getAzureGroupRepo(), Mockito.never())
-               .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString(), null);
+               .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString());
     }
 
     @Test
@@ -345,7 +345,7 @@ public class SpotinstCloudTest {
         spotinstCloud.setPendingInstances(pendingInstances);
 
         Mockito.when(RepoManager.getInstance().getAzureGroupRepo()
-                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString(), null))
+                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString()))
                .thenReturn(new ApiResponse<Boolean>(new Boolean(true)));
 
         spotinstCloud.provision(null, 4);
@@ -355,7 +355,7 @@ public class SpotinstCloudTest {
         ArgumentCaptor<String>  accountIdCapture = ArgumentCaptor.forClass(String.class);
 
         Mockito.verify(RepoManager.getInstance().getAzureGroupRepo(), Mockito.times(1))
-               .scaleUp(groupCapture.capture(), unitsCapture.capture(), accountIdCapture.capture(), null);
+               .scaleUp(groupCapture.capture(), unitsCapture.capture(), accountIdCapture.capture());
         assertEquals(unitsCapture.getValue().intValue(), 2);
     }
     //endregion
@@ -374,7 +374,7 @@ public class SpotinstCloudTest {
         spotinstCloud.provision(null, 2);
 
         Mockito.verify(RepoManager.getInstance().getAzureVmGroupRepo(), Mockito.never())
-               .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString(), null);
+               .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString());
     }
 
     @Test
@@ -396,7 +396,7 @@ public class SpotinstCloudTest {
         List<AzureScaleUpResultNewVm> vms = Collections.singletonList(newSpot);
 
         Mockito.when(RepoManager.getInstance().getAzureVmGroupRepo()
-                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString(), null))
+                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString()))
                .thenReturn(new ApiResponse<>(vms));
 
         spotinstCloud.provision(null, 4);
@@ -406,7 +406,7 @@ public class SpotinstCloudTest {
         ArgumentCaptor<String>  accountIdCapture = ArgumentCaptor.forClass(String.class);
 
         Mockito.verify(RepoManager.getInstance().getAzureVmGroupRepo(), Mockito.times(1))
-               .scaleUp(groupCapture.capture(), unitsCapture.capture(), accountIdCapture.capture(), null);
+               .scaleUp(groupCapture.capture(), unitsCapture.capture(), accountIdCapture.capture());
 
         assertEquals(unitsCapture.getValue().intValue(), 2);
     }
@@ -426,7 +426,7 @@ public class SpotinstCloudTest {
         List<AzureScaleUpResultNewVm> vms = Collections.singletonList(newSpot);
 
         Mockito.when(RepoManager.getInstance().getAzureVmGroupRepo()
-                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString(), null))
+                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString()))
                .thenReturn(new ApiResponse<>(vms));
 
         spotinstCloud.provision(null, 4);
@@ -459,7 +459,7 @@ public class SpotinstCloudTest {
         List<AzureScaleUpResultNewVm> vms = Arrays.asList(newVm1, newVm2);
 
         Mockito.when(RepoManager.getInstance().getAzureVmGroupRepo()
-                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString(), null))
+                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString()))
                .thenReturn(new ApiResponse<>(vms));
 
         spotinstCloud.provision(null, 4);
@@ -499,13 +499,13 @@ public class SpotinstCloudTest {
         List<AzureScaleUpResultNewVm> vms = Arrays.asList(newVm1, newVm2);
 
         Mockito.when(RepoManager.getInstance().getAzureVmGroupRepo()
-                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString(), null))
+                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString()))
                .thenReturn(new ApiResponse<>(vms));
 
         spotinstCloud.provision(null, 3);
         spotinstCloud.provision(null, 2);
 
-        Mockito.verify(RepoManager.getInstance().getAzureVmGroupRepo(), Mockito.times(1)).scaleUp(groupId, 1, null, null);
+        Mockito.verify(RepoManager.getInstance().getAzureVmGroupRepo(), Mockito.times(1)).scaleUp(groupId, 1, null);
     }
     //endregion
 
@@ -529,7 +529,7 @@ public class SpotinstCloudTest {
         List<AzureScaleUpResultNewVm> vms = Collections.singletonList(newSpot);
 
         Mockito.when(RepoManager.getInstance().getAzureVmGroupRepo()
-                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString(), null))
+                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString()))
                .thenReturn(new ApiResponse<>(vms));
 
         spotCloud.provision(null, 2);
@@ -581,7 +581,7 @@ public class SpotinstCloudTest {
         List<AwsGroupInstance> result = Collections.singletonList(incomingInstance);
 
         Mockito.when(
-                RepoManager.getInstance().getAwsGroupRepo().getGroupInstances(Mockito.anyString(), Mockito.anyString(), null))
+                RepoManager.getInstance().getAwsGroupRepo().getGroupInstances(Mockito.anyString(), Mockito.anyString()))
                .thenReturn(new ApiResponse<>(result));
 
 
@@ -590,7 +590,7 @@ public class SpotinstCloudTest {
         scaleUpResult.setNewSpotRequests(spots);
 
         Mockito.when(RepoManager.getInstance().getAwsGroupRepo()
-                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString(), null))
+                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString()))
                .thenReturn(new ApiResponse<>(scaleUpResult));
 
         cloud.provision(null, 1);
@@ -620,7 +620,7 @@ public class SpotinstCloudTest {
         List<AwsGroupInstance> result = Collections.singletonList(incomingInstance);
 
         Mockito.when(
-                RepoManager.getInstance().getAwsGroupRepo().getGroupInstances(Mockito.anyString(), Mockito.anyString(), null))
+                RepoManager.getInstance().getAwsGroupRepo().getGroupInstances(Mockito.anyString(), Mockito.anyString()))
                .thenReturn(new ApiResponse<>(result));
 
 
@@ -629,7 +629,7 @@ public class SpotinstCloudTest {
         scaleUpResult.setNewSpotRequests(spots);
 
         Mockito.when(RepoManager.getInstance().getAwsGroupRepo()
-                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString(), null))
+                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString()))
                .thenReturn(new ApiResponse<>(scaleUpResult));
 
         cloud.provision(null, 1);
@@ -664,7 +664,7 @@ public class SpotinstCloudTest {
         List<AwsGroupInstance> result = Collections.singletonList(incomingInstance);
 
         Mockito.when(
-                RepoManager.getInstance().getAwsGroupRepo().getGroupInstances(Mockito.anyString(), Mockito.anyString(), null))
+                RepoManager.getInstance().getAwsGroupRepo().getGroupInstances(Mockito.anyString(), Mockito.anyString()))
                .thenReturn(new ApiResponse<>(result));
 
 
@@ -673,7 +673,7 @@ public class SpotinstCloudTest {
         scaleUpResult.setNewSpotRequests(spots);
 
         Mockito.when(RepoManager.getInstance().getAwsGroupRepo()
-                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString(), null))
+                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString()))
                .thenReturn(new ApiResponse<>(scaleUpResult));
 
         cloud.provision(null, 1);
@@ -705,7 +705,7 @@ public class SpotinstCloudTest {
         List<AwsGroupInstance> result = Collections.singletonList(incomingInstance);
 
         Mockito.when(
-                RepoManager.getInstance().getAwsGroupRepo().getGroupInstances(Mockito.anyString(), Mockito.anyString(), null))
+                RepoManager.getInstance().getAwsGroupRepo().getGroupInstances(Mockito.anyString(), Mockito.anyString()))
                .thenReturn(new ApiResponse<>(result));
 
 
@@ -714,7 +714,7 @@ public class SpotinstCloudTest {
         scaleUpResult.setNewSpotRequests(spots);
 
         Mockito.when(RepoManager.getInstance().getAwsGroupRepo()
-                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString(), null))
+                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString()))
                .thenReturn(new ApiResponse<>(scaleUpResult));
 
         cloud.provision(null, 1);
@@ -744,7 +744,7 @@ public class SpotinstCloudTest {
         List<AwsGroupInstance> result = Collections.singletonList(incomingInstance);
 
         Mockito.when(
-                RepoManager.getInstance().getAwsGroupRepo().getGroupInstances(Mockito.anyString(), Mockito.anyString(), null))
+                RepoManager.getInstance().getAwsGroupRepo().getGroupInstances(Mockito.anyString(), Mockito.anyString()))
                .thenReturn(new ApiResponse<>(result));
 
 
@@ -753,7 +753,7 @@ public class SpotinstCloudTest {
         scaleUpResult.setNewSpotRequests(spots);
 
         Mockito.when(RepoManager.getInstance().getAwsGroupRepo()
-                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString(), null))
+                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString()))
                .thenReturn(new ApiResponse<>(scaleUpResult));
 
         cloud.provision(null, 1);
@@ -789,7 +789,7 @@ public class SpotinstCloudTest {
         List<AwsGroupInstance> result = Collections.singletonList(incomingInstance);
 
         Mockito.when(
-                RepoManager.getInstance().getAwsGroupRepo().getGroupInstances(Mockito.anyString(), Mockito.anyString(), null))
+                RepoManager.getInstance().getAwsGroupRepo().getGroupInstances(Mockito.anyString(), Mockito.anyString()))
                .thenReturn(new ApiResponse<>(result));
 
 
@@ -798,7 +798,7 @@ public class SpotinstCloudTest {
         scaleUpResult.setNewSpotRequests(spots);
 
         Mockito.when(RepoManager.getInstance().getAwsGroupRepo()
-                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString(), null))
+                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString()))
                .thenReturn(new ApiResponse<>(scaleUpResult));
 
         cloud.provision(null, 1);
@@ -829,7 +829,7 @@ public class SpotinstCloudTest {
         List<AwsGroupInstance> result = Collections.singletonList(incomingInstance);
 
         Mockito.when(
-                RepoManager.getInstance().getAwsGroupRepo().getGroupInstances(Mockito.anyString(), Mockito.anyString(), null))
+                RepoManager.getInstance().getAwsGroupRepo().getGroupInstances(Mockito.anyString(), Mockito.anyString()))
                .thenReturn(new ApiResponse<>(result));
 
 
@@ -838,7 +838,7 @@ public class SpotinstCloudTest {
         scaleUpResult.setNewSpotRequests(spots);
 
         Mockito.when(RepoManager.getInstance().getAwsGroupRepo()
-                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString(), null))
+                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString()))
                .thenReturn(new ApiResponse<>(scaleUpResult));
 
         cloud.provision(null, 1);
@@ -868,7 +868,7 @@ public class SpotinstCloudTest {
         List<AwsGroupInstance> result = Collections.singletonList(incomingInstance);
 
         Mockito.when(
-                RepoManager.getInstance().getAwsGroupRepo().getGroupInstances(Mockito.anyString(), Mockito.anyString(), null))
+                RepoManager.getInstance().getAwsGroupRepo().getGroupInstances(Mockito.anyString(), Mockito.anyString()))
                .thenReturn(new ApiResponse<>(result));
 
 
@@ -877,7 +877,7 @@ public class SpotinstCloudTest {
         scaleUpResult.setNewSpotRequests(spots);
 
         Mockito.when(RepoManager.getInstance().getAwsGroupRepo()
-                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString(), null))
+                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString()))
                .thenReturn(new ApiResponse<>(scaleUpResult));
 
         cloud.provision(null, 1);
@@ -913,7 +913,7 @@ public class SpotinstCloudTest {
         List<AwsGroupInstance> result = Collections.singletonList(incomingInstance);
 
         Mockito.when(
-                RepoManager.getInstance().getAwsGroupRepo().getGroupInstances(Mockito.anyString(), Mockito.anyString(), null))
+                RepoManager.getInstance().getAwsGroupRepo().getGroupInstances(Mockito.anyString(), Mockito.anyString()))
                .thenReturn(new ApiResponse<>(result));
 
 
@@ -922,7 +922,7 @@ public class SpotinstCloudTest {
         scaleUpResult.setNewSpotRequests(spots);
 
         Mockito.when(RepoManager.getInstance().getAwsGroupRepo()
-                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString(), null))
+                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString()))
                .thenReturn(new ApiResponse<>(scaleUpResult));
 
         cloud.provision(null, 1);
@@ -952,7 +952,7 @@ public class SpotinstCloudTest {
         List<AwsGroupInstance> result = Collections.singletonList(incomingInstance);
 
         Mockito.when(
-                RepoManager.getInstance().getAwsGroupRepo().getGroupInstances(Mockito.anyString(), Mockito.anyString(), null))
+                RepoManager.getInstance().getAwsGroupRepo().getGroupInstances(Mockito.anyString(), Mockito.anyString()))
                .thenReturn(new ApiResponse<>(result));
 
 
@@ -961,7 +961,7 @@ public class SpotinstCloudTest {
         scaleUpResult.setNewSpotRequests(spots);
 
         Mockito.when(RepoManager.getInstance().getAwsGroupRepo()
-                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString(), null))
+                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString()))
                .thenReturn(new ApiResponse<>(scaleUpResult));
 
         cloud.provision(null, 1);
@@ -991,7 +991,7 @@ public class SpotinstCloudTest {
         List<AwsGroupInstance> result = Collections.singletonList(incomingInstance);
 
         Mockito.when(
-                RepoManager.getInstance().getAwsGroupRepo().getGroupInstances(Mockito.anyString(), Mockito.anyString(), null))
+                RepoManager.getInstance().getAwsGroupRepo().getGroupInstances(Mockito.anyString(), Mockito.anyString()))
                .thenReturn(new ApiResponse<>(result));
 
 
@@ -1000,7 +1000,7 @@ public class SpotinstCloudTest {
         scaleUpResult.setNewSpotRequests(spots);
 
         Mockito.when(RepoManager.getInstance().getAwsGroupRepo()
-                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString(), null))
+                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString()))
                .thenReturn(new ApiResponse<>(scaleUpResult));
 
         cloud.provision(null, 1);
@@ -1036,7 +1036,7 @@ public class SpotinstCloudTest {
         List<AwsGroupInstance> result = Collections.singletonList(incomingInstance);
 
         Mockito.when(
-                RepoManager.getInstance().getAwsGroupRepo().getGroupInstances(Mockito.anyString(), Mockito.anyString(), null))
+                RepoManager.getInstance().getAwsGroupRepo().getGroupInstances(Mockito.anyString(), Mockito.anyString()))
                .thenReturn(new ApiResponse<>(result));
 
 
@@ -1045,7 +1045,7 @@ public class SpotinstCloudTest {
         scaleUpResult.setNewSpotRequests(spots);
 
         Mockito.when(RepoManager.getInstance().getAwsGroupRepo()
-                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString(), null))
+                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString()))
                .thenReturn(new ApiResponse<>(scaleUpResult));
 
         cloud.provision(null, 1);
@@ -1076,7 +1076,7 @@ public class SpotinstCloudTest {
         List<AwsGroupInstance> result = Collections.singletonList(incomingInstance);
 
         Mockito.when(
-                RepoManager.getInstance().getAwsGroupRepo().getGroupInstances(Mockito.anyString(), Mockito.anyString(), null))
+                RepoManager.getInstance().getAwsGroupRepo().getGroupInstances(Mockito.anyString(), Mockito.anyString()))
                .thenReturn(new ApiResponse<>(result));
 
 
@@ -1085,7 +1085,7 @@ public class SpotinstCloudTest {
         scaleUpResult.setNewSpotRequests(spots);
 
         Mockito.when(RepoManager.getInstance().getAwsGroupRepo()
-                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString(), null))
+                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString()))
                .thenReturn(new ApiResponse<>(scaleUpResult));
 
         cloud.provision(null, 1);
@@ -1114,7 +1114,7 @@ public class SpotinstCloudTest {
         List<AwsGroupInstance> result = Collections.singletonList(incomingInstance);
 
         Mockito.when(
-                RepoManager.getInstance().getAwsGroupRepo().getGroupInstances(Mockito.anyString(), Mockito.anyString(), null))
+                RepoManager.getInstance().getAwsGroupRepo().getGroupInstances(Mockito.anyString(), Mockito.anyString()))
                .thenReturn(new ApiResponse<>(result));
 
 
@@ -1123,7 +1123,7 @@ public class SpotinstCloudTest {
         scaleUpResult.setNewSpotRequests(spots);
 
         Mockito.when(RepoManager.getInstance().getAwsGroupRepo()
-                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString(), null))
+                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString()))
                .thenReturn(new ApiResponse<>(scaleUpResult));
 
         cloud.provision(null, 1);
@@ -1159,7 +1159,7 @@ public class SpotinstCloudTest {
         List<AwsGroupInstance> result = Collections.singletonList(incomingInstance);
 
         Mockito.when(
-                RepoManager.getInstance().getAwsGroupRepo().getGroupInstances(Mockito.anyString(), Mockito.anyString(), null))
+                RepoManager.getInstance().getAwsGroupRepo().getGroupInstances(Mockito.anyString(), Mockito.anyString()))
                .thenReturn(new ApiResponse<>(result));
 
 
@@ -1168,7 +1168,7 @@ public class SpotinstCloudTest {
         scaleUpResult.setNewSpotRequests(spots);
 
         Mockito.when(RepoManager.getInstance().getAwsGroupRepo()
-                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString(), null))
+                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString()))
                .thenReturn(new ApiResponse<>(scaleUpResult));
 
         cloud.provision(null, 1);
@@ -1202,7 +1202,7 @@ public class SpotinstCloudTest {
         List<AwsGroupInstance> result = Collections.singletonList(incomingInstance);
 
         Mockito.when(
-                RepoManager.getInstance().getAwsGroupRepo().getGroupInstances(Mockito.anyString(), Mockito.anyString(), null))
+                RepoManager.getInstance().getAwsGroupRepo().getGroupInstances(Mockito.anyString(), Mockito.anyString()))
                .thenReturn(new ApiResponse<>(result));
 
 
@@ -1211,14 +1211,14 @@ public class SpotinstCloudTest {
         scaleUpResult.setNewSpotRequests(spots);
 
         Mockito.when(RepoManager.getInstance().getAwsGroupRepo()
-                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString(), null))
+                                .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString()))
                .thenReturn(new ApiResponse<>(scaleUpResult));
 
         cloud.provision(null, 1);
 
         Boolean detachResult = true;
         Mockito.when(
-                RepoManager.getInstance().getAwsGroupRepo().detachInstance(Mockito.anyString(), Mockito.anyString(), null))
+                RepoManager.getInstance().getAwsGroupRepo().detachInstance(Mockito.anyString(), Mockito.anyString()))
                .thenReturn(new ApiResponse<>(detachResult));
 
         SpotinstSlave agent = (SpotinstSlave) Jenkins.get().getNode(newSpot.getInstanceId());

@@ -44,7 +44,6 @@
              <f:dropdownDescriptorSelector field="computerConnector" descriptors="${descriptor.getComputerConnectorDescriptors()}" />
             </f:entry>
           </f:radioBlock>
-
       </j:when>
       <j:otherwise>
         <f:entry title="${%Tunnel connection through}" field="tunnel">
@@ -121,17 +120,5 @@
 
 <st:include class="${descriptor.clazz}" page="config-entries.jelly" />
 
-<f:section title="Configure Spot token">
-    <td>
-    <f:radioBlock checked="${instance == null || instance.credentialsMethod == null || instance.credentialsMethod == 'GlobalConfiguration'}" name="credentialsMethod" title="Spot Personal Access Token From Global Configuration" value="GlobalConfiguration" inline="true">
-    </f:radioBlock>
-
-    <f:radioBlock checked="${instance.credentialsMethod == 'CredentialsStore'}" name="credentialsMethod" title="Spot Personal Access Token From Credentials Store" value="CredentialsStore" inline="true">
-        <f:entry field="credentialsId" title="${%Spot Token}">
-            <c:select />
-        </f:entry>
-    </f:radioBlock>
-    </td>
-    </f:section>
 </j:jelly>
 

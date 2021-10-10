@@ -6,7 +6,6 @@ import hudson.plugins.spotinst.api.infra.ApiResponse;
 import hudson.plugins.spotinst.api.infra.JsonMapper;
 import hudson.plugins.spotinst.common.ConnectionMethodEnum;
 import hudson.plugins.spotinst.common.Constants;
-import hudson.plugins.spotinst.common.CredentialsMethodEnum;
 import hudson.plugins.spotinst.model.azure.AzureGroupVm;
 import hudson.plugins.spotinst.model.azure.AzureScaleUpResultNewVm;
 import hudson.plugins.spotinst.model.azure.AzureVmSizeEnum;
@@ -56,7 +55,7 @@ public class AzureSpotCloud extends BaseSpotinstCloud {
         List<SpotinstSlave> retVal           = new LinkedList<>();
         IAzureVmGroupRepo   azureVmGroupRepo = RepoManager.getInstance().getAzureVmGroupRepo();
         ApiResponse<List<AzureScaleUpResultNewVm>> scaleUpResponse =
-                azureVmGroupRepo.scaleUp(groupId, request.getExecutors(), this.accountId, this.secret);
+                azureVmGroupRepo.scaleUp(groupId, request.getExecutors(), this.accountId);
 
         if (scaleUpResponse.isRequestSucceed()) {
             List<AzureScaleUpResultNewVm> newVms = scaleUpResponse.getValue();
@@ -83,7 +82,7 @@ public class AzureSpotCloud extends BaseSpotinstCloud {
     public Boolean detachInstance(String instanceId) {
         Boolean              retVal           = false;
         IAzureVmGroupRepo    azureVmGroupRepo = RepoManager.getInstance().getAzureVmGroupRepo();
-        ApiResponse<Boolean> detachVmResponse = azureVmGroupRepo.detachVM(groupId, instanceId, this.accountId, this.secret);
+        ApiResponse<Boolean> detachVmResponse = azureVmGroupRepo.detachVM(groupId, instanceId, this.accountId);
 
         if (detachVmResponse.isRequestSucceed()) {
             LOGGER.info(String.format("Instance %s detached", instanceId));
@@ -110,7 +109,7 @@ public class AzureSpotCloud extends BaseSpotinstCloud {
     @Override
     public void syncGroupInstances() {
         IAzureVmGroupRepo               azureVmGroupRepo  = RepoManager.getInstance().getAzureVmGroupRepo();
-        ApiResponse<List<AzureGroupVm>> instancesResponse = azureVmGroupRepo.getGroupVms(groupId, this.accountId, this.secret);
+        ApiResponse<List<AzureGroupVm>> instancesResponse = azureVmGroupRepo.getGroupVms(groupId, this.accountId);
 
         if (instancesResponse.isRequestSucceed()) {
             List<AzureGroupVm> vms = instancesResponse.getValue();
@@ -140,7 +139,7 @@ public class AzureSpotCloud extends BaseSpotinstCloud {
         Map<String, String> retVal = new HashMap<>();
 
         IAzureVmGroupRepo               awsGroupRepo      = RepoManager.getInstance().getAzureVmGroupRepo();
-        ApiResponse<List<AzureGroupVm>> instancesResponse = awsGroupRepo.getGroupVms(groupId, this.accountId, this.secret);
+        ApiResponse<List<AzureGroupVm>> instancesResponse = awsGroupRepo.getGroupVms(groupId, this.accountId);
 
         if (instancesResponse.isRequestSucceed()) {
             List<AzureGroupVm> instances = instancesResponse.getValue();
@@ -176,15 +175,6 @@ public class AzureSpotCloud extends BaseSpotinstCloud {
         }
 
         return retVal;
-    }
-
-    @Override
-    public void setCredentialsId(String credentialsId) {
-        this.credentialsId = credentialsId;
-    }
-    @Override
-    public void setCredentialsMethod(CredentialsMethodEnum credentialsMethod) {
-        this.credentialsMethod = credentialsMethod;
     }
 
     //endregion

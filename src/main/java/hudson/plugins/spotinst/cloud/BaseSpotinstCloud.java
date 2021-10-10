@@ -1,30 +1,22 @@
 package hudson.plugins.spotinst.cloud;
-import com.cloudbees.plugins.credentials.*;
-import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
+
 import hudson.DescriptorExtensionList;
 import hudson.model.*;
 import hudson.model.labels.LabelAtom;
 import hudson.plugins.spotinst.api.infra.JsonMapper;
 import hudson.plugins.spotinst.common.*;
-import hudson.plugins.spotinst.credentials.SpotTokenCredentialsLoader;
-import hudson.plugins.spotinst.credentials.SpotTokenCredentialsLoaderImpl;
 import hudson.plugins.spotinst.slave.*;
 import hudson.plugins.sshslaves.SSHConnector;
-import hudson.security.ACL;
 import hudson.slaves.*;
 import hudson.slaves.NodeProvisioner.PlannedNode;
 import hudson.tools.ToolDescriptor;
 import hudson.tools.ToolInstallation;
 import hudson.tools.ToolLocationNodeProperty;
-import hudson.util.ListBoxModel;
-import hudson.util.Secret;
 import jenkins.model.Jenkins;
 import org.apache.commons.lang.BooleanUtils;
-import org.kohsuke.stapler.AncestorInPath;
-import org.kohsuke.stapler.DataBoundSetter;
-import org.kohsuke.stapler.interceptor.RequirePOST;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -42,24 +34,21 @@ public abstract class BaseSpotinstCloud extends Cloud {
     protected String                            groupId;
     protected Map<String, PendingInstance>      pendingInstances;
     protected Map<String, SlaveInstanceDetails> slaveInstancesDetailsByInstanceId;
-    protected  Secret                           secret;
-    protected String                            credentialsId;
-    protected   CredentialsMethodEnum           credentialsMethod;
-    private String                              labelString;
-    private String                              idleTerminationMinutes;
-    private String                              workspaceDir;
-    private Set<LabelAtom>                      labelSet;
-    private SlaveUsageEnum                      usage;
-    private String                              tunnel;
-    private String                              vmargs;
-    private EnvironmentVariablesNodeProperty environmentVariables;
-    private ToolLocationNodeProperty         toolLocations;
-    private   Boolean                    shouldUseWebsocket;
-    private   Boolean                    shouldRetriggerBuilds;
-    private   ComputerConnector          computerConnector;
-    private   ConnectionMethodEnum       connectionMethod;
-    private   Boolean                    shouldUsePrivateIp;
-    private   SpotGlobalExecutorOverride globalExecutorOverride;
+    private   String                            labelString;
+    private   String                            idleTerminationMinutes;
+    private   String                            workspaceDir;
+    private   Set<LabelAtom>                    labelSet;
+    private   SlaveUsageEnum                    usage;
+    private   String                            tunnel;
+    private   String                            vmargs;
+    private   EnvironmentVariablesNodeProperty  environmentVariables;
+    private   ToolLocationNodeProperty          toolLocations;
+    private   Boolean                           shouldUseWebsocket;
+    private   Boolean                           shouldRetriggerBuilds;
+    private   ComputerConnector                 computerConnector;
+    private   ConnectionMethodEnum              connectionMethod;
+    private   Boolean                           shouldUsePrivateIp;
+    private   SpotGlobalExecutorOverride        globalExecutorOverride;
     //endregion
 
     //region Constructor
@@ -118,82 +107,6 @@ public abstract class BaseSpotinstCloud extends Cloud {
             this.globalExecutorOverride = new SpotGlobalExecutorOverride(false, 1);
         }
 
-        //readResolve();
-    }
-
-    public BaseSpotinstCloud(String groupId, String labelString, String idleTerminationMinutes, String workspaceDir,
-                             SlaveUsageEnum usage, String tunnel, Boolean shouldUseWebsocket,
-                             Boolean shouldRetriggerBuilds, String vmargs,
-                             EnvironmentVariablesNodeProperty environmentVariables,
-                             ToolLocationNodeProperty toolLocations, String accountId,
-                             ConnectionMethodEnum connectionMethod, ComputerConnector computerConnector,
-                             Boolean shouldUsePrivateIp, SpotGlobalExecutorOverride globalExecutorOverride, CredentialsMethodEnum credentialsMethod, String credentialsId) {
-
-        super(groupId);
-        this.groupId = groupId;
-        this.accountId = accountId;
-        this.labelString = labelString;
-        this.idleTerminationMinutes = idleTerminationMinutes;
-        this.workspaceDir = workspaceDir;
-        this.pendingInstances = new HashMap<>();
-        labelSet = Label.parse(labelString);
-
-        if (usage != null) {
-            this.usage = usage;
-        }
-        else {
-            this.usage = SlaveUsageEnum.NORMAL;
-        }
-
-        this.shouldRetriggerBuilds = shouldRetriggerBuilds == null || BooleanUtils.isTrue(shouldRetriggerBuilds);
-        this.tunnel = tunnel;
-        this.shouldUseWebsocket = shouldUseWebsocket;
-        this.vmargs = vmargs;
-        this.environmentVariables = environmentVariables;
-        this.toolLocations = toolLocations;
-        this.slaveInstancesDetailsByInstanceId = new HashMap<>();
-
-        if (connectionMethod != null) {
-            this.connectionMethod = connectionMethod;
-        }
-        else {
-            this.connectionMethod = ConnectionMethodEnum.JNLP;
-        }
-
-        if (credentialsMethod != null) {
-            this.credentialsMethod = credentialsMethod;
-        }
-        else {
-            this.credentialsMethod = credentialsMethod.GlobalConfiguration;
-        }
-
-        this.credentialsId = credentialsId;
-
-        if (shouldUsePrivateIp != null) {
-            this.shouldUsePrivateIp = shouldUsePrivateIp;
-        }
-        else {
-            this.shouldUsePrivateIp = false;
-        }
-
-        this.computerConnector = computerConnector;
-
-        if (globalExecutorOverride != null) {
-            this.globalExecutorOverride = globalExecutorOverride;
-        }
-        else {
-            this.globalExecutorOverride = new SpotGlobalExecutorOverride(false, 1);
-        }
-
-        if(this.credentialsMethod == CredentialsMethodEnum.CredentialsStore) {
-            SpotTokenLoader            spotTokenLoader            = new SpotTokenLoader(this.credentialsId, this.credentialsId);
-            SpotTokenCredentialsLoader spotTokenCredentialsLoader = spotTokenLoader.getAdminCredentials();
-            this.secret = spotTokenCredentialsLoader.getSecret();
-            String token = this.secret.getPlainText();
-            LOGGER.info(String.format("*****************************secret: %s****************************",token));
-        }
-
-        LOGGER.info(String.format("*****************************BaseSpotinstCloud credentialsId: %s****************************",this.credentialsId));
     }
     //endregion
 
@@ -431,11 +344,6 @@ public abstract class BaseSpotinstCloud extends Cloud {
 
         return retVal;
     }
-
-    public String getCredentialsId() {
-        return credentialsId;
-    }
-
     //endregion
 
     //region Private Methods
@@ -523,7 +431,6 @@ public abstract class BaseSpotinstCloud extends Cloud {
 
         return retVal;
     }
-
     //endregion
 
     //region Protected Methods
@@ -714,26 +621,6 @@ public abstract class BaseSpotinstCloud extends Cloud {
     protected Integer getSlaveOfflineThreshold() {
         return Constants.SLAVE_OFFLINE_THRESHOLD_IN_MINUTES;
     }
-
-    @DataBoundSetter
-    protected void setCredentialsId(String credentialsId) {
-        this.credentialsId = credentialsId;
-    }
-
-    @DataBoundSetter
-    protected void setCredentialsMethod(CredentialsMethodEnum credentialsMethod) {
-        this.credentialsMethod = credentialsMethod;
-        if(this.credentialsMethod == CredentialsMethodEnum.CredentialsStore) {
-            SpotTokenLoader            spotTokenLoader            = new SpotTokenLoader(this.credentialsId, this.credentialsId);
-            SpotTokenCredentialsLoader spotTokenCredentialsLoader = spotTokenLoader.getAdminCredentials();
-            this.secret = spotTokenCredentialsLoader.getSecret();
-            String token = this.secret.getPlainText();
-            LOGGER.info(String.format("*****************************secret: %s****************************",token));
-        }
-
-        LOGGER.info(String.format("*****************************BaseSpotinstCloud credentialsId: %s****************************",this.credentialsId));
-    }
-
     //endregion
 
     //region Getters / Setters
@@ -805,20 +692,8 @@ public abstract class BaseSpotinstCloud extends Cloud {
         return connectionMethod;
     }
 
-    public  CredentialsMethodEnum getCredentialsMethod() {
-        if (this.credentialsMethod == null) {
-            return CredentialsMethodEnum.GlobalConfiguration;
-        }
-
-        return credentialsMethod;
-    }
-
     public void setConnectionMethod(ConnectionMethodEnum connectionMethod) {
         this.connectionMethod = connectionMethod;
-    }
-
-    public void setCredentialsMethodEnum(CredentialsMethodEnum credentialsnMethod) {
-        this.credentialsMethod = credentialsnMethod;
     }
 
 
@@ -890,21 +765,6 @@ public abstract class BaseSpotinstCloud extends Cloud {
             return Jenkins.get().getDescriptorList(ComputerConnector.class).stream()
                           .filter(x -> x.isSubTypeOf(SSHConnector.class)).collect(Collectors.toList());
         }
-
-        public List getCredentialsDescriptors() {
-            return Jenkins.get().getDescriptorList(Credentials.class).stream()
-                          .filter(x -> x.isSubTypeOf(SpotTokenCredentialsLoaderImpl.class)).collect(Collectors.toList());
-        }
-
-        @RequirePOST
-        public ListBoxModel doFillCredentialsIdItems(@AncestorInPath ItemGroup context) {
-            Jenkins.get().checkPermission(Jenkins.ADMINISTER);
-            return new StandardListBoxModel()
-                    .includeEmptyValue()
-                    .includeMatchingAs(ACL.SYSTEM, context, SpotTokenCredentialsLoader.class, Collections.emptyList(), CredentialsMatchers
-                            .always());
-        }
-
     }
     //endregion
 }

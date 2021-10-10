@@ -1,8 +1,5 @@
 package hudson.plugins.spotinst.common;
 
-/**
- * Created by Shibel Karmi Mansour on 30/12/2021.
- */
 public enum CredentialsMethodEnum {
     CredentialsStore("Credentials Store"),
     GlobalConfiguration("Global configuration (plain text)");
