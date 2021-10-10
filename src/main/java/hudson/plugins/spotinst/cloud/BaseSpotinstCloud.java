@@ -1,16 +1,13 @@
 package hudson.plugins.spotinst.cloud;
-
-import com.cloudbees.jenkins.plugins.sshcredentials.SSHUserPrivateKey;
-import com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey;
 import com.cloudbees.plugins.credentials.*;
 import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
-import com.cloudbees.plugins.credentials.domains.Domain;
-import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.DescriptorExtensionList;
 import hudson.model.*;
 import hudson.model.labels.LabelAtom;
 import hudson.plugins.spotinst.api.infra.JsonMapper;
 import hudson.plugins.spotinst.common.*;
+import hudson.plugins.spotinst.credentials.SpotTokenCredentialsLoader;
+import hudson.plugins.spotinst.credentials.SpotTokenCredentialsLoaderImpl;
 import hudson.plugins.spotinst.slave.*;
 import hudson.plugins.sshslaves.SSHConnector;
 import hudson.security.ACL;
@@ -19,27 +16,18 @@ import hudson.slaves.NodeProvisioner.PlannedNode;
 import hudson.tools.ToolDescriptor;
 import hudson.tools.ToolInstallation;
 import hudson.tools.ToolLocationNodeProperty;
-import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import hudson.util.Secret;
 import jenkins.model.Jenkins;
 import org.apache.commons.lang.BooleanUtils;
-import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundSetter;
-import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.interceptor.RequirePOST;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.annotation.CheckForNull;
-import javax.servlet.ServletException;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.StringReader;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 /**
@@ -54,16 +42,16 @@ public abstract class BaseSpotinstCloud extends Cloud {
     protected String                            groupId;
     protected Map<String, PendingInstance>      pendingInstances;
     protected Map<String, SlaveInstanceDetails> slaveInstancesDetailsByInstanceId;
-    protected  Secret             token;
-    protected String                   credentialsId;
-    protected   CredentialsMethodEnum      credentialsMethod;
-    private String                           labelString;
-    private String                           idleTerminationMinutes;
-    private String                           workspaceDir;
-    private Set<LabelAtom>                   labelSet;
-    private SlaveUsageEnum                   usage;
-    private String                           tunnel;
-    private String                           vmargs;
+    protected  Secret                           secret;
+    protected String                            credentialsId;
+    protected   CredentialsMethodEnum           credentialsMethod;
+    private String                              labelString;
+    private String                              idleTerminationMinutes;
+    private String                              workspaceDir;
+    private Set<LabelAtom>                      labelSet;
+    private SlaveUsageEnum                      usage;
+    private String                              tunnel;
+    private String                              vmargs;
     private EnvironmentVariablesNodeProperty environmentVariables;
     private ToolLocationNodeProperty         toolLocations;
     private   Boolean                    shouldUseWebsocket;
@@ -114,18 +102,6 @@ public abstract class BaseSpotinstCloud extends Cloud {
             this.connectionMethod = ConnectionMethodEnum.JNLP;
         }
 
-
-//        if (credentialsMethod != null) {
-//            this.credentialsMethod = credentialsMethod;
-//        }
-//        else {
-//            this.credentialsMethod = credentialsMethod.GlobalConfiguration;
-//        }
-//
-//        if(credentialsId != null){
-//            this.credentialsId = credentialsId;
-//        }
-
         if (shouldUsePrivateIp != null) {
             this.shouldUsePrivateIp = shouldUsePrivateIp;
         }
@@ -142,7 +118,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
             this.globalExecutorOverride = new SpotGlobalExecutorOverride(false, 1);
         }
 
-        readResolve();
+        //readResolve();
     }
 
     public BaseSpotinstCloud(String groupId, String labelString, String idleTerminationMinutes, String workspaceDir,
@@ -193,18 +169,6 @@ public abstract class BaseSpotinstCloud extends Cloud {
 
         this.credentialsId = credentialsId;
 
-        SpotCredentialsConfiguration sc = new SpotCredentialsConfiguration("2345a957-0901-40ad-843c-d2b0ce874e4e");
-        this.token  = sc.getCredentials().getSecret();
-        //this.token = getCredentials(this.credentialsId).getSecret();
-
-        if(this.token.getPlainText() != null){
-            LOGGER.info(String.format("**********************************************************%nthis.token.getPlainText() is NOT null%n**********************************************************"));
-            LOGGER.info(this.token.getPlainText().toString());
-        }
-        else{
-            LOGGER.info(String.format("**********************************************************%nthis.token.getPlainText() is null%n**********************************************************"));
-        }
-
         if (shouldUsePrivateIp != null) {
             this.shouldUsePrivateIp = shouldUsePrivateIp;
         }
@@ -221,7 +185,15 @@ public abstract class BaseSpotinstCloud extends Cloud {
             this.globalExecutorOverride = new SpotGlobalExecutorOverride(false, 1);
         }
 
-        //readResolve();
+        if(this.credentialsMethod == CredentialsMethodEnum.CredentialsStore) {
+            SpotTokenLoader            spotTokenLoader            = new SpotTokenLoader(this.credentialsId, this.credentialsId);
+            SpotTokenCredentialsLoader spotTokenCredentialsLoader = spotTokenLoader.getAdminCredentials();
+            this.secret = spotTokenCredentialsLoader.getSecret();
+            String token = this.secret.getPlainText();
+            LOGGER.info(String.format("*****************************secret: %s****************************",token));
+        }
+
+        LOGGER.info(String.format("*****************************BaseSpotinstCloud credentialsId: %s****************************",this.credentialsId));
     }
     //endregion
 
@@ -464,41 +436,6 @@ public abstract class BaseSpotinstCloud extends Cloud {
         return credentialsId;
     }
 
-//    public static AWSCredentialsProvider createCredentialsProvider(
-//            final boolean useInstanceProfileForCredentials,
-//            final String credentialsId,
-//            final String roleArn,
-//            final String roleSessionName,
-//            final String region) {
-//
-//        AWSCredentialsProvider provider = createCredentialsProvider(useInstanceProfileForCredentials, credentialsId);
-//
-//        if (StringUtils.isNotEmpty(roleArn) && StringUtils.isNotEmpty(roleSessionName)) {
-//            return new STSAssumeRoleSessionCredentialsProvider.Builder(roleArn, roleSessionName)
-//                    .withStsClient(AWSSecurityTokenServiceClientBuilder.standard()
-//                                                                       .withCredentials(provider)
-//                                                                       .withRegion(region)
-//                                                                       .withClientConfiguration(createClientConfiguration(convertHostName(region)))
-//                                                                       .build())
-//                    .build();
-//        }
-//
-//        return provider;
-//    }
-//
-//    public static AWSCredentialsProvider createCredentialsProvider(final boolean useInstanceProfileForCredentials, final String credentialsId) {
-//        if (useInstanceProfileForCredentials) {
-//            return new InstanceProfileCredentialsProvider(false);
-//        } else if (StringUtils.isBlank(credentialsId)) {
-//            return new DefaultAWSCredentialsProviderChain();
-//        } else {
-//            AmazonWebServicesCredentials credentials = getCredentials(credentialsId);
-//            if (credentials != null)
-//                return new AWSStaticCredentialsProvider(credentials.getCredentials());
-//        }
-//        return new DefaultAWSCredentialsProviderChain();
-//    }
-
     //endregion
 
     //region Private Methods
@@ -587,47 +524,6 @@ public abstract class BaseSpotinstCloud extends Cloud {
         return retVal;
     }
 
-    private void addNewGlobalCredential(Credentials credentials){
-        for (CredentialsStore credentialsStore: CredentialsProvider.lookupStores(Jenkins.get())) {
-
-            if (credentialsStore instanceof  SystemCredentialsProvider.StoreImpl) {
-
-                try {
-                    credentialsStore.addCredentials(Domain.global(), credentials);
-                } catch (IOException e) {
-                    this.credentialsId = null;
-                    LOGGER.warn("Exception converting legacy configuration to the new credentials API", e);
-                }
-            }
-
-        }
-    }
-
-    @CheckForNull
-    private static SpotSecretToken getCredentials(@CheckForNull String credentialsId) {
-        if (StringUtils.isBlank(credentialsId)) {
-            return null;
-        }
-        return (SpotSecretToken) CredentialsMatchers.firstOrNull(
-                CredentialsProvider.lookupCredentials(SpotSecretToken.class, Jenkins.get(),
-                                                      ACL.SYSTEM, Collections.emptyList()),
-                CredentialsMatchers.withId(credentialsId));
-    }
-
-//    private void addNewGlobalCredential(Credentials credentials){
-//        for (CredentialsStore credentialsStore: CredentialsProvider.lookupStores(Jenkins.get())) {
-//
-//            if (credentialsStore instanceof  SystemCredentialsProvider.StoreImpl) {
-//
-//                try {
-//                    credentialsStore.addCredentials(Domain.global(), credentials);
-//                } catch (IOException e) {
-//                    this.credentialsId = null;
-//                    LOGGER.log(Level.WARNING, "Exception converting legacy configuration to the new credentials API", e);
-//                }
-//            }
-//
-//        }
     //endregion
 
     //region Protected Methods
@@ -823,100 +719,20 @@ public abstract class BaseSpotinstCloud extends Cloud {
     protected void setCredentialsId(String credentialsId) {
         this.credentialsId = credentialsId;
     }
+
     @DataBoundSetter
     protected void setCredentialsMethod(CredentialsMethodEnum credentialsMethod) {
         this.credentialsMethod = credentialsMethod;
+        if(this.credentialsMethod == CredentialsMethodEnum.CredentialsStore) {
+            SpotTokenLoader            spotTokenLoader            = new SpotTokenLoader(this.credentialsId, this.credentialsId);
+            SpotTokenCredentialsLoader spotTokenCredentialsLoader = spotTokenLoader.getAdminCredentials();
+            this.secret = spotTokenCredentialsLoader.getSecret();
+            String token = this.secret.getPlainText();
+            LOGGER.info(String.format("*****************************secret: %s****************************",token));
+        }
+
+        LOGGER.info(String.format("*****************************BaseSpotinstCloud credentialsId: %s****************************",this.credentialsId));
     }
-
-//    protected void setSpotSecretToken(String CredentialsId){
-//        SpotCredentialsConfiguration server = new SpotCredentialsConfiguration(CredentialsId);
-//        this.spotSecretToken     = server.getCredentials();
-//    }
-
-//    protected AWSCredentialsProvider createCredentialsProvider() {
-//        return createCredentialsProvider(useInstanceProfileForCredentials, credentialsId);
-//    }
-
-    protected Object readResolve() {
-
-//        if (this.sshKeysCredentialsId == null && this.privateKey != null ){
-//            migratePrivateSshKeyToCredential(this.privateKey.getPrivateKey());
-//        }
-
-//        this.privateKey = null; // This enforces it not to be persisted and that CasC will never output privateKey on export
-        if(this.token != null){
-            LOGGER.error(String.format("**********************************************************%nSpot Token :%n%s%n**********************************************************", this.token.getPlainText()));
-        }
-        else{
-            LOGGER.error(String.format("**********************************************************%nthis.token is null%n**********************************************************"));
-        }
-        if (this.token != null && credentialsId == null) {
-            String secretKeyEncryptedValue = this.token.getEncryptedValue();
-            // REPLACE this.secretId by a credential
-
-            SystemCredentialsProvider systemCredentialsProvider = SystemCredentialsProvider.getInstance();
-
-            // ITERATE ON EXISTING CREDS AND DON'T CREATE IF EXIST
-            for (Credentials credentials: systemCredentialsProvider.getCredentials()) {
-                if (credentials instanceof SpotSecretToken) {
-                    SpotSecretToken spotCreds = (SpotSecretToken) credentials;
-                    SpotCredentials spotCredentials = spotCreds.getCredentials();
-                    if (Secret.toString(this.token).equals(spotCredentials.getSpotToken())) {
-                        this.credentialsId = spotCreds.getId();
-                        this.token = null;
-                        return this;
-                    }
-                }
-            }
-
-            // CREATE
-            String credsId = UUID.randomUUID().toString();
-            addNewGlobalCredential(new SpotCredentialsImpl(
-                    CredentialsScope.SYSTEM, credsId, this.credentialsId, secretKeyEncryptedValue,
-                    "EC2 Cloud - " + getDisplayName()));
-
-            this.credentialsId = credsId;
-            this.token = null;
-
-
-            // PROBLEM, GLOBAL STORE NOT FOUND
-            LOGGER.warn("Spotinst Plugin could not migrate credentials to the Jenkins Global Credentials Store, Spotinst Plugin for cloud {0} must be manually reconfigured", getDisplayName());
-        }
-
-        return this;
-    }
-
-//    private void migratePrivateSshKeyToCredential(String privateKey){
-//        // GET matching private key credential from Credential API if exists
-//        Optional<SSHUserPrivateKey> keyCredential = SystemCredentialsProvider.getInstance().getCredentials()
-//                                                                             .stream()
-//                                                                             .filter((cred) -> cred instanceof SSHUserPrivateKey)
-//                                                                             .filter((cred) -> ((SSHUserPrivateKey)cred).getPrivateKey().trim().equals(privateKey.trim()))
-//                                                                             .map(cred -> (SSHUserPrivateKey)cred)
-//                                                                             .findFirst();
-//
-//        if (keyCredential.isPresent()){
-//            // SET this.sshKeysCredentialsId with the found credential
-//            sshKeysCredentialsId = keyCredential.get().getId();
-//        } else {
-//            // CREATE new credential
-//            String credsId = UUID.randomUUID().toString();
-//
-//            SSHUserPrivateKey sshKeyCredentials = new BasicSSHUserPrivateKey(CredentialsScope.SYSTEM, credsId, "key",
-//                                                                             new BasicSSHUserPrivateKey.PrivateKeySource() {
-//                                                                                 @NonNull
-//                                                                                 @Override
-//                                                                                 public List<String> getPrivateKeys() {
-//                                                                                     return Collections.singletonList(privateKey.trim());
-//                                                                                 }
-//                                                                             }, "", "EC2 Cloud Private Key - " + getDisplayName());
-//
-//            addNewGlobalCredential(sshKeyCredentials);
-//
-//            sshKeysCredentialsId = credsId;
-//        }
-//    }
-
 
     //endregion
 
@@ -1077,7 +893,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
 
         public List getCredentialsDescriptors() {
             return Jenkins.get().getDescriptorList(Credentials.class).stream()
-                          .filter(x -> x.isSubTypeOf(SpotCredentialsImpl.class)).collect(Collectors.toList());
+                          .filter(x -> x.isSubTypeOf(SpotTokenCredentialsLoaderImpl.class)).collect(Collectors.toList());
         }
 
         @RequirePOST
@@ -1085,44 +901,9 @@ public abstract class BaseSpotinstCloud extends Cloud {
             Jenkins.get().checkPermission(Jenkins.ADMINISTER);
             return new StandardListBoxModel()
                     .includeEmptyValue()
-                    .includeMatchingAs(ACL.SYSTEM, context, SpotSecretToken.class, Collections.emptyList(), CredentialsMatchers
+                    .includeMatchingAs(ACL.SYSTEM, context, SpotTokenCredentialsLoader.class, Collections.emptyList(), CredentialsMatchers
                             .always());
         }
-
-//        @RequirePOST
-//        public FormValidation doCheckSshKeysCredentialsId(@AncestorInPath ItemGroup context, @QueryParameter String value) throws IOException, ServletException {
-//            Jenkins.get().checkPermission(Jenkins.ADMINISTER);
-//
-//            if (value == null || value.isEmpty()){
-//                return FormValidation.error("No ssh credentials selected");
-//            }
-//
-//            SSHUserPrivateKey sshCredential = getSshCredential(value, context);
-//            String privateKey = "";
-//            if (sshCredential != null) {
-//                privateKey = sshCredential.getPrivateKey();
-//            } else {
-//                return FormValidation.error("Failed to find credential \"" + value + "\" in store.");
-//            }
-//
-//            boolean        hasStart = false, hasEnd = false;
-//            BufferedReader br       = new BufferedReader(new StringReader(privateKey));
-//            String         line;
-//            while ((line = br.readLine()) != null) {
-//                if (line.equals("-----BEGIN RSA PRIVATE KEY-----") ||
-//                    line.equals("-----BEGIN OPENSSH PRIVATE KEY-----"))
-//                    hasStart = true;
-//                if (line.equals("-----END RSA PRIVATE KEY-----") ||
-//                    line.equals("-----END OPENSSH PRIVATE KEY-----"))
-//                    hasEnd = true;
-//            }
-//            if (!hasStart)
-//                return FormValidation.error("This doesn't look like a private key at all");
-//            if (!hasEnd)
-//                return FormValidation
-//                        .error("The private key is missing the trailing 'END RSA PRIVATE KEY' marker. Copy&paste error?");
-//            return FormValidation.ok();
-//        }
 
     }
     //endregion

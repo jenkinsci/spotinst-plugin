@@ -59,7 +59,7 @@ public class GcpSpotinstCloud extends BaseSpotinstCloud {
         List<SpotinstSlave> retVal       = new LinkedList<>();
         IGcpGroupRepo       gcpGroupRepo = RepoManager.getInstance().getGcpGroupRepo();
         ApiResponse<GcpScaleUpResult> scaleUpResponse =
-                gcpGroupRepo.scaleUp(groupId, request.getExecutors(), this.accountId, this.token);
+                gcpGroupRepo.scaleUp(groupId, request.getExecutors(), this.accountId, this.secret);
 
         if (scaleUpResponse.isRequestSucceed()) {
             GcpScaleUpResult scaleUpResult = scaleUpResponse.getValue();
@@ -101,7 +101,7 @@ public class GcpSpotinstCloud extends BaseSpotinstCloud {
     public Boolean detachInstance(String instanceId) {
         Boolean              retVal                 = false;
         IGcpGroupRepo        gcpGroupRepo           = RepoManager.getInstance().getGcpGroupRepo();
-        ApiResponse<Boolean> detachInstanceResponse = gcpGroupRepo.detachInstance(groupId, instanceId, this.accountId, this.token);
+        ApiResponse<Boolean> detachInstanceResponse = gcpGroupRepo.detachInstance(groupId, instanceId, this.accountId, this.secret);
 
         if (detachInstanceResponse.isRequestSucceed()) {
             LOGGER.info(String.format("Instance %s detached", instanceId));
@@ -118,7 +118,7 @@ public class GcpSpotinstCloud extends BaseSpotinstCloud {
     @Override
     public void syncGroupInstances() {
         IGcpGroupRepo                       gcpGroupRepo      = RepoManager.getInstance().getGcpGroupRepo();
-        ApiResponse<List<GcpGroupInstance>> instancesResponse = gcpGroupRepo.getGroupInstances(groupId, this.accountId, this.token);
+        ApiResponse<List<GcpGroupInstance>> instancesResponse = gcpGroupRepo.getGroupInstances(groupId, this.accountId, this.secret);
 
         if (instancesResponse.isRequestSucceed()) {
 
@@ -149,7 +149,7 @@ public class GcpSpotinstCloud extends BaseSpotinstCloud {
         Map<String, String> retVal = new HashMap<>();
 
         IGcpGroupRepo                       awsGroupRepo      = RepoManager.getInstance().getGcpGroupRepo();
-        ApiResponse<List<GcpGroupInstance>> instancesResponse = awsGroupRepo.getGroupInstances(groupId, this.accountId, this.token);
+        ApiResponse<List<GcpGroupInstance>> instancesResponse = awsGroupRepo.getGroupInstances(groupId, this.accountId, this.secret);
 
         if (instancesResponse.isRequestSucceed()) {
             List<GcpGroupInstance> instances = instancesResponse.getValue();

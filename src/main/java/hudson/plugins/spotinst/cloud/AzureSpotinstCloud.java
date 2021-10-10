@@ -55,7 +55,7 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
         List<SpotinstSlave> retVal = new LinkedList<>();
 
         IAzureGroupRepo      azureGroupRepo  = RepoManager.getInstance().getAzureGroupRepo();
-        ApiResponse<Boolean> scaleUpResponse = azureGroupRepo.scaleUp(groupId, request.getExecutors(), this.accountId, this.token);
+        ApiResponse<Boolean> scaleUpResponse = azureGroupRepo.scaleUp(groupId, request.getExecutors(), this.accountId, this.secret);
 
         if (scaleUpResponse.isRequestSucceed()) {
             LOGGER.info(String.format("Scale up group %s succeeded", groupId));
@@ -74,7 +74,7 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
         Boolean         retVal         = false;
         IAzureGroupRepo azureGroupRepo = RepoManager.getInstance().getAzureGroupRepo();
         ApiResponse<Boolean> detachInstanceResponse =
-                azureGroupRepo.detachInstance(groupId, instanceId, this.accountId, this.token);
+                azureGroupRepo.detachInstance(groupId, instanceId, this.accountId, this.secret);
 
         if (detachInstanceResponse.isRequestSucceed()) {
             LOGGER.info(String.format("Instance %s detached", instanceId));
@@ -99,7 +99,7 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
 
         IAzureGroupRepo awsGroupRepo = RepoManager.getInstance().getAzureGroupRepo();
         ApiResponse<List<AzureGroupInstance>> instancesResponse =
-                awsGroupRepo.getGroupInstances(groupId, this.accountId, this.token);
+                awsGroupRepo.getGroupInstances(groupId, this.accountId, this.secret);
 
         if (instancesResponse.isRequestSucceed()) {
             List<AzureGroupInstance> instances = instancesResponse.getValue();
@@ -126,7 +126,7 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
     public void monitorInstances() {
         IAzureGroupRepo azureGroupRepo = RepoManager.getInstance().getAzureGroupRepo();
         ApiResponse<List<AzureGroupInstance>> instancesResponse =
-                azureGroupRepo.getGroupInstances(groupId, this.accountId, this.token);
+                azureGroupRepo.getGroupInstances(groupId, this.accountId, this.secret);
 
         if (instancesResponse.isRequestSucceed()) {
             List<AzureGroupInstance> instances = instancesResponse.getValue();

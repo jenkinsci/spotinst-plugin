@@ -1,13 +1,6 @@
 package hudson.plugins.spotinst.cloud;
 
-import com.cloudbees.jenkins.plugins.sshcredentials.SSHAuthenticator;
-import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
-import com.cloudbees.plugins.credentials.common.StandardUsernameListBoxModel;
-import com.cloudbees.plugins.credentials.impl.BaseStandardCredentials;
-import com.trilead.ssh2.Connection;
 import hudson.Extension;
-import hudson.model.Computer;
-import hudson.model.ItemGroup;
 import hudson.model.Node;
 import hudson.plugins.spotinst.api.infra.ApiResponse;
 import hudson.plugins.spotinst.api.infra.JsonMapper;
@@ -21,27 +14,16 @@ import hudson.plugins.spotinst.model.aws.AwsScaleUpResult;
 import hudson.plugins.spotinst.repos.IAwsGroupRepo;
 import hudson.plugins.spotinst.repos.RepoManager;
 import hudson.plugins.spotinst.slave.*;
-import hudson.plugins.sshslaves.SSHLauncher;
-import hudson.security.ACL;
-import hudson.security.AccessControlled;
 import hudson.slaves.ComputerConnector;
 import hudson.slaves.EnvironmentVariablesNodeProperty;
 import hudson.tools.ToolLocationNodeProperty;
-import hudson.util.ListBoxModel;
-import hudson.util.Secret;
 import jenkins.model.Jenkins;
-import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.DataBoundSetter;
-import org.kohsuke.stapler.QueryParameter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.CheckForNull;
 import java.io.IOException;
 import java.util.*;
-
-import static com.cloudbees.plugins.credentials.CredentialsScope.SYSTEM;
 
 /**
  * Created by ohadmuchnik on 20/03/2017.
@@ -84,6 +66,33 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
         }
     }
 
+//    @DataBoundConstructor
+//    public AwsSpotinstCloud(String groupId, String labelString, String idleTerminationMinutes, String workspaceDir,
+//                            List<? extends SpotinstInstanceWeight> executorsForTypes, SlaveUsageEnum usage,
+//                            String tunnel, Boolean shouldUseWebsocket, Boolean shouldRetriggerBuilds, String vmargs,
+//                            EnvironmentVariablesNodeProperty environmentVariables,
+//                            ToolLocationNodeProperty toolLocations, String accountId,
+//                            ConnectionMethodEnum connectionMethod, ComputerConnector computerConnector,
+//                            Boolean shouldUsePrivateIp, SpotGlobalExecutorOverride globalExecutorOverride) {
+//
+//        super(groupId, labelString, idleTerminationMinutes, workspaceDir, usage, tunnel, shouldUseWebsocket,
+//              shouldRetriggerBuilds, vmargs, environmentVariables, toolLocations, accountId, connectionMethod,
+//              computerConnector, shouldUsePrivateIp, globalExecutorOverride);
+//
+//        this.executorsForTypes = new LinkedList<>();
+//        executorsForInstanceType = new HashMap<>();
+//
+//        if (executorsForTypes != null) {
+//            this.executorsForTypes = executorsForTypes;
+//
+//            for (SpotinstInstanceWeight executors : executorsForTypes) {
+//                if (executors.getExecutors() != null) {
+//                    executorsForInstanceType.put(executors.getAwsInstanceType(), executors.getExecutors());
+//                }
+//            }
+//        }
+//    }
+
     //endregion
 
     //region Overrides
@@ -93,7 +102,7 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
 
         IAwsGroupRepo awsGroupRepo = RepoManager.getInstance().getAwsGroupRepo();
         ApiResponse<AwsScaleUpResult> scaleUpResponse =
-                awsGroupRepo.scaleUp(groupId, request.getExecutors(), this.accountId, this.token);
+                awsGroupRepo.scaleUp(groupId, request.getExecutors(), this.accountId, this.secret);
 
         if (scaleUpResponse.isRequestSucceed()) {
             AwsScaleUpResult scaleUpResult = scaleUpResponse.getValue();
@@ -128,7 +137,7 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
         Boolean retVal = false;
 
         IAwsGroupRepo        awsGroupRepo           = RepoManager.getInstance().getAwsGroupRepo();
-        ApiResponse<Boolean> detachInstanceResponse = awsGroupRepo.detachInstance(instanceId, this.accountId, this.token);
+        ApiResponse<Boolean> detachInstanceResponse = awsGroupRepo.detachInstance(instanceId, this.accountId, this.secret);
 
         if (detachInstanceResponse.isRequestSucceed()) {
             LOGGER.info(String.format("Instance %s detached", instanceId));
@@ -145,7 +154,7 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
     @Override
     public void syncGroupInstances() {
         IAwsGroupRepo                       awsGroupRepo      = RepoManager.getInstance().getAwsGroupRepo();
-        ApiResponse<List<AwsGroupInstance>> instancesResponse = awsGroupRepo.getGroupInstances(groupId, this.accountId, this.token);
+        ApiResponse<List<AwsGroupInstance>> instancesResponse = awsGroupRepo.getGroupInstances(groupId, this.accountId, this.secret);
 
         if (instancesResponse.isRequestSucceed()) {
             List<AwsGroupInstance> instances = instancesResponse.getValue();
@@ -176,7 +185,7 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
         Map<String, String> retVal = new HashMap<>();
 
         IAwsGroupRepo                       awsGroupRepo      = RepoManager.getInstance().getAwsGroupRepo();
-        ApiResponse<List<AwsGroupInstance>> instancesResponse = awsGroupRepo.getGroupInstances(groupId, this.accountId, this.token);
+        ApiResponse<List<AwsGroupInstance>> instancesResponse = awsGroupRepo.getGroupInstances(groupId, this.accountId, this.secret);
 
         if (instancesResponse.isRequestSucceed()) {
             List<AwsGroupInstance> instances = instancesResponse.getValue();
@@ -218,20 +227,6 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
 
         return retVal;
     }
-
-//    @Override
-//    public void setCredentialsId(String credentialsId) {
-//        this.credentialsId = credentialsId;
-//    }
-//    @Override
-//    public void setCredentialsMethod(CredentialsMethodEnum credentialsMethod) {
-//        this.credentialsMethod = credentialsMethod;
-//    }
-
-//    @Override
-//    protected AWSCredentialsProvider createCredentialsProvider() {
-//        return createCredentialsProvider(isUseInstanceProfileForCredentials(), getCredentialsId(), getRoleArn(), getRoleSessionName(), getRegion());
-//    }
     //endregion
 
     //region Private Methods
