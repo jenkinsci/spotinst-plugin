@@ -61,16 +61,30 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
         spotinstToken = json.getString("spotinstToken");
         accountId = json.getString("accountId");
         credentialsId = json.getString("credentialsId");
+        String credentialsStoreSpotToken = null;
 
+        try {
         SpotTokenLoader            spotTokenLoader            = new SpotTokenLoader(credentialsId, credentialsId);
         SpotTokenCredentialsLoader spotTokenCredentialsLoader = spotTokenLoader.getAdminCredentials();
-        Secret                     secret                     = spotTokenCredentialsLoader.getSecret();
-
-        spotinstToken                                         = secret.getPlainText();
+        Secret secret = spotTokenCredentialsLoader.getSecret();
+        credentialsStoreSpotToken = secret.getPlainText();
+        }
+        catch (Exception e) {
+            LOGGER.info(String.format("token was not loaded from credentials store."));
+        }
 
         save();
-        SpotinstContext.getInstance().setSpotinstToken(spotinstToken);
+
+        if(credentialsStoreSpotToken != null){
+            SpotinstContext.getInstance().setSpotinstToken(credentialsStoreSpotToken);
+
+        }
+        else{
+            SpotinstContext.getInstance().setSpotinstToken(spotinstToken);
+        }
+
         SpotinstContext.getInstance().setAccountId(accountId);
+
 
         return true;
     }
