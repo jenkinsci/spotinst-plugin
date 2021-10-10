@@ -4,7 +4,6 @@ import hudson.plugins.spotinst.api.SpotinstApi;
 import hudson.plugins.spotinst.api.infra.ApiException;
 import hudson.plugins.spotinst.api.infra.ApiResponse;
 import hudson.plugins.spotinst.api.infra.ExceptionHelper;
-import hudson.plugins.spotinst.cloud.SpotSecretToken;
 import hudson.plugins.spotinst.model.azure.AzureGroupInstance;
 import hudson.util.Secret;
 

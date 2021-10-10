@@ -1,14 +1,13 @@
 package hudson.plugins.spotinst.cloud;
-
 import com.cloudbees.plugins.credentials.*;
 import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
-import com.cloudbees.plugins.credentials.domains.Domain;
 import hudson.DescriptorExtensionList;
 import hudson.model.*;
 import hudson.model.labels.LabelAtom;
 import hudson.plugins.spotinst.api.infra.JsonMapper;
 import hudson.plugins.spotinst.common.*;
 import hudson.plugins.spotinst.credentials.SpotTokenCredentialsLoader;
+import hudson.plugins.spotinst.credentials.SpotTokenCredentialsLoaderImpl;
 import hudson.plugins.spotinst.slave.*;
 import hudson.plugins.sshslaves.SSHConnector;
 import hudson.security.ACL;
@@ -21,14 +20,11 @@ import hudson.util.ListBoxModel;
 import hudson.util.Secret;
 import jenkins.model.Jenkins;
 import org.apache.commons.lang.BooleanUtils;
-import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.interceptor.RequirePOST;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.annotation.CheckForNull;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -189,13 +185,15 @@ public abstract class BaseSpotinstCloud extends Cloud {
             this.globalExecutorOverride = new SpotGlobalExecutorOverride(false, 1);
         }
 
-        SpotTokenLoader            spotTokenLoader            = new SpotTokenLoader(this.credentialsId, this.credentialsId);
-        SpotTokenCredentialsLoader spotTokenCredentialsLoader = spotTokenLoader.getAdminCredentials();
-        this.secret                                           = spotTokenCredentialsLoader.getSecret();
-        String token                                          = this.secret.getPlainText();
-        LOGGER.info(String.format("*****************************secret: %s****************************",token));
+        if(this.credentialsMethod == CredentialsMethodEnum.CredentialsStore) {
+            SpotTokenLoader            spotTokenLoader            = new SpotTokenLoader(this.credentialsId, this.credentialsId);
+            SpotTokenCredentialsLoader spotTokenCredentialsLoader = spotTokenLoader.getAdminCredentials();
+            this.secret = spotTokenCredentialsLoader.getSecret();
+            String token = this.secret.getPlainText();
+            LOGGER.info(String.format("*****************************secret: %s****************************",token));
+        }
 
-        LOGGER.info(String.format("*****************************this.credentialsId: %s****************************",this.credentialsId));
+        LOGGER.info(String.format("*****************************BaseSpotinstCloud credentialsId: %s****************************",this.credentialsId));
     }
     //endregion
 
@@ -524,33 +522,6 @@ public abstract class BaseSpotinstCloud extends Cloud {
         }
 
         return retVal;
-    }
-
-    private void addNewGlobalCredential(Credentials credentials){
-        for (CredentialsStore credentialsStore: CredentialsProvider.lookupStores(Jenkins.get())) {
-
-            if (credentialsStore instanceof  SystemCredentialsProvider.StoreImpl) {
-
-                try {
-                    credentialsStore.addCredentials(Domain.global(), credentials);
-                } catch (IOException e) {
-                    this.credentialsId = null;
-                    LOGGER.warn("Exception converting legacy configuration to the new credentials API", e);
-                }
-            }
-
-        }
-    }
-
-    @CheckForNull
-    private static SpotSecretToken getCredentials(@CheckForNull String credentialsId) {
-        if (StringUtils.isBlank(credentialsId)) {
-            return null;
-        }
-        return (SpotSecretToken) CredentialsMatchers.firstOrNull(
-                CredentialsProvider.lookupCredentials(SpotSecretToken.class, Jenkins.get(),
-                                                      ACL.SYSTEM, Collections.emptyList()),
-                CredentialsMatchers.withId(credentialsId));
     }
 
     //endregion
@@ -912,7 +883,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
 
         public List getCredentialsDescriptors() {
             return Jenkins.get().getDescriptorList(Credentials.class).stream()
-                          .filter(x -> x.isSubTypeOf(SpotCredentialsImpl.class)).collect(Collectors.toList());
+                          .filter(x -> x.isSubTypeOf(SpotTokenCredentialsLoaderImpl.class)).collect(Collectors.toList());
         }
 
         @RequirePOST

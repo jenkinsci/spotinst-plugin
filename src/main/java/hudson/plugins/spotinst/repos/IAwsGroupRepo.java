@@ -1,7 +1,6 @@
 package hudson.plugins.spotinst.repos;
 
 import hudson.plugins.spotinst.api.infra.ApiResponse;
-import hudson.plugins.spotinst.cloud.SpotSecretToken;
 import hudson.plugins.spotinst.model.aws.AwsGroupInstance;
 import hudson.plugins.spotinst.model.aws.AwsScaleUpResult;
 import hudson.util.Secret;

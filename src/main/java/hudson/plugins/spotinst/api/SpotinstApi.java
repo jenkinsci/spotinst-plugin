@@ -316,8 +316,21 @@ public class SpotinstApi {
     }
 
     private static Map<String, String> buildHeaders(Secret secret) {
-        String                     token                      = secret.getPlainText();
-        Map<String, String>        headers                    = new HashMap<>();
+        // Global context token
+        String token;
+
+        // Cloud specific token
+        if (secret != null) {
+            token = secret.getPlainText();
+            LOGGER.info(String.format("***************************** Cloud specific token: %s****************************",token));
+        }
+        else {
+            token  = SpotinstContext.getInstance().getSpotinstToken();
+            LOGGER.info(String.format("***************************** Global context token: %s****************************",token));
+
+        }
+
+        Map<String, String> headers = new HashMap<>();
         headers.put(HEADER_AUTH, AUTH_PREFIX + token);
         headers.put(HEADER_CONTENT_TYPE, CONTENT_TYPE);
         String userAgent = buildUserAgent();

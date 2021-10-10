@@ -9,24 +9,25 @@
                      src="https://spotinst-public.s3.amazonaws.com/assets/emails/welcome-email/spot_large.png"/>
             </td>
             <td>
-                <f:radioBlock checked="${instance == null || instance.credentialsMethod == null || instance.credentialsMethod == 'GlobalConfiguration'}" name="credentialsMethod" title="Use plain text token" value="GlobalConfiguration" inline="true">
-                    <f:entry title="Spot Personal Access Token" field="spotinstToken">
-
+                <f:entry title="Spot Personal Access Token"></f:entry>
+                <f:radioBlock checked="${instance == null || instance.credentialsMethod == null || instance.credentialsMethod == 'GlobalConfiguration'}" name="credentialsMethod" title="Plain Text Token" value="GlobalConfiguration" inline="true">
+                    <f:entry field="spotinstToken">
                         <f:textbox/>
                     </f:entry>
-                    <f:entry title="${%Spot Account ID}" field="accountId">
-                        <f:textbox/>
-                    </f:entry>
-
-                    <f:validateButton title="${%Validate Token}" progress="${%Checking...}" method="validateToken"
-                                      with="spotinstToken,accountId"/>
                 </f:radioBlock>
 
-                <f:radioBlock checked="${instance.credentialsMethod == 'CredentialsStore'}" name="credentialsMethod" title="Use Credentials Store token" value="CredentialsStore" inline="true">
+                <f:radioBlock checked="${instance.credentialsMethod == 'CredentialsStore'}" name="credentialsMethod" title="Credentials Store Token" value="CredentialsStore" inline="true">
                     <f:entry field="credentialsId">
                         <c:select />
                     </f:entry>
                 </f:radioBlock>
+
+                <f:entry title="${%Spot Account ID}" field="accountId">
+                    <f:textbox/>
+                </f:entry>
+
+                <f:validateButton title="${%Validate Token}" progress="${%Checking...}" method="validateToken"
+                                  with="spotinstToken,accountId"/>
             </td>
         </tr>
     </f:section>
