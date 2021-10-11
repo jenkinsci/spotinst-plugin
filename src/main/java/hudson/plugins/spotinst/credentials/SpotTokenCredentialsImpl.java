@@ -1,7 +1,6 @@
 package hudson.plugins.spotinst.credentials;
 
 
-
 import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.impl.BaseStandardCredentials;
 import edu.umd.cs.findbugs.annotations.NonNull;
@@ -11,30 +10,28 @@ import org.jenkins.ui.icon.Icon;
 import org.jenkins.ui.icon.IconSet;
 import org.jenkins.ui.icon.IconType;
 import org.kohsuke.stapler.DataBoundConstructor;
+
 import javax.annotation.CheckForNull;
 
 /**
  * Created by Liron Arad on 07/10/2021.
  */
-public class SpotTokenCredentialsImpl extends BaseStandardCredentials
-        implements SpotTokenCredentials {
+public class SpotTokenCredentialsImpl extends BaseStandardCredentials implements SpotTokenCredentials {
 
     private static final long serialVersionUID = 1L;
 
     private final Secret secret;
     private final String id;
-    private final String name;
     private final String description;
 
     @DataBoundConstructor
     public SpotTokenCredentialsImpl(@CheckForNull String id, @CheckForNull String description, Secret secret,
-                                    CredentialsScope scope, @CheckForNull String name) {
+                                    CredentialsScope scope) {
 
         super(scope, id, description);
         this.secret = secret;
         this.id = id;
         this.description = description;
-        this.name = name;
     }
 
     @Override
@@ -43,7 +40,7 @@ public class SpotTokenCredentialsImpl extends BaseStandardCredentials
     }
 
     public String getDisplayName() {
-        return name;
+        return id;
     }
 
     @NonNull
@@ -61,20 +58,9 @@ public class SpotTokenCredentialsImpl extends BaseStandardCredentials
     @Extension
     public static class DescriptorImpl extends BaseStandardCredentialsDescriptor {
 
-        static {
-            IconSet.icons.addIcon(new Icon("icon-spot-credentials icon-sm",
-                                           "spotinst-plugin/images/spot.png",
-                                           Icon.ICON_SMALL_STYLE, IconType.PLUGIN));
-        }
-
         @Override
         public String getDisplayName() {
             return "Spot Personal Access Token";
-        }
-
-        @Override
-        public String getIconClassName() {
-            return "icon-spot-credentials";
         }
     }
 }

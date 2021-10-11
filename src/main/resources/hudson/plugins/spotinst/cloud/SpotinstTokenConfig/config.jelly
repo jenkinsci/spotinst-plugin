@@ -9,12 +9,15 @@
                      src="https://spotinst-public.s3.amazonaws.com/assets/emails/welcome-email/spot_large.png"/>
             </td>
             <td>
-             <f:entry title="${%Spot Account ID}" field="accountId">
-                <f:textbox/>
-            </f:entry>
-
-                <f:entry title="Spot Personal Access Token"></f:entry>
-                <f:radioBlock checked="${instance == null || instance.credentialsMethod == null || instance.credentialsMethod == 'PlainText'}" name="credentialsMethod" title="Plain Text Token" value="PlainText" inline="true">
+                <f:radioBlock checked="true" title="${%Spot Account ID}">
+                    <f:entry field="accountId">
+                        <f:textbox/>
+                    </f:entry>
+                </f:radioBlock>
+                <f:radioBlock
+                        checked="${instance == null || instance.credentialsMethod == null || instance.credentialsMethod == 'PlainText'}"
+                        name="credentialsMethod" title="Plain Text Personal Access Token" value="PlainText"
+                        inline="true">
                     <f:entry field="spotinstToken">
                         <f:password/>
                     </f:entry>
@@ -22,12 +25,14 @@
                                       with="spotinstToken,accountId"/>
                 </f:radioBlock>
 
-                <f:radioBlock checked="${instance.credentialsMethod == 'CredentialsStore'}" name="credentialsMethod" title="Credentials Store Token" value="CredentialsStore" inline="true">
+                <f:radioBlock checked="${instance.credentialsMethod == 'CredentialsStore'}" name="credentialsMethod"
+                              title="Credentials Store Personal Access Token" value="CredentialsStore" inline="true">
                     <f:entry field="credentialsId">
-                        <c:select />
+                        <c:select/>
                     </f:entry>
-                <f:validateButton title="${%Validate Token}" progress="${%Checking...}" method="validateCredentialsStoreToken"
-                                  with="credentialsId,accountId"/>
+                    <f:validateButton title="${%Validate Token}" progress="${%Checking...}"
+                                      method="validateCredentialsStoreToken"
+                                      with="credentialsId,accountId"/>
                 </f:radioBlock>
 
             </td>

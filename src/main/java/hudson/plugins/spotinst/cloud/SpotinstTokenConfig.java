@@ -37,7 +37,6 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
     private String                accountId;
     private CredentialsMethodEnum credentialsMethod;
     private String                credentialsId;
-    private String credentialsName;
     private String credentialsStoreSpotToken;
     //endregion
 
@@ -52,11 +51,9 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
         spotinstToken = json.getString("spotinstToken");
         accountId = json.getString("accountId");
         credentialsId = json.getString("credentialsId");
-        credentialsName = json.getString("credentialsName");
-
 
         try {
-        CredentialsStoreReader credentialsStoreReader = new CredentialsStoreReader(credentialsId, credentialsName);
+        CredentialsStoreReader credentialsStoreReader = new CredentialsStoreReader(credentialsId);
         SpotTokenCredentials   spotTokenCredentials   = credentialsStoreReader.getSpotToken();
         Secret                 secret                 = spotTokenCredentials.getSecret();
         credentialsStoreSpotToken = secret.getPlainText();
@@ -90,7 +87,7 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
         FormValidation result;
 
         try {
-            CredentialsStoreReader credentialsStoreReader = new CredentialsStoreReader(credentialsId, credentialsId);
+            CredentialsStoreReader credentialsStoreReader = new CredentialsStoreReader(credentialsId);
             SpotTokenCredentials   spotTokenCredentials   = credentialsStoreReader.getSpotToken();
             Secret                 secret                 = spotTokenCredentials.getSecret();
             String                 token                  = secret.getPlainText();
@@ -160,16 +157,8 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
         return credentialsId;
     }
 
-    public void setCredentialsName(String credentialsName) {
-        this.credentialsName = credentialsName;
-    }
-
     public void setCredentialsStoreSpotToken(String credentialsStoreSpotToken) {
         this.credentialsStoreSpotToken = credentialsStoreSpotToken;
-    }
-
-    public String getCredentialsName() {
-        return credentialsName;
     }
 
     public String getCredentialsStoreSpotToken() {

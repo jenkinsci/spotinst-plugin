@@ -12,7 +12,9 @@ import hudson.util.Secret;
 public interface SpotTokenCredentials extends StandardCredentials {
 
     Secret getSecret();
+
     String getDisplayName();
+
     class NameProvider extends CredentialsNameProvider<SpotTokenCredentialsImpl> {
 
         @Override

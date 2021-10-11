@@ -16,5 +16,4 @@ public enum CredentialsMethodEnum {
     public String getName() {
         return name;
     }
-
 }
