@@ -6,9 +6,6 @@ import com.cloudbees.plugins.credentials.impl.BaseStandardCredentials;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Extension;
 import hudson.util.Secret;
-import org.jenkins.ui.icon.Icon;
-import org.jenkins.ui.icon.IconSet;
-import org.jenkins.ui.icon.IconType;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 import javax.annotation.CheckForNull;
@@ -22,7 +19,6 @@ public class SpotTokenCredentialsImpl extends BaseStandardCredentials implements
 
     private final Secret secret;
     private final String id;
-    private final String description;
 
     @DataBoundConstructor
     public SpotTokenCredentialsImpl(@CheckForNull String id, @CheckForNull String description, Secret secret,
@@ -31,7 +27,6 @@ public class SpotTokenCredentialsImpl extends BaseStandardCredentials implements
         super(scope, id, description);
         this.secret = secret;
         this.id = id;
-        this.description = description;
     }
 
     @Override
@@ -47,12 +42,6 @@ public class SpotTokenCredentialsImpl extends BaseStandardCredentials implements
     @Override
     public String getId() {
         return id;
-    }
-
-    @NonNull
-    @Override
-    public String getDescription() {
-        return description;
     }
 
     @Extension

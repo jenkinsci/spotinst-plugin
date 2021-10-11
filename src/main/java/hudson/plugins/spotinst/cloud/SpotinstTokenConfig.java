@@ -17,7 +17,6 @@ import jenkins.model.GlobalConfiguration;
 import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
 import org.kohsuke.stapler.AncestorInPath;
-import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.interceptor.RequirePOST;
@@ -37,7 +36,7 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
     private String                accountId;
     private CredentialsMethodEnum credentialsMethod;
     private String                credentialsId;
-    private String credentialsStoreSpotToken;
+    private String                credentialsStoreSpotToken;
     //endregion
 
     public SpotinstTokenConfig() {
@@ -49,14 +48,14 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
     @Override
     public boolean configure(StaplerRequest req, JSONObject json) {
         spotinstToken = json.getString("spotinstToken");
-        accountId = json.getString("accountId");
+        accountId     = json.getString("accountId");
         credentialsId = json.getString("credentialsId");
 
         try {
-        CredentialsStoreReader credentialsStoreReader = new CredentialsStoreReader(credentialsId);
-        SpotTokenCredentials   spotTokenCredentials   = credentialsStoreReader.getSpotToken();
-        Secret                 secret                 = spotTokenCredentials.getSecret();
-        credentialsStoreSpotToken = secret.getPlainText();
+            CredentialsStoreReader credentialsStoreReader = new CredentialsStoreReader(credentialsId);
+            SpotTokenCredentials   spotTokenCredentials   = credentialsStoreReader.getSpotToken();
+            Secret                 secret                 = spotTokenCredentials.getSecret();
+            credentialsStoreSpotToken = secret.getPlainText();
         }
         catch (Exception e) {
             LOGGER.info("token was not loaded from credentials store.");
@@ -65,10 +64,10 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
         save();
 
         // If Credentials Store token was chosen use it, else use plain text token.
-        if(credentialsStoreSpotToken != null){
+        if (credentialsStoreSpotToken != null) {
             SpotinstContext.getInstance().setSpotinstToken(credentialsStoreSpotToken);
         }
-        else{
+        else {
             SpotinstContext.getInstance().setSpotinstToken(spotinstToken);
         }
 
@@ -145,18 +144,19 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
         this.credentialsMethod = credentialsMethod;
     }
 
-    public void setCredentialsId(String credentialsId) {
-        this.credentialsId = credentialsId;
-    }
-
     public CredentialsMethodEnum getCredentialsMethod() {
         return credentialsMethod;
+    }
+
+    public void setCredentialsId(String credentialsId) {
+        this.credentialsId = credentialsId;
     }
 
     public String getCredentialsId() {
         return credentialsId;
     }
 
+    //TODO - consult if needed.
     public void setCredentialsStoreSpotToken(String credentialsStoreSpotToken) {
         this.credentialsStoreSpotToken = credentialsStoreSpotToken;
     }
