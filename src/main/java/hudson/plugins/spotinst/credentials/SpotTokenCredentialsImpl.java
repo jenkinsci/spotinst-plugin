@@ -4,11 +4,18 @@ package hudson.plugins.spotinst.credentials;
 
 import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.impl.BaseStandardCredentials;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Extension;
 import hudson.util.Secret;
+import org.jenkins.ui.icon.Icon;
+import org.jenkins.ui.icon.IconSet;
+import org.jenkins.ui.icon.IconType;
 import org.kohsuke.stapler.DataBoundConstructor;
 import javax.annotation.CheckForNull;
 
+/**
+ * Created by Liron Arad on 07/10/2021.
+ */
 public class SpotTokenCredentialsImpl extends BaseStandardCredentials
         implements SpotTokenCredentials {
 
@@ -16,18 +23,18 @@ public class SpotTokenCredentialsImpl extends BaseStandardCredentials
 
     private final Secret secret;
     private final String id;
+    private final String name;
     private final String description;
 
     @DataBoundConstructor
-    public SpotTokenCredentialsImpl(
-            @CheckForNull String id,
-            @CheckForNull String description,
-            Secret secret, CredentialsScope scope) {
+    public SpotTokenCredentialsImpl(@CheckForNull String id, @CheckForNull String description, Secret secret,
+                                    CredentialsScope scope, @CheckForNull String name) {
 
         super(scope, id, description);
         this.secret = secret;
         this.id = id;
         this.description = description;
+        this.name = name;
     }
 
     @Override
@@ -36,13 +43,29 @@ public class SpotTokenCredentialsImpl extends BaseStandardCredentials
     }
 
     public String getDisplayName() {
+        return name;
+    }
+
+    @NonNull
+    @Override
+    public String getId() {
         return id;
+    }
+
+    @NonNull
+    @Override
+    public String getDescription() {
+        return description;
     }
 
     @Extension
     public static class DescriptorImpl extends BaseStandardCredentialsDescriptor {
 
-        static { }
+        static {
+            IconSet.icons.addIcon(new Icon("icon-spot-credentials icon-sm",
+                                           "spotinst-plugin/images/spot.png",
+                                           Icon.ICON_SMALL_STYLE, IconType.PLUGIN));
+        }
 
         @Override
         public String getDisplayName() {

@@ -14,22 +14,25 @@ import static java.util.Objects.requireNonNull;
 import static org.apache.commons.lang.StringUtils.isBlank;
 import static org.apache.commons.lang.StringUtils.trimToEmpty;
 
+/**
+ * Created by Liron Arad on 07/10/2021.
+ */
 public class CredentialsStoreReader
         extends AbstractDescribableImpl<CredentialsStoreReader> {
 
     private final String credentialsId;
-    private final String id;
+    private final String credentialsName;
 
     @DataBoundConstructor
     public CredentialsStoreReader(
             String credentialsId,
-            @Nullable String id) {
-        this.credentialsId = requireNonNull(credentialsId);
-        this.id = isBlank(id) ? UUID.randomUUID().toString() : id;
+            @Nullable String credentialsName) {
+        this.credentialsId = isBlank(credentialsId) ? UUID.randomUUID().toString() : credentialsId;
+        this.credentialsName = isBlank(credentialsName) ? credentialsId : credentialsName;
     }
 
-    public String getId() {
-        return id;
+    public String getCredentialsName() {
+        return credentialsName;
     }
 
     @Nullable

@@ -23,7 +23,6 @@ import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.interceptor.RequirePOST;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.util.Collections;
 
 /**
@@ -34,11 +33,12 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
     //region Members
     private static final Logger LOGGER = LoggerFactory.getLogger(SpotinstTokenConfig.class);
 
-    private String spotinstToken;
-    private String accountId;
+    private String                spotinstToken;
+    private String                accountId;
     private CredentialsMethodEnum credentialsMethod;
     private String                credentialsId;
-    private String  credentialsStoreSpotToken;
+    private String credentialsName;
+    private String credentialsStoreSpotToken;
     //endregion
 
     public SpotinstTokenConfig() {
@@ -52,9 +52,11 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
         spotinstToken = json.getString("spotinstToken");
         accountId = json.getString("accountId");
         credentialsId = json.getString("credentialsId");
+        credentialsName = json.getString("credentialsName");
+
 
         try {
-        CredentialsStoreReader credentialsStoreReader = new CredentialsStoreReader(credentialsId, credentialsId);
+        CredentialsStoreReader credentialsStoreReader = new CredentialsStoreReader(credentialsId, credentialsName);
         SpotTokenCredentials   spotTokenCredentials   = credentialsStoreReader.getSpotToken();
         Secret                 secret                 = spotTokenCredentials.getSecret();
         credentialsStoreSpotToken = secret.getPlainText();
@@ -65,6 +67,7 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
 
         save();
 
+        // If Credentials Store token was chosen use it, else use plain text token.
         if(credentialsStoreSpotToken != null){
             SpotinstContext.getInstance().setSpotinstToken(credentialsStoreSpotToken);
         }
@@ -141,12 +144,10 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
         SpotinstContext.getInstance().setAccountId(accountId);
     }
 
-    @DataBoundSetter
     public void setCredentialsMethod(CredentialsMethodEnum credentialsMethod) {
         this.credentialsMethod = credentialsMethod;
     }
 
-    @DataBoundSetter
     public void setCredentialsId(String credentialsId) {
         this.credentialsId = credentialsId;
     }
@@ -157,6 +158,22 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
 
     public String getCredentialsId() {
         return credentialsId;
+    }
+
+    public void setCredentialsName(String credentialsName) {
+        this.credentialsName = credentialsName;
+    }
+
+    public void setCredentialsStoreSpotToken(String credentialsStoreSpotToken) {
+        this.credentialsStoreSpotToken = credentialsStoreSpotToken;
+    }
+
+    public String getCredentialsName() {
+        return credentialsName;
+    }
+
+    public String getCredentialsStoreSpotToken() {
+        return credentialsStoreSpotToken;
     }
 
     @RequirePOST
