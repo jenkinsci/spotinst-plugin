@@ -9,11 +9,9 @@
                      src="https://spotinst-public.s3.amazonaws.com/assets/emails/welcome-email/spot_large.png"/>
             </td>
             <td>
-                <f:radioBlock checked="true" title="${%Spot Account ID}">
-                    <f:entry field="accountId">
-                        <f:textbox/>
-                    </f:entry>
-                </f:radioBlock>
+                <f:entry field="accountId" title="${%Spot Account ID}">
+                    <f:textbox/>
+                </f:entry>
                 <f:radioBlock
                         checked="${instance == null || instance.credentialsMethod == null || instance.credentialsMethod == 'PlainText'}"
                         name="credentialsMethod" title="Plain Text Personal Access Token" value="PlainText"
