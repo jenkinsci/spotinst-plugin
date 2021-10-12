@@ -41,7 +41,14 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
 
     public SpotinstTokenConfig() {
         load();
-        SpotinstContext.getInstance().setSpotinstToken(spotinstToken);
+
+        if (credentialsStoreSpotToken != null) {
+            SpotinstContext.getInstance().setSpotinstToken(credentialsStoreSpotToken);
+        }
+        else {
+            SpotinstContext.getInstance().setSpotinstToken(spotinstToken);
+        }
+
         SpotinstContext.getInstance().setAccountId(accountId);
     }
 
