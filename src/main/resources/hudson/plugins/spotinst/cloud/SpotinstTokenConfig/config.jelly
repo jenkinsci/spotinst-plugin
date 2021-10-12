@@ -17,6 +17,7 @@
                         name="credentialsMethod" title="Plain Text Personal Access Token" value="PlainText"
                         inline="true">
                     <f:entry field="spotinstToken">
+                        <f:textbox/>
                     </f:entry>
                     <f:validateButton title="${%Validate Token}" progress="${%Checking...}" method="validateToken"
                                       with="spotinstToken,accountId"/>
