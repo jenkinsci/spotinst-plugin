@@ -32,17 +32,17 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
     //region Members
     private static final Logger LOGGER = LoggerFactory.getLogger(SpotinstTokenConfig.class);
 
-    private String                spotinstToken;
-    private String                accountId;
-    private CredentialsMethodEnum credentialsMethod;
-    private String                credentialsId;
-    private String                credentialsStoreSpotToken;
+    private String spotinstToken;
+    private String accountId;
+    private String credentialsMethod;
+    private String credentialsId;
+    private String credentialsStoreSpotToken;
     //endregion
 
     public SpotinstTokenConfig() {
         load();
 
-        if (credentialsStoreSpotToken != null) {
+        if (credentialsMethod.equals(CredentialsMethodEnum.CredentialsStore.getName())) {
             SpotinstContext.getInstance().setSpotinstToken(credentialsStoreSpotToken);
         }
         else {
@@ -54,24 +54,27 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
 
     @Override
     public boolean configure(StaplerRequest req, JSONObject json) {
-        spotinstToken = json.getString("spotinstToken");
-        accountId     = json.getString("accountId");
-        credentialsId = json.getString("credentialsId");
+        spotinstToken     = json.getString("spotinstToken");
+        accountId         = json.getString("accountId");
+        credentialsId     = json.getString("credentialsId");
+        credentialsMethod = json.getString("credentialsMethod");
 
-        try {
-            CredentialsStoreReader credentialsStoreReader = new CredentialsStoreReader(credentialsId);
-            SpotTokenCredentials   spotTokenCredentials   = credentialsStoreReader.getSpotToken();
-            Secret                 secret                 = spotTokenCredentials.getSecret();
-            credentialsStoreSpotToken = secret.getPlainText();
-        }
-        catch (Exception e) {
-            LOGGER.info("token was not loaded from credentials store.");
+        if(credentialsMethod.equals(CredentialsMethodEnum.CredentialsStore.getName())){
+            try {
+                CredentialsStoreReader credentialsStoreReader = new CredentialsStoreReader(credentialsId);
+                SpotTokenCredentials   spotTokenCredentials   = credentialsStoreReader.getSpotToken();
+                Secret                 secret                 = spotTokenCredentials.getSecret();
+                credentialsStoreSpotToken = secret.getPlainText();
+
+            }
+            catch (Exception e) {
+                LOGGER.info("token was not loaded from credentials store.");
+            }
         }
 
         save();
 
-        // If Credentials Store token was chosen use it, else use plain text token.
-        if (credentialsStoreSpotToken != null) {
+        if (credentialsMethod.equals(CredentialsMethodEnum.CredentialsStore.getName())) {
             SpotinstContext.getInstance().setSpotinstToken(credentialsStoreSpotToken);
         }
         else {
@@ -147,11 +150,11 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
         SpotinstContext.getInstance().setAccountId(accountId);
     }
 
-    public void setCredentialsMethod(CredentialsMethodEnum credentialsMethod) {
+    public void setCredentialsMethod(String credentialsMethod) {
         this.credentialsMethod = credentialsMethod;
     }
 
-    public CredentialsMethodEnum getCredentialsMethod() {
+    public String getCredentialsMethod() {
         return credentialsMethod;
     }
 

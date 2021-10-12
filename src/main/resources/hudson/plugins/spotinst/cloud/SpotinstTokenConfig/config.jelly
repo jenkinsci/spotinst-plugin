@@ -14,7 +14,7 @@
                 </f:entry>
                 <f:radioBlock
                         checked="${instance == null || instance.credentialsMethod == null || instance.credentialsMethod == 'PlainText'}"
-                        name="credentialsMethod" title="Plain Text Personal Access Token" value="PlainText"
+                        name="credentialsMethod" title="Plain Text Personal Access Token" value="Plain Text"
                         inline="true">
                     <f:entry field="spotinstToken">
                         <f:textbox/>
@@ -24,7 +24,7 @@
                 </f:radioBlock>
 
                 <f:radioBlock checked="${instance.credentialsMethod == 'CredentialsStore'}" name="credentialsMethod"
-                              title="Credentials Store Personal Access Token" value="CredentialsStore" inline="true">
+                              title="Credentials Store Personal Access Token" value="Credentials Store" inline="true">
                     <f:entry field="credentialsId">
                         <c:select/>
                     </f:entry>
