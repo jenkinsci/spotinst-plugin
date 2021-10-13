@@ -42,11 +42,12 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
     public SpotinstTokenConfig() {
         load();
 
-        if (credentialsMethod.equals(CredentialsMethodEnum.CredentialsStore.getName())) {
-            SpotinstContext.getInstance().setSpotinstToken(credentialsStoreSpotToken);
-        }
-        else {
+        if (credentialsMethod == null || credentialsMethod.equals(CredentialsMethodEnum.PlainText.getName())) {
             SpotinstContext.getInstance().setSpotinstToken(spotinstToken);
+        }
+
+        else {
+            SpotinstContext.getInstance().setSpotinstToken(credentialsStoreSpotToken);
         }
 
         SpotinstContext.getInstance().setAccountId(accountId);
@@ -54,21 +55,24 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
 
     @Override
     public boolean configure(StaplerRequest req, JSONObject json) {
-        spotinstToken     = json.getString("spotinstToken");
-        accountId         = json.getString("accountId");
-        credentialsId     = json.getString("credentialsId");
-        credentialsMethod = json.getString("credentialsMethod");
+        spotinstToken = json.getString("spotinstToken");
+        accountId = json.getString("accountId");
+        credentialsId = json.getString("credentialsId");
 
-        if(credentialsMethod.equals(CredentialsMethodEnum.CredentialsStore.getName())){
-            try {
-                CredentialsStoreReader credentialsStoreReader = new CredentialsStoreReader(credentialsId);
-                SpotTokenCredentials   spotTokenCredentials   = credentialsStoreReader.getSpotToken();
-                Secret                 secret                 = spotTokenCredentials.getSecret();
+        try {
+            credentialsMethod = json.getString("credentialsMethod");
+        }
+        catch (Exception e) {
+            credentialsMethod = CredentialsMethodEnum.PlainText.getName();
+        }
+
+        if (credentialsMethod.equals(CredentialsMethodEnum.CredentialsStore.getName())) {
+            CredentialsStoreReader credentialsStoreReader = new CredentialsStoreReader(credentialsId);
+            SpotTokenCredentials   spotTokenCredentials   = credentialsStoreReader.getSpotToken();
+
+            if (spotTokenCredentials != null) {
+                Secret secret = spotTokenCredentials.getSecret();
                 credentialsStoreSpotToken = secret.getPlainText();
-
-            }
-            catch (Exception e) {
-                LOGGER.info("token was not loaded from credentials store.");
             }
         }
 
@@ -93,22 +97,22 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
 
     public FormValidation doValidateCredentialsStoreToken(@QueryParameter("credentialsId") String credentialsId,
                                                           @QueryParameter("accountId") String accountId) {
-        FormValidation result;
+        FormValidation result = FormValidation.error("Unexpected error occurred");
 
-        try {
+
             CredentialsStoreReader credentialsStoreReader = new CredentialsStoreReader(credentialsId);
             SpotTokenCredentials   spotTokenCredentials   = credentialsStoreReader.getSpotToken();
-            //TODO check if spotTokenCredentials == null
-            //TODO result = FormValidation.error("failed retrive token");
 
-            Secret                 secret                 = spotTokenCredentials.getSecret();
-            String                 token                  = secret.getPlainText();
-            result = doValidateToken(token, accountId);
-        }
-        catch (Exception e) {
-            LOGGER.error(e.getMessage());
-            result = FormValidation.warning("Failed to process the validation, please try again");
-        }
+            if (spotTokenCredentials != null) {
+                Secret secret = spotTokenCredentials.getSecret();
+                String token  = secret.getPlainText();
+                result = doValidateToken(token, accountId);
+            }
+            else {
+                String failureMassage = "Failed to load token match to credentials ID: ";
+                result = FormValidation
+                        .error(String.format(failureMassage, credentialsId));
+            }
 
         return result;
     }
