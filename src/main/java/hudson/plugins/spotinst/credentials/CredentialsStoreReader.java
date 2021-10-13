@@ -24,7 +24,7 @@ public class CredentialsStoreReader
     public CredentialsStoreReader(
             String credentialsId,
             @Nullable String id) {
-        this.credentialsId = requireNonNull(credentialsId);
+        this.credentialsId = credentialsId;
         this.id = isBlank(id) ? UUID.randomUUID().toString() : id;
     }
 

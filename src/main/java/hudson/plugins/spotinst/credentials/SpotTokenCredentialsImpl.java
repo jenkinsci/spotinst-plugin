@@ -16,7 +16,6 @@ public class SpotTokenCredentialsImpl extends BaseStandardCredentials
 
     private final Secret secret;
     private final String id;
-    private final String description;
 
     @DataBoundConstructor
     public SpotTokenCredentialsImpl(
@@ -27,7 +26,6 @@ public class SpotTokenCredentialsImpl extends BaseStandardCredentials
         super(scope, id, description);
         this.secret = secret;
         this.id = id;
-        this.description = description;
     }
 
     @Override

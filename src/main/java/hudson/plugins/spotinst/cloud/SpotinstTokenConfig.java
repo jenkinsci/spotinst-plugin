@@ -36,9 +36,9 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
 
     private String spotinstToken;
     private String accountId;
-    private CredentialsMethodEnum credentialsMethod;
-    private String                credentialsId;
-    private String  credentialsStoreSpotToken;
+    private String credentialsMethod;
+    private String credentialsId;
+    private String credentialsStoreSpotToken;
     //endregion
 
     public SpotinstTokenConfig() {
@@ -52,15 +52,18 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
         spotinstToken = json.getString("spotinstToken");
         accountId = json.getString("accountId");
         credentialsId = json.getString("credentialsId");
+        credentialsMethod = json.getString("credentialsMethod");
 
-        try {
-        CredentialsStoreReader credentialsStoreReader = new CredentialsStoreReader(credentialsId, credentialsId);
-        SpotTokenCredentials   spotTokenCredentials   = credentialsStoreReader.getSpotToken();
-        Secret                 secret                 = spotTokenCredentials.getSecret();
-        credentialsStoreSpotToken = secret.getPlainText();
-        }
-        catch (Exception e) {
-            LOGGER.info("token was not loaded from credentials store.");
+        if(credentialsMethod.contains(CredentialsMethodEnum.CredentialsStore.getName())) {
+            CredentialsStoreReader credentialsStoreReader = new CredentialsStoreReader(credentialsId, credentialsId);
+            SpotTokenCredentials spotTokenCredentials = credentialsStoreReader.getSpotToken();
+
+            if (spotTokenCredentials != null) {
+                Secret secret = spotTokenCredentials.getSecret();
+                credentialsStoreSpotToken = secret.getPlainText();
+            } else {
+                LOGGER.info("token was not loaded from credentials store.");
+            }
         }
 
         save();
@@ -84,18 +87,19 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
 
     public FormValidation doValidateCredentialsStoreToken(@QueryParameter("credentialsId") String credentialsId,
                                                           @QueryParameter("accountId") String accountId) {
-        FormValidation result;
+        FormValidation result = null;
 
-        try {
+        if(credentialsMethod.contains(CredentialsMethodEnum.CredentialsStore.getName())) {
             CredentialsStoreReader credentialsStoreReader = new CredentialsStoreReader(credentialsId, credentialsId);
             SpotTokenCredentials   spotTokenCredentials   = credentialsStoreReader.getSpotToken();
-            Secret                 secret                 = spotTokenCredentials.getSecret();
-            String                 token                  = secret.getPlainText();
-            result = doValidateToken(token, accountId);
-        }
-        catch (Exception e) {
-            LOGGER.error(e.getMessage());
-            result = FormValidation.warning("Failed to process the validation, please try again");
+            if (spotTokenCredentials != null) {
+                Secret secret = spotTokenCredentials.getSecret();
+                String token = secret.getPlainText();
+                result = doValidateToken(token, accountId);
+            }
+            else{
+                result = FormValidation.warning(String.format("Token with credentials ID %s not found"),credentialsId);
+            }
         }
 
         return result;
@@ -142,7 +146,7 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
     }
 
     @DataBoundSetter
-    public void setCredentialsMethod(CredentialsMethodEnum credentialsMethod) {
+    public void setCredentialsMethod(String credentialsMethod) {
         this.credentialsMethod = credentialsMethod;
     }
 
@@ -151,7 +155,7 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
         this.credentialsId = credentialsId;
     }
 
-    public CredentialsMethodEnum getCredentialsMethod() {
+    public String getCredentialsMethod() {
         return credentialsMethod;
     }
 
