@@ -98,6 +98,9 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
         try {
             CredentialsStoreReader credentialsStoreReader = new CredentialsStoreReader(credentialsId);
             SpotTokenCredentials   spotTokenCredentials   = credentialsStoreReader.getSpotToken();
+            //TODO check if spotTokenCredentials == null
+            //TODO result = FormValidation.error("failed retrive token");
+
             Secret                 secret                 = spotTokenCredentials.getSecret();
             String                 token                  = secret.getPlainText();
             result = doValidateToken(token, accountId);
