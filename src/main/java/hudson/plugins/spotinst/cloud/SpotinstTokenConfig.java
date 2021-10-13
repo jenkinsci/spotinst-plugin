@@ -17,13 +17,11 @@ import jenkins.model.GlobalConfiguration;
 import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
 import org.kohsuke.stapler.AncestorInPath;
-import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.interceptor.RequirePOST;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.util.Collections;
 
 /**
@@ -43,35 +41,43 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
 
     public SpotinstTokenConfig() {
         load();
-        SpotinstContext.getInstance().setSpotinstToken(spotinstToken);
+
+        if (credentialsMethod.equals(CredentialsMethodEnum.CredentialsStore.getName())) {
+            SpotinstContext.getInstance().setSpotinstToken(credentialsStoreSpotToken);
+        }
+        else {
+            SpotinstContext.getInstance().setSpotinstToken(spotinstToken);
+        }
+
         SpotinstContext.getInstance().setAccountId(accountId);
     }
 
     @Override
     public boolean configure(StaplerRequest req, JSONObject json) {
-        spotinstToken = json.getString("spotinstToken");
-        accountId = json.getString("accountId");
-        credentialsId = json.getString("credentialsId");
+        spotinstToken     = json.getString("spotinstToken");
+        accountId         = json.getString("accountId");
+        credentialsId     = json.getString("credentialsId");
         credentialsMethod = json.getString("credentialsMethod");
 
-        if(credentialsMethod.contains(CredentialsMethodEnum.CredentialsStore.getName())) {
-            CredentialsStoreReader credentialsStoreReader = new CredentialsStoreReader(credentialsId, credentialsId);
-            SpotTokenCredentials spotTokenCredentials = credentialsStoreReader.getSpotToken();
-
-            if (spotTokenCredentials != null) {
-                Secret secret = spotTokenCredentials.getSecret();
+        if(credentialsMethod.equals(CredentialsMethodEnum.CredentialsStore.getName())){
+            try {
+                CredentialsStoreReader credentialsStoreReader = new CredentialsStoreReader(credentialsId);
+                SpotTokenCredentials   spotTokenCredentials   = credentialsStoreReader.getSpotToken();
+                Secret                 secret                 = spotTokenCredentials.getSecret();
                 credentialsStoreSpotToken = secret.getPlainText();
-            } else {
+
+            }
+            catch (Exception e) {
                 LOGGER.info("token was not loaded from credentials store.");
             }
         }
 
         save();
 
-        if(credentialsStoreSpotToken != null){
+        if (credentialsMethod.equals(CredentialsMethodEnum.CredentialsStore.getName())) {
             SpotinstContext.getInstance().setSpotinstToken(credentialsStoreSpotToken);
         }
-        else{
+        else {
             SpotinstContext.getInstance().setSpotinstToken(spotinstToken);
         }
 
@@ -87,19 +93,21 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
 
     public FormValidation doValidateCredentialsStoreToken(@QueryParameter("credentialsId") String credentialsId,
                                                           @QueryParameter("accountId") String accountId) {
-        FormValidation result = null;
+        FormValidation result;
 
-        if(credentialsMethod.contains(CredentialsMethodEnum.CredentialsStore.getName())) {
-            CredentialsStoreReader credentialsStoreReader = new CredentialsStoreReader(credentialsId, credentialsId);
+        try {
+            CredentialsStoreReader credentialsStoreReader = new CredentialsStoreReader(credentialsId);
             SpotTokenCredentials   spotTokenCredentials   = credentialsStoreReader.getSpotToken();
-            if (spotTokenCredentials != null) {
-                Secret secret = spotTokenCredentials.getSecret();
-                String token = secret.getPlainText();
-                result = doValidateToken(token, accountId);
-            }
-            else{
-                result = FormValidation.warning(String.format("Token with credentials ID %s not found"),credentialsId);
-            }
+            //TODO check if spotTokenCredentials == null
+            //TODO result = FormValidation.error("failed retrive token");
+
+            Secret                 secret                 = spotTokenCredentials.getSecret();
+            String                 token                  = secret.getPlainText();
+            result = doValidateToken(token, accountId);
+        }
+        catch (Exception e) {
+            LOGGER.error(e.getMessage());
+            result = FormValidation.warning("Failed to process the validation, please try again");
         }
 
         return result;
@@ -145,22 +153,29 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
         SpotinstContext.getInstance().setAccountId(accountId);
     }
 
-    @DataBoundSetter
     public void setCredentialsMethod(String credentialsMethod) {
         this.credentialsMethod = credentialsMethod;
-    }
-
-    @DataBoundSetter
-    public void setCredentialsId(String credentialsId) {
-        this.credentialsId = credentialsId;
     }
 
     public String getCredentialsMethod() {
         return credentialsMethod;
     }
 
+    public void setCredentialsId(String credentialsId) {
+        this.credentialsId = credentialsId;
+    }
+
     public String getCredentialsId() {
         return credentialsId;
+    }
+
+    //TODO - consult if needed.
+    public void setCredentialsStoreSpotToken(String credentialsStoreSpotToken) {
+        this.credentialsStoreSpotToken = credentialsStoreSpotToken;
+    }
+
+    public String getCredentialsStoreSpotToken() {
+        return credentialsStoreSpotToken;
     }
 
     @RequirePOST

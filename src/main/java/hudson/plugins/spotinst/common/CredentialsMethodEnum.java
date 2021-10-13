@@ -1,8 +1,11 @@
 package hudson.plugins.spotinst.common;
 
+/**
+ * Created by Liron Arad on 06/10/2021.
+ */
 public enum CredentialsMethodEnum {
     CredentialsStore("Credentials Store"),
-    GlobalConfiguration("Global configuration (plain text)");
+    PlainText("Plain Text");
 
     private String name;
 
@@ -13,5 +16,4 @@ public enum CredentialsMethodEnum {
     public String getName() {
         return name;
     }
-
 }
