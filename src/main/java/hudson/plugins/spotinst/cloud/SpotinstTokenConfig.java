@@ -56,7 +56,7 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
     @Override
     public boolean configure(StaplerRequest req, JSONObject json) {
         spotinstToken = json.getString("spotinstToken");
-        accountId = json.getString("accountId");
+        accountId     = json.getString("accountId");
         credentialsId = json.getString("credentialsId");
 
         try {
