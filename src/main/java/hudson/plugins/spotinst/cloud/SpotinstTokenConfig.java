@@ -41,50 +41,97 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
 
     public SpotinstTokenConfig() {
         load();
+        String tokenToUse;
+        boolean isPlanTextToken = credentialsMethod == null || credentialsMethod.equals(CredentialsMethodEnum.PlainText.getName());
 
-        if (credentialsMethod == null || credentialsMethod.equals(CredentialsMethodEnum.PlainText.getName())) {
-            SpotinstContext.getInstance().setSpotinstToken(spotinstToken);
+        if (isPlanTextToken) {
+            tokenToUse = spotinstToken;
         }
 
         else {
-            SpotinstContext.getInstance().setSpotinstToken(credentialsStoreSpotToken);
+            tokenToUse = credentialsStoreSpotToken;
         }
 
         SpotinstContext.getInstance().setAccountId(accountId);
+        SpotinstContext.getInstance().setSpotinstToken(tokenToUse);
     }
+
+//    @Override
+//    public boolean configure(StaplerRequest req, JSONObject json) {
+//        spotinstToken = json.getString("spotinstToken");
+//        accountId     = json.getString("accountId");
+//
+//        //TODO use json.has and print jason for debugging
+//
+//        try {
+//            credentialsMethod = json.getString("credentialsMethod");
+//        }
+//        catch (Exception e) {
+//            credentialsMethod = CredentialsMethodEnum.PlainText.getName();
+//        }
+//
+//        if (credentialsMethod.equals(CredentialsMethodEnum.CredentialsStore.getName())) {
+//            credentialsId = json.getString("credentialsId");
+//            CredentialsStoreReader credentialsStoreReader = new CredentialsStoreReader(credentialsId);
+//            SpotTokenCredentials   spotTokenCredentials   = credentialsStoreReader.getSpotToken();
+//
+//            if (spotTokenCredentials != null) {
+//                Secret secret = spotTokenCredentials.getSecret();
+//                credentialsStoreSpotToken = secret.getPlainText();
+//            }
+//        }
+//
+//        save();
+//
+//        if (credentialsMethod.equals(CredentialsMethodEnum.CredentialsStore.getName())) {
+//            SpotinstContext.getInstance().setSpotinstToken(credentialsStoreSpotToken);
+//        }
+//        else {
+//            SpotinstContext.getInstance().setSpotinstToken(spotinstToken);
+//        }
+//
+//        SpotinstContext.getInstance().setAccountId(accountId);
+//
+//        return true;
+//    }
 
     @Override
     public boolean configure(StaplerRequest req, JSONObject json) {
-        spotinstToken = json.getString("spotinstToken");
+        String tokenToUse;
         accountId     = json.getString("accountId");
-        credentialsId = json.getString("credentialsId");
 
-        try {
+        boolean isSpecifiedCredentialMethod =  json.has("credentialsMethod");
+
+        if(isSpecifiedCredentialMethod){
             credentialsMethod = json.getString("credentialsMethod");
         }
-        catch (Exception e) {
+        else {
             credentialsMethod = CredentialsMethodEnum.PlainText.getName();
         }
 
+
         if (credentialsMethod.equals(CredentialsMethodEnum.CredentialsStore.getName())) {
+            credentialsId = json.getString("credentialsId");
             CredentialsStoreReader credentialsStoreReader = new CredentialsStoreReader(credentialsId);
-            SpotTokenCredentials   spotTokenCredentials   = credentialsStoreReader.getSpotToken();
+            SpotTokenCredentials   spotTokenCredentials  = credentialsStoreReader.getSpotToken();
 
             if (spotTokenCredentials != null) {
                 Secret secret = spotTokenCredentials.getSecret();
                 credentialsStoreSpotToken = secret.getPlainText();
+                tokenToUse = credentialsStoreSpotToken;
             }
+            else{
+                //////log
+            }
+        }
+        else{
+            spotinstToken = json.getString("spotinstToken");
+            tokenToUse = spotinstToken;
         }
 
         save();
 
-        if (credentialsMethod.equals(CredentialsMethodEnum.CredentialsStore.getName())) {
-            SpotinstContext.getInstance().setSpotinstToken(credentialsStoreSpotToken);
-        }
-        else {
-            SpotinstContext.getInstance().setSpotinstToken(spotinstToken);
-        }
-
+        SpotinstContext.getInstance().setSpotinstToken(tokenToUse);
         SpotinstContext.getInstance().setAccountId(accountId);
 
         return true;
@@ -97,8 +144,7 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
 
     public FormValidation doValidateCredentialsStoreToken(@QueryParameter("credentialsId") String credentialsId,
                                                           @QueryParameter("accountId") String accountId) {
-        FormValidation result = FormValidation.error("Unexpected error occurred");
-
+        FormValidation result;
 
             CredentialsStoreReader credentialsStoreReader = new CredentialsStoreReader(credentialsId);
             SpotTokenCredentials   spotTokenCredentials   = credentialsStoreReader.getSpotToken();
@@ -109,7 +155,7 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
                 result = doValidateToken(token, accountId);
             }
             else {
-                String failureMassage = "Failed to load token match to credentials ID: ";
+                String failureMassage = "Failed to load token match to credentials ID: %s";
                 result = FormValidation
                         .error(String.format(failureMassage, credentialsId));
             }
@@ -140,6 +186,7 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
     }
 
     public String getSpotinstToken() {
+        //TODO check which token to expose
         return spotinstToken;
     }
 
@@ -171,15 +218,6 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
 
     public String getCredentialsId() {
         return credentialsId;
-    }
-
-    //TODO - consult if needed.
-    public void setCredentialsStoreSpotToken(String credentialsStoreSpotToken) {
-        this.credentialsStoreSpotToken = credentialsStoreSpotToken;
-    }
-
-    public String getCredentialsStoreSpotToken() {
-        return credentialsStoreSpotToken;
     }
 
     @RequirePOST
