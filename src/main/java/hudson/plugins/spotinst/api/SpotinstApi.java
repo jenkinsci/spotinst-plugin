@@ -276,7 +276,7 @@ public class SpotinstApi {
         return retVal;
     }
 
-    public static Boolean azureVmDetach(String groupId, String vmId, String accountId) throws ApiException {    
+    public static Boolean azureVmDetach(String groupId, String vmId, String accountId) throws ApiException {
         Map<String, String> headers     = buildHeaders();
         Map<String, String> queryParams = buildQueryParams(accountId);
 

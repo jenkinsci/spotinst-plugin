@@ -40,6 +40,11 @@ termination"
 
 [SpotinstPlugin-Versionhistory]
 == Version history
+[SpotinstPlugin-Version2.2.5(Oct19,2021)]
+=== Version 2.2.5 (Oct 19, 2021)
+
+* Add Spot Personal Access Token to Jenkins Credentials Store
+
 [SpotinstPlugin-Version2.2.4(Sep26,2021)]
 === Version 2.2.4 (Sep 26, 2021)
 
