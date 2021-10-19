@@ -58,7 +58,6 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
 
     @Override
     public boolean configure(StaplerRequest req, JSONObject json) {
-
         String tokenToUse = null;
         accountId = json.getString("accountId");
         boolean isSpecifiedCredentialMethod = json.has("credentialsMethod");
@@ -108,18 +107,22 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
                                                           @QueryParameter("accountId") String accountId) {
         FormValidation result;
 
-        CredentialsStoreReader credentialsStoreReader = new CredentialsStoreReader(credentialsId);
-        SpotTokenCredentials   spotTokenCredentials   = credentialsStoreReader.getSpotToken();
-
-        if (spotTokenCredentials != null) {
-            Secret secret = spotTokenCredentials.getSecret();
-            String token  = secret.getPlainText();
-            result = doValidateToken(token, accountId);
+        if (credentialsId.equals("")) {
+            result = FormValidation.error("Please choose credentials ID.");
         }
         else {
-            result = FormValidation.error("Failed to load token match to credentials ID.");
-        }
+            CredentialsStoreReader credentialsStoreReader = new CredentialsStoreReader(credentialsId);
+            SpotTokenCredentials   spotTokenCredentials   = credentialsStoreReader.getSpotToken();
 
+            if (spotTokenCredentials != null) {
+                Secret secret = spotTokenCredentials.getSecret();
+                String token  = secret.getPlainText();
+                result = doValidateToken(token, accountId);
+            }
+            else {
+                result = FormValidation.error("Failed to load token match to credentials ID.");
+            }
+        }
         return result;
     }
 
@@ -190,10 +193,12 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
 
     @RequirePOST
     public ListBoxModel doFillCredentialsIdItems(@AncestorInPath ItemGroup context) {
-        Jenkins.get().checkPermission(Jenkins.ADMINISTER);
-        return new StandardListBoxModel()
-                .includeEmptyValue()
-                .includeMatchingAs(ACL.SYSTEM, context, SpotTokenCredentials.class, Collections.emptyList(), CredentialsMatchers
-                        .always());
+        ListBoxModel retVal;
+
+        retVal = new StandardListBoxModel().includeEmptyValue()
+                                           .includeMatchingAs(ACL.SYSTEM, context, SpotTokenCredentials.class,
+                                                              Collections.emptyList(), CredentialsMatchers.always());
+
+        return retVal;
     }
 }
