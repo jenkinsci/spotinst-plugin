@@ -40,6 +40,11 @@ termination"
 
 [SpotinstPlugin-Versionhistory]
 == Version history
+[SpotinstPlugin-Version2.2.5(Dec21,2021)]
+=== Version 2.2.6 (Dec 21, 2021)
+
+* Load AWS instance types using Spot API
+
 [SpotinstPlugin-Version2.2.5(Oct19,2021)]
 === Version 2.2.5 (Oct 19, 2021)
 
