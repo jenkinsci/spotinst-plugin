@@ -4,6 +4,7 @@ import hudson.plugins.spotinst.api.SpotinstApi;
 import hudson.plugins.spotinst.api.infra.ApiException;
 import hudson.plugins.spotinst.api.infra.ApiResponse;
 import hudson.plugins.spotinst.api.infra.ExceptionHelper;
+import hudson.plugins.spotinst.model.aws.AwsInstanceType;
 import hudson.plugins.spotinst.model.aws.AwsGroupInstance;
 import hudson.plugins.spotinst.model.aws.AwsScaleUpResult;
 
@@ -55,6 +56,23 @@ public class AwsGroupRepo implements IAwsGroupRepo {
         try {
             AwsScaleUpResult scaleUpResult = SpotinstApi.awsScaleUp(groupId, adjustment, accountId);
             retVal = new ApiResponse<>(scaleUpResult);
+        }
+        catch (ApiException e) {
+            retVal = ExceptionHelper.handleDalException(e);
+        }
+
+        return retVal;
+    }
+
+    @Override
+    public ApiResponse<List<AwsInstanceType>> getAllInstanceTypes(String accountId) {
+        ApiResponse<List<AwsInstanceType>> retVal;
+
+        try {
+            List<AwsInstanceType> instances = SpotinstApi.getAllAwsInstanceTypes(accountId);
+
+            retVal = new ApiResponse<>(instances);
+
         }
         catch (ApiException e) {
             retVal = ExceptionHelper.handleDalException(e);

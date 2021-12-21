@@ -120,6 +120,24 @@ public class SpotinstApi {
 
         return retVal;
     }
+
+    public static List<AwsInstanceType> getAllAwsInstanceTypes(String accountId) throws ApiException {
+        List<AwsInstanceType> retVal;
+        Map<String, String>   headers     = buildHeaders();
+        Map<String, String>   queryParams = buildQueryParams(accountId);
+        queryParams.put("distinctTypesList","true");
+
+        RestResponse response =
+                RestClient.sendGet(SPOTINST_API_HOST + "/aws/ec2/instanceType", headers, queryParams);
+
+        AwsInstanceTypesResponse
+                allAwsInstanceTypesResponse = getCastedResponse(response, AwsInstanceTypesResponse.class);
+
+        retVal = allAwsInstanceTypesResponse.getResponse().getItems();
+
+        return retVal;
+    }
+
     //endregion
 
     //region GCP

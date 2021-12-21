@@ -1,6 +1,7 @@
 package hudson.plugins.spotinst.repos;
 
 import hudson.plugins.spotinst.api.infra.ApiResponse;
+import hudson.plugins.spotinst.model.aws.AwsInstanceType;
 import hudson.plugins.spotinst.model.aws.AwsGroupInstance;
 import hudson.plugins.spotinst.model.aws.AwsScaleUpResult;
 
@@ -15,4 +16,6 @@ public interface IAwsGroupRepo {
     ApiResponse<Boolean> detachInstance(String instanceId, String accountId);
 
     ApiResponse<AwsScaleUpResult> scaleUp(String groupId, Integer adjustment, String accountId);
+
+    ApiResponse<List<AwsInstanceType>> getAllInstanceTypes(String accountId);
 }
