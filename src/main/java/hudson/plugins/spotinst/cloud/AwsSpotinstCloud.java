@@ -4,12 +4,9 @@ import hudson.Extension;
 import hudson.model.Node;
 import hudson.plugins.spotinst.api.infra.ApiResponse;
 import hudson.plugins.spotinst.api.infra.JsonMapper;
-import hudson.plugins.spotinst.common.AwsInstanceTypeEnum;
 import hudson.plugins.spotinst.common.ConnectionMethodEnum;
-import hudson.plugins.spotinst.model.aws.AwsGroupInstance;
-import hudson.plugins.spotinst.model.aws.AwsScaleResultNewInstance;
-import hudson.plugins.spotinst.model.aws.AwsScaleResultNewSpot;
-import hudson.plugins.spotinst.model.aws.AwsScaleUpResult;
+import hudson.plugins.spotinst.common.SpotAwsInstanceTypesHelper;
+import hudson.plugins.spotinst.model.aws.*;
 import hudson.plugins.spotinst.repos.IAwsGroupRepo;
 import hudson.plugins.spotinst.repos.RepoManager;
 import hudson.plugins.spotinst.slave.*;
@@ -30,11 +27,11 @@ import java.util.*;
 public class AwsSpotinstCloud extends BaseSpotinstCloud {
 
     //region Members
-    private static final Logger LOGGER    = LoggerFactory.getLogger(AwsSpotinstCloud.class);
-    private static final String CLOUD_URL = "aws/ec2";
-
-    protected Map<AwsInstanceTypeEnum, Integer>      executorsForInstanceType;
-    private   List<? extends SpotinstInstanceWeight> executorsForTypes;
+    private static final Logger                                 LOGGER    =
+            LoggerFactory.getLogger(AwsSpotinstCloud.class);
+    private static final String                                 CLOUD_URL = "aws/ec2";
+    protected            Map<String, Integer>                   executorsByInstanceType;
+    private              List<? extends SpotinstInstanceWeight> executorsForTypes;
     //endregion
 
     //region Constructor
@@ -52,17 +49,12 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
               computerConnector, shouldUsePrivateIp, globalExecutorOverride);
 
         this.executorsForTypes = new LinkedList<>();
-        executorsForInstanceType = new HashMap<>();
 
         if (executorsForTypes != null) {
             this.executorsForTypes = executorsForTypes;
-
-            for (SpotinstInstanceWeight executors : executorsForTypes) {
-                if (executors.getExecutors() != null) {
-                    executorsForInstanceType.put(executors.getAwsInstanceType(), executors.getExecutors());
-                }
-            }
         }
+
+        initExecutorsByInstanceType();
     }
 
     //endregion
@@ -186,15 +178,15 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
 
     @Override
     protected Integer getDefaultExecutorsNumber(String instanceType) {
-        Integer retVal;
+        Integer retVal = null;
         LOGGER.info(String.format("Getting the # of default executors for instance type: %s", instanceType));
-        AwsInstanceTypeEnum enumMember = AwsInstanceTypeEnum.fromValue(instanceType);
+        Optional<AwsInstanceType> awsInstanceType = SpotAwsInstanceTypesHelper.getAllInstanceTypes().stream()
+                                                                              .filter(i -> i.getInstanceType()
+                                                                                            .equals(instanceType))
+                                                                              .findFirst();
 
-        if (enumMember != null) {
-            retVal = enumMember.getExecutors();
-        }
-        else {
-            retVal = null;
+        if (awsInstanceType.isPresent()) {
+            retVal = awsInstanceType.get().getVCPU();
         }
 
         return retVal;
@@ -204,17 +196,15 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
     //region Private Methods
     @Override
     protected Integer getNumOfExecutors(String instanceType) {
-        Integer             retVal;
-        AwsInstanceTypeEnum type = AwsInstanceTypeEnum.fromValue(instanceType);
+        Integer retVal;
 
-        if (type != null) {
-            if (executorsForInstanceType.containsKey(type)) {
-                retVal = executorsForInstanceType.get(type);
-                LOGGER.info(String.format("We have a weight definition for this type of %s", retVal));
-            }
-            else {
-                retVal = super.getNumOfExecutors(instanceType);
-            }
+        if (executorsByInstanceType == null) {
+            initExecutorsByInstanceType();
+        }
+
+        if (executorsByInstanceType.containsKey(instanceType)) {
+            retVal = executorsByInstanceType.get(instanceType);
+            LOGGER.info(String.format("We have a weight definition for this type of %s", retVal));
         }
         else {
             retVal = super.getNumOfExecutors(instanceType);
@@ -252,7 +242,7 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
     }
 
     private SpotinstSlave handleNewAwsInstance(String instanceId, String instanceType, String label) {
-        Integer             executors  = getNumOfExecutors(instanceType);
+        Integer executors = getNumOfExecutors(instanceType);
         addToPending(instanceId, executors, PendingInstance.StatusEnum.INSTANCE_INITIATING, label);
         SpotinstSlave retVal = buildSpotinstSlave(instanceId, instanceType, String.valueOf(executors));
 
@@ -374,6 +364,20 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
             }
             catch (IOException e) {
                 LOGGER.error(String.format("Failed to create node for slave: %s", slave.getInstanceId()), e);
+            }
+        }
+    }
+
+    private void initExecutorsByInstanceType() {
+        this.executorsByInstanceType = new HashMap<>();
+
+        if (this.executorsForTypes != null) {
+            for (SpotinstInstanceWeight instance : this.executorsForTypes) {
+                if (instance.getExecutors() != null) {
+                    Integer executors = instance.getExecutors();
+                    String  type      = instance.getAwsInstanceTypeFromAPI();
+                    this.executorsByInstanceType.put(type, executors);
+                }
             }
         }
     }

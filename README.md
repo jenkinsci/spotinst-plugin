@@ -5,7 +5,7 @@ Jenkins plugin to integrate with Spot.
 # Spot Elastigroup
 This plugin uses [Spot](http://www.spotinst.com) Elastigroup to launch instances instead of launching them directly.
 The Elastigroup will make sure the agents' target-capacity is being maintained.
-More details can be found in this [blog post](http://blog.spotinst.com/2016/06/08/elastigroup-jenkins).
+More details can be found in our [documentation](https://docs.spot.io/tools-and-provisioning/ci-cd/jenkins?id=jenkins).
 
 #Usage
 

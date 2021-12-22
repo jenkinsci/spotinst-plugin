@@ -10,7 +10,7 @@ launch instances instead of directly launching them by itself. +
 The Elastigroup will make sure the agents' target-capacity is being
 maintained. +
 More details can be found in
-our http://blog.spotinst.com/2016/06/08/elastigroup-jenkins/[Blog post].
+our https://docs.spot.io/tools-and-provisioning/ci-cd/jenkins?id=jenkins/[documentation].
 
 [[SpotinstPlugin-Usage]]
 == Usage
@@ -40,6 +40,11 @@ termination"
 
 [SpotinstPlugin-Versionhistory]
 == Version history
+[SpotinstPlugin-Version2.2.5(Dec21,2021)]
+=== Version 2.2.6 (Dec 21, 2021)
+
+* Load AWS instance types using Spot API
+
 [SpotinstPlugin-Version2.2.5(Oct19,2021)]
 === Version 2.2.5 (Oct 19, 2021)
 
