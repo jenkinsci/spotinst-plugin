@@ -52,8 +52,9 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
 
         if (executorsForTypes != null) {
             this.executorsForTypes = executorsForTypes;
-            initExecutorsByInstanceType();
         }
+
+        initExecutorsByInstanceType();
     }
 
     //endregion
@@ -366,15 +367,8 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
             }
         }
     }
-    //endregion
 
-    //region Getters
-    public List<? extends SpotinstInstanceWeight> getExecutorsForTypes() {
-        return executorsForTypes;
-    }
-
-    //used in upgrade from constant instance types list version (v2.2.5) to new version of instance types list from API version (v2.2.6).
-    public void initExecutorsByInstanceType() {
+    private void initExecutorsByInstanceType() {
         this.executorsByInstanceType = new HashMap<>();
 
         if (this.executorsForTypes != null) {
@@ -386,6 +380,12 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
                 }
             }
         }
+    }
+    //endregion
+
+    //region Getters
+    public List<? extends SpotinstInstanceWeight> getExecutorsForTypes() {
+        return executorsForTypes;
     }
     //endregion
 
