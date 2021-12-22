@@ -49,16 +49,10 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
               computerConnector, shouldUsePrivateIp, globalExecutorOverride);
 
         this.executorsForTypes = new LinkedList<>();
-        executorsByInstanceType = new HashMap<>();
 
         if (executorsForTypes != null) {
             this.executorsForTypes = executorsForTypes;
-
-            for (SpotinstInstanceWeight executors : executorsForTypes) {
-                if (executors.getExecutors() != null) {
-                    executorsByInstanceType.put(executors.getAwsInstanceTypeFromAPI(), executors.getExecutors());
-                }
-            }
+            initExecutorsByInstanceType();
         }
     }
 
@@ -206,19 +200,14 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
         if (executorsByInstanceType == null) {
             initExecutorsByInstanceType();
         }
-        if (executorsByInstanceType != null) {
-            if (executorsByInstanceType.containsKey(instanceType)) {
-                retVal = executorsByInstanceType.get(instanceType);
-                LOGGER.info(String.format("We have a weight definition for this type of %s", retVal));
-            }
-            else {
-                retVal = super.getNumOfExecutors(instanceType);
-            }
+
+        if (executorsByInstanceType.containsKey(instanceType)) {
+            retVal = executorsByInstanceType.get(instanceType);
+            LOGGER.info(String.format("We have a weight definition for this type of %s", retVal));
         }
         else {
             retVal = super.getNumOfExecutors(instanceType);
         }
-
 
         return retVal;
     }
@@ -386,9 +375,9 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
 
     //used in upgrade from constant instance types list version (v2.2.5) to new version of instance types list from API version (v2.2.6).
     public void initExecutorsByInstanceType() {
-        if (this.executorsForTypes != null) {
-            this.executorsByInstanceType = new HashMap<>();
+        this.executorsByInstanceType = new HashMap<>();
 
+        if (this.executorsForTypes != null) {
             for (SpotinstInstanceWeight instance : this.executorsForTypes) {
                 if (instance.getExecutors() != null) {
                     Integer executors = instance.getExecutors();

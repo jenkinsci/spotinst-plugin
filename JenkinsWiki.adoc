@@ -10,7 +10,7 @@ launch instances instead of directly launching them by itself. +
 The Elastigroup will make sure the agents' target-capacity is being
 maintained. +
 More details can be found in
-our http://blog.spotinst.com/2016/06/08/elastigroup-jenkins/[Blog post].
+our https://docs.spot.io/tools-and-provisioning/ci-cd/jenkins?id=jenkins/[documentation].
 
 [[SpotinstPlugin-Usage]]
 == Usage
