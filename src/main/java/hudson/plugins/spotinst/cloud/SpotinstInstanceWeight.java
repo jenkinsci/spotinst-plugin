@@ -105,7 +105,7 @@ public class SpotinstInstanceWeight implements Describable<SpotinstInstanceWeigh
     }
 
     public String getAwsInstanceTypeFromAPI() {
-        String retVal;
+        String retVal = null;
 
         if (this.awsInstanceTypeFromAPI != null) {
 
@@ -129,7 +129,9 @@ public class SpotinstInstanceWeight implements Describable<SpotinstInstanceWeigh
 
         }
         else {
-            retVal = awsInstanceType.getValue();
+            if(awsInstanceType != null){
+                retVal = awsInstanceType.getValue();
+            }
         }
 
         return retVal;
