@@ -40,6 +40,11 @@ termination"
 
 [SpotinstPlugin-Versionhistory]
 == Version history
+[SpotinstPlugin-Version2.2.7(Jan17,2022)]
+=== Version 2.2.7 (Jan 17, 2022)
+
+* Fix issue: fix fallback to hardcoded list of AWS instance types in configure cloud page
+
 [SpotinstPlugin-Version2.2.6(Dec22,2021)]
 === Version 2.2.6 (Dec 22, 2021)
 
