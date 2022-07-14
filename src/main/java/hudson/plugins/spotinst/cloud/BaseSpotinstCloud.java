@@ -1,5 +1,6 @@
 package hudson.plugins.spotinst.cloud;
 
+import edu.umd.cs.findbugs.annotations.CheckForNull;
 import hudson.DescriptorExtensionList;
 import hudson.model.*;
 import hudson.model.labels.LabelAtom;
@@ -14,6 +15,7 @@ import hudson.tools.ToolInstallation;
 import hudson.tools.ToolLocationNodeProperty;
 import jenkins.model.Jenkins;
 import org.apache.commons.lang.BooleanUtils;
+import org.kohsuke.stapler.DataBoundSetter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,25 +32,27 @@ public abstract class BaseSpotinstCloud extends Cloud {
     //region Members
     private static final Logger LOGGER = LoggerFactory.getLogger(BaseSpotinstCloud.class);
 
-    protected String                            accountId;
-    protected String                            groupId;
-    protected Map<String, PendingInstance>      pendingInstances;
-    protected Map<String, SlaveInstanceDetails> slaveInstancesDetailsByInstanceId;
-    private   String                            labelString;
-    private   String                            idleTerminationMinutes;
-    private   String                            workspaceDir;
-    private   Set<LabelAtom>                    labelSet;
-    private   SlaveUsageEnum                    usage;
-    private   String                            tunnel;
-    private   String                            vmargs;
-    private   EnvironmentVariablesNodeProperty  environmentVariables;
-    private   ToolLocationNodeProperty          toolLocations;
-    private   Boolean                           shouldUseWebsocket;
-    private   Boolean                           shouldRetriggerBuilds;
-    private   ComputerConnector                 computerConnector;
-    private   ConnectionMethodEnum              connectionMethod;
-    private   Boolean                           shouldUsePrivateIp;
-    private   SpotGlobalExecutorOverride        globalExecutorOverride;
+    protected static final int                               NO_OVERRIDED_NUM_OF_EXECUTORS = -1;
+    protected              String                            accountId;
+    protected              String                            groupId;
+    protected              Map<String, PendingInstance>      pendingInstances;
+    protected              Map<String, SlaveInstanceDetails> slaveInstancesDetailsByInstanceId;
+    private                String                            labelString;
+    private                String                            idleTerminationMinutes;
+    private                String                            workspaceDir;
+    private                Set<LabelAtom>                    labelSet;
+    private                SlaveUsageEnum                    usage;
+    private                String                            tunnel;
+    private                String                            vmargs;
+    private                EnvironmentVariablesNodeProperty  environmentVariables;
+    private                ToolLocationNodeProperty          toolLocations;
+    private                Boolean                           shouldUseWebsocket;
+    private                Boolean                           shouldRetriggerBuilds;
+    private                Boolean                           isSingleTaskNodesEnabled;
+    private                ComputerConnector                 computerConnector;
+    private                ConnectionMethodEnum              connectionMethod;
+    private                Boolean                           shouldUsePrivateIp;
+    private                SpotGlobalExecutorOverride        globalExecutorOverride;
     //endregion
 
     //region Constructor
@@ -106,7 +110,6 @@ public abstract class BaseSpotinstCloud extends Cloud {
         else {
             this.globalExecutorOverride = new SpotGlobalExecutorOverride(false, 1);
         }
-
     }
     //endregion
 
@@ -585,33 +588,52 @@ public abstract class BaseSpotinstCloud extends Cloud {
 
     protected Integer getNumOfExecutors(String instanceType) {
         Integer retVal;
+        boolean isSingleTaskNodesEnabled = getIsSingleTaskNodesEnabled();
 
-        Integer globalOverrideExecutorsNumber = getExecutorsFromGlobalOverride();
-
-        if (globalOverrideExecutorsNumber != null) {
-            LOGGER.debug(String.format("Overriding executors for instance type %s to be %s", instanceType,
-                                       globalOverrideExecutorsNumber));
-            retVal = globalOverrideExecutorsNumber;
+        if (isSingleTaskNodesEnabled) {
+            retVal = 1;
         }
         else {
-            Integer defaultNumberOfExecutors = getDefaultExecutorsNumber(instanceType);
+            int overridedNumOfExecutors = getOverridedNumberOfExecutors(instanceType);
+            boolean isNumOfExecutorsOverrided = overridedNumOfExecutors != NO_OVERRIDED_NUM_OF_EXECUTORS;
 
-            if (defaultNumberOfExecutors != null) {
-                retVal = defaultNumberOfExecutors;
+            if(isNumOfExecutorsOverrided){
+                retVal = overridedNumOfExecutors;
             }
             else {
-                retVal = 1;
-                String warningMsg = String.format(
-                        "Failed to determine # of executors for instance type %s, defaulting to %s executor(s). Group ID: %s",
-                        instanceType, retVal, this.getGroupId());
-                LOGGER.warn(warningMsg);
+                Integer globalOverrideExecutorsNumber = getExecutorsFromGlobalOverride();
 
+                if (globalOverrideExecutorsNumber != null) {
+                    LOGGER.debug(String.format("Overriding executors for instance type %s to be %s", instanceType,
+                                               globalOverrideExecutorsNumber));
+                    retVal = globalOverrideExecutorsNumber;
+                }
+                else {
+                    Integer defaultNumberOfExecutors = getDefaultExecutorsNumber(instanceType);
+
+                    if (defaultNumberOfExecutors != null) {
+                        retVal = defaultNumberOfExecutors;
+                    }
+                    else {
+                        retVal = 1;
+                        String warningMsg = String.format(
+                                "Failed to determine # of executors for instance type %s, defaulting to %s executor(s). Group ID: %s",
+                                instanceType, retVal, this.getGroupId());
+                        LOGGER.warn(warningMsg);
+
+                    }
+                }
             }
+
         }
 
         LOGGER.debug(String.format("instance type executors number was set to %s", retVal));
 
         return retVal;
+    }
+
+    protected int getOverridedNumberOfExecutors(String instanceType) {
+        return NO_OVERRIDED_NUM_OF_EXECUTORS;
     }
 
     protected Integer getPendingThreshold() {
@@ -734,6 +756,30 @@ public abstract class BaseSpotinstCloud extends Cloud {
     public void setGlobalExecutorOverride(SpotGlobalExecutorOverride globalExecutorOverride) {
         this.globalExecutorOverride = globalExecutorOverride;
     }
+
+
+    public Boolean getIsSingleTaskNodesEnabled() {
+        if (this.isSingleTaskNodesEnabled == null) {
+            return false;
+        }
+        else {
+            return isSingleTaskNodesEnabled;
+        }
+    }
+
+    @DataBoundSetter
+    public void setIsSingleTaskNodesEnabled(Boolean isSingleTaskNodesEnabled) {
+        this.isSingleTaskNodesEnabled = isSingleTaskNodesEnabled;
+
+        // if enabled, enable and override GlobalExecutorOverride to 1
+        // better clarity to user, avoid race conditions
+        boolean shouldDisableGlobalExecutors = isSingleTaskNodesEnabled != null && isSingleTaskNodesEnabled && this.globalExecutorOverride != null;
+        if (shouldDisableGlobalExecutors) {
+            this.globalExecutorOverride.setIsEnabled(false);
+        }
+    }
+
+
     //endregion
 
     //region Abstract Methods

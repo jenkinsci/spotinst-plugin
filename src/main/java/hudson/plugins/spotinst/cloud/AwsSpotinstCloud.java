@@ -195,7 +195,7 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
 
     //region Private Methods
     @Override
-    protected Integer getNumOfExecutors(String instanceType) {
+    protected int getOverridedNumberOfExecutors(String instanceType) {
         Integer retVal;
 
         if (executorsByInstanceType == null) {
@@ -207,7 +207,7 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
             LOGGER.info(String.format("We have a weight definition for this type of %s", retVal));
         }
         else {
-            retVal = super.getNumOfExecutors(instanceType);
+            retVal = NO_OVERRIDED_NUM_OF_EXECUTORS;
         }
 
         return retVal;

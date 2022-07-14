@@ -40,6 +40,11 @@ termination"
 
 [SpotinstPlugin-Versionhistory]
 == Version history
+[SpotinstPlugin-Version2.2.8(Jul14,2022)]
+=== Version 2.2.8 (Jul 14, 2022)
+
+* Added 'Single Task Nodes' feature
+
 [SpotinstPlugin-Version2.2.7(Jan17,2022)]
 === Version 2.2.7 (Jan 17, 2022)
 
