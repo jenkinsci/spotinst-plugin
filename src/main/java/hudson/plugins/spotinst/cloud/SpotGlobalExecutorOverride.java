@@ -56,5 +56,9 @@ public class SpotGlobalExecutorOverride implements Describable<SpotGlobalExecuto
     public boolean getIsEnabled() {
         return isEnabled;
     }
+
+    public void setIsEnabled(boolean isEnabled) {
+        this.isEnabled = isEnabled;
+    }
     //endregion
 }

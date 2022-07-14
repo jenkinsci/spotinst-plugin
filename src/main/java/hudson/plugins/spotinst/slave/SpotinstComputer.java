@@ -1,11 +1,16 @@
 package hudson.plugins.spotinst.slave;
 
+import hudson.model.Executor;
 import hudson.model.Node;
+import hudson.model.Queue;
+import hudson.plugins.spotinst.cloud.BaseSpotinstCloud;
 import hudson.slaves.SlaveComputer;
 import org.kohsuke.stapler.HttpRedirect;
 import org.kohsuke.stapler.HttpResponse;
 import org.kohsuke.stapler.HttpResponses;
 import org.kohsuke.stapler.interceptor.RequirePOST;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
@@ -15,7 +20,46 @@ import java.io.IOException;
 public class SpotinstComputer extends SlaveComputer {
 
     //region Members
-    private long launchTime;
+    private static final Logger LOGGER = LoggerFactory.getLogger(SpotinstComputer.class);
+    private              long   launchTime;
+    //endregion
+
+    //region overrides
+    // better than JobListener because in complicated pipelines Jenkins is the initial Node and
+    // we know the Node is a SpotinstNode (I'm not using that word).
+    @Override
+    public void taskAccepted(Executor executor, Queue.Task task) {
+        super.taskAccepted(executor, task);
+        SpotinstSlave spotinstNode = this.getNode();
+
+        if (spotinstNode != null) {
+            BaseSpotinstCloud spotinstCloud = spotinstNode.getSpotinstCloud();
+
+            if (spotinstCloud != null) {
+                if (spotinstCloud.getIsSingleTaskNodesEnabled()) {
+                    String msg = String.format(
+                            "Node %s has accepted a job and 'Single Task Nodes' setting on Cloud %s is on. Node will not accept any more jobs.",
+                            spotinstNode.getNodeName(), spotinstCloud.getDisplayName());
+                    LOGGER.info(msg);
+                    this.setAcceptingTasks(false);
+                    // I see much better responsiveness from Jenkins in case of setting offline, both have same effect
+                    // should also be decided with UI because each combo looks different in the node list.
+                    SpotinstNonLocalizable spotinstNonLocalizable = new SpotinstNonLocalizable(msg);
+                    SpotinstSingleTaskOfflineCause spotinstSingleTaskOfflineCause = new SpotinstSingleTaskOfflineCause(spotinstNonLocalizable);
+                    this.setTemporarilyOffline(true,spotinstSingleTaskOfflineCause);
+                }
+            }
+            else {
+                LOGGER.error(String.format(
+                        "Node %s has accepted a job but can't determine 'Single Task Nodes' setting because SpotinstNode's SpotinstCloud appears to be null.",
+                        spotinstNode.getNodeName()));
+            }
+        } else {
+            LOGGER.error(String.format(
+                    "Executor of Node %s has accepted a job but can't determine 'Single Task Nodes' setting because SpotinstNode is null.", executor.getOwner().getName()));
+        }
+    }
+
     //endregion
 
     //region Constructor

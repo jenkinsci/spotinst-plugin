@@ -116,9 +116,16 @@
 	</f:entry>
  </f:optionalBlock>
 
-<f:property title="Global Instance Override" field="globalExecutorOverride"/>
+<f:section title="Node executor overrides">
+ <f:entry title="${%Single Task Nodes}" field="isSingleTaskNodesEnabled">
+   <f:checkbox checked="${(instance != null) &amp;&amp; (instance.isSingleTaskNodesEnabled != null) &amp;&amp; (instance.isSingleTaskNodesEnabled) || descriptor.getIsSingleTaskNodesEnabledOneOfEnabledDescriptor()}"/>
+   <f:description>Each node will perform at most one job and get terminated after "Idle minutes before termination" (see setting above).</f:description>
+   <f:description>Enabling this setting effectively means: <b><u>override</u></b> the Default executor count setting and <b><u>ignore</u></b> any instance-weight overrides if those are set.</f:description>
+ </f:entry>
 
+<f:property title="Global Instance Override" field="globalExecutorOverride"/>
 <st:include class="${descriptor.clazz}" page="config-entries.jelly" />
+</f:section>
 
 </j:jelly>
 
