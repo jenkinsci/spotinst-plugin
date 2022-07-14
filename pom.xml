@@ -10,7 +10,7 @@
     </parent>
 
     <artifactId>spotinst</artifactId>
-    <version>2.2.8-SNAPSHOT</version>
+    <version>2.2.8</version>
     <packaging>hpi</packaging>
 
     <name>Spotinst plugin</name>
@@ -36,7 +36,7 @@
         <connection>scm:git:git://github.com/jenkinsci/spotinst-plugin.git</connection>
         <developerConnection>scm:git:git@github.com:jenkinsci/spotinst-plugin.git</developerConnection>
         <url>https://github.com/jenkinsci/spotinst-plugin</url>
-        <tag>HEAD</tag>
+        <tag>spotinst-2.2.8</tag>
     </scm>
 
     <properties>
