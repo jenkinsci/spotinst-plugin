@@ -61,6 +61,40 @@ public class RestClient {
 
         return retVal;
     }
+
+    public static RestResponse sendDelete(String url, Map<String, String> headers,
+                                       Map<String, String> queryParams) throws ApiException {
+
+        HttpDelete getRequest = new HttpDelete(url);
+        addQueryParams(getRequest, queryParams);
+        addHeaders(getRequest, headers);
+        RestResponse retVal = sendRequest(getRequest);
+
+        return retVal;
+    }
+
+    public static RestResponse sendPost(String url, String body, Map<String, String> headers,
+                                       Map<String, String> queryParams) throws ApiException {
+
+        HttpPost postRequest = new HttpPost(url);
+
+        if (body != null) {
+            StringEntity entity = null;
+            try {
+                entity = new StringEntity(body);
+            }
+            catch (UnsupportedEncodingException e) {
+                LOGGER.error("Exception when building put body", e);
+            }
+            postRequest.setEntity(entity);
+        }
+
+        addQueryParams(postRequest, queryParams);
+        addHeaders(postRequest, headers);
+        RestResponse retVal = sendRequest(postRequest);
+
+        return retVal;
+    }
     //endregion
 
     //region Private Methods

@@ -6,6 +6,7 @@ import hudson.plugins.spotinst.api.infra.ApiResponse;
 import hudson.plugins.spotinst.api.infra.JsonMapper;
 import hudson.plugins.spotinst.common.ConnectionMethodEnum;
 import hudson.plugins.spotinst.common.SpotAwsInstanceTypesHelper;
+import hudson.plugins.spotinst.common.SpotinstContext;
 import hudson.plugins.spotinst.model.aws.*;
 import hudson.plugins.spotinst.repos.IAwsGroupRepo;
 import hudson.plugins.spotinst.repos.RepoManager;
@@ -117,55 +118,77 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
 
     @Override
     public void syncGroupInstances() {
-        IAwsGroupRepo                       awsGroupRepo      = RepoManager.getInstance().getAwsGroupRepo();
-        ApiResponse<List<AwsGroupInstance>> instancesResponse = awsGroupRepo.getGroupInstances(groupId, this.accountId);
+        boolean isGroupBelongToCloud = SpotinstContext.getInstance().getGroupsInUse().containsKey(this.groupId);
 
-        if (instancesResponse.isRequestSucceed()) {
-            List<AwsGroupInstance> instances = instancesResponse.getValue();
-            LOGGER.info(String.format("There are %s instances in group %s", instances.size(), groupId));
+        if (isGroupBelongToCloud) {
+            IAwsGroupRepo awsGroupRepo = RepoManager.getInstance().getAwsGroupRepo();
+            ApiResponse<List<AwsGroupInstance>> instancesResponse = awsGroupRepo.getGroupInstances(groupId, this.accountId);
 
-            Map<String, SlaveInstanceDetails> slaveInstancesDetailsByInstanceId = new HashMap<>();
+            if (instancesResponse.isRequestSucceed()) {
+                List<AwsGroupInstance> instances = instancesResponse.getValue();
+                LOGGER.info(String.format("There are %s instances in group %s", instances.size(), groupId));
 
-            for (AwsGroupInstance instance : instances) {
-                SlaveInstanceDetails instanceDetails = SlaveInstanceDetails.build(instance);
-                slaveInstancesDetailsByInstanceId.put(instanceDetails.getInstanceId(), instanceDetails);
+                Map<String, SlaveInstanceDetails> slaveInstancesDetailsByInstanceId = new HashMap<>();
+
+                for (AwsGroupInstance instance : instances) {
+                    SlaveInstanceDetails instanceDetails = SlaveInstanceDetails.build(instance);
+                    slaveInstancesDetailsByInstanceId.put(instanceDetails.getInstanceId(), instanceDetails);
+                }
+
+                this.slaveInstancesDetailsByInstanceId = new HashMap<>(slaveInstancesDetailsByInstanceId);
+
+                addNewSlaveInstances(instances);
+                removeOldSlaveInstances(instances);
+
+
+            } else {
+                LOGGER.error(String.format("Failed to get group %s instances. Errors: %s", groupId,
+                        instancesResponse.getErrors()));
             }
-
-            this.slaveInstancesDetailsByInstanceId = new HashMap<>(slaveInstancesDetailsByInstanceId);
-
-            addNewSlaveInstances(instances);
-            removeOldSlaveInstances(instances);
-
-
         }
-        else {
-            LOGGER.error(String.format("Failed to get group %s instances. Errors: %s", groupId,
-                                       instancesResponse.getErrors()));
+        else{
+            try {
+                handleGroupDosNotBelongToCloud(groupId);
+            }
+            catch (Exception e) {
+                LOGGER.error(e.getMessage());
+            }
         }
     }
+
 
     @Override
     public Map<String, String> getInstanceIpsById() {
         Map<String, String> retVal = new HashMap<>();
 
-        IAwsGroupRepo                       awsGroupRepo      = RepoManager.getInstance().getAwsGroupRepo();
-        ApiResponse<List<AwsGroupInstance>> instancesResponse = awsGroupRepo.getGroupInstances(groupId, this.accountId);
+        boolean isGroupBelongToCloud = SpotinstContext.getInstance().getGroupsInUse().containsKey(this.groupId);
 
-        if (instancesResponse.isRequestSucceed()) {
-            List<AwsGroupInstance> instances = instancesResponse.getValue();
+        if (isGroupBelongToCloud) {
+            IAwsGroupRepo awsGroupRepo = RepoManager.getInstance().getAwsGroupRepo();
+            ApiResponse<List<AwsGroupInstance>> instancesResponse = awsGroupRepo.getGroupInstances(groupId, this.accountId);
 
-            for (AwsGroupInstance instance : instances) {
-                if (this.getShouldUsePrivateIp()) {
-                    retVal.put(instance.getInstanceId(), instance.getPrivateIp());
+            if (instancesResponse.isRequestSucceed()) {
+                List<AwsGroupInstance> instances = instancesResponse.getValue();
+
+                for (AwsGroupInstance instance : instances) {
+                    if (this.getShouldUsePrivateIp()) {
+                        retVal.put(instance.getInstanceId(), instance.getPrivateIp());
+                    } else {
+                        retVal.put(instance.getInstanceId(), instance.getPublicIp());
+                    }
                 }
-                else {
-                    retVal.put(instance.getInstanceId(), instance.getPublicIp());
-                }
+            } else {
+                LOGGER.error(String.format("Failed to get group %s instances. Errors: %s", groupId,
+                        instancesResponse.getErrors()));
             }
         }
-        else {
-            LOGGER.error(String.format("Failed to get group %s instances. Errors: %s", groupId,
-                                       instancesResponse.getErrors()));
+        else{
+            try {
+                handleGroupDosNotBelongToCloud(groupId);
+            }
+            catch (Exception e) {
+                LOGGER.warn(e.getMessage());
+            }
         }
 
         return retVal;

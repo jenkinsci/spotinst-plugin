@@ -7,6 +7,10 @@ import hudson.plugins.spotinst.common.SpotinstContext;
 import hudson.plugins.spotinst.model.aws.*;
 import hudson.plugins.spotinst.model.azure.*;
 import hudson.plugins.spotinst.model.gcp.*;
+import hudson.plugins.spotinst.model.redis.RedisDeleteKeyResponse;
+import hudson.plugins.spotinst.model.redis.RedisGetValueResponse;
+import hudson.plugins.spotinst.model.redis.RedisSetKeyRequest;
+import hudson.plugins.spotinst.model.redis.RedisSetKeyResponse;
 import jenkins.model.Jenkins;
 import org.apache.commons.httpclient.HttpStatus;
 import org.slf4j.Logger;
@@ -19,7 +23,7 @@ public class SpotinstApi {
 
     //region Members
     private static final Logger LOGGER                  = LoggerFactory.getLogger(SpotinstApi.class);
-    private final static String SPOTINST_API_HOST       = "https://api.spotinst.io";
+    private final static String SPOTINST_API_HOST       = "http://localhost:3100";
     private final static String HEADER_AUTH             = "Authorization";
     private final static String AUTH_PREFIX             = "Bearer ";
     private final static String HEADER_CONTENT_TYPE     = "Content-Type";
@@ -308,6 +312,72 @@ public class SpotinstApi {
                          headers, queryParams);
         getCastedResponse(response, ApiEmptyResponse.class);
         Boolean retVal = true;
+
+        return retVal;
+    }
+    //endregion
+
+    //Redis
+    public static <T> T getRedisValue(String groupId, String accountId) throws ApiException {
+        T retVal      = null;
+
+        Map<String, String>    headers     = buildHeaders();
+
+        Map<String, String>    queryParams = buildQueryParams(accountId);
+
+        RestResponse response =
+                RestClient.sendGet(SPOTINST_API_HOST + "/aws/ec2/group/" + groupId + "/jenkinsPlugin", headers, queryParams);
+
+        RedisGetValueResponse<T> redisValue = getCastedResponse(response, RedisGetValueResponse.class);
+
+        if (redisValue.getResponse().getItems().size() > 0) {
+            retVal = redisValue.getResponse().getItems().get(0);
+        }
+
+        return retVal;
+    }
+
+    public static String setRedisKey(String groupId, String accountId, String orchestratorIdentifier, Integer ttl) throws ApiException {
+        String retVal      = null;
+
+        Map<String, String>    headers     = buildHeaders();
+
+        Map<String, String>    queryParams = buildQueryParams(accountId);
+
+        RedisSetKeyRequest request = new RedisSetKeyRequest();
+        request.setGroupId(groupId);
+        request.setOrchestratorIdentifier(orchestratorIdentifier);
+        request.setTtl(ttl);
+
+        String body = JsonMapper.toJson(request);
+
+        RestResponse response =
+                RestClient.sendPost(SPOTINST_API_HOST + "/aws/ec2/group/jenkinsPlugin", body, headers, queryParams);
+
+        RedisSetKeyResponse redisValue = getCastedResponse(response, RedisSetKeyResponse.class);
+
+        if (redisValue.getResponse().getItems().size() > 0) {
+            retVal = redisValue.getResponse().getItems().get(0);
+        }
+
+        return retVal;
+    }
+
+    public static Integer deleteRedisKey(String groupId, String accountId) throws ApiException {
+        Integer retVal      = null;
+
+        Map<String, String>    headers     = buildHeaders();
+
+        Map<String, String>    queryParams = buildQueryParams(accountId);
+
+        RestResponse response =
+                RestClient.sendDelete(SPOTINST_API_HOST + "/aws/ec2/group/" + groupId + "/jenkinsPlugin", headers, queryParams);
+
+        RedisDeleteKeyResponse redisValue = getCastedResponse(response, RedisDeleteKeyResponse.class);
+
+        if (redisValue.getResponse().getItems().size() > 0) {
+            retVal = redisValue.getResponse().getItems().get(0);
+        }
 
         return retVal;
     }

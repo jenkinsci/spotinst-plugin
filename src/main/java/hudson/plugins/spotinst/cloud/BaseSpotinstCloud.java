@@ -1,11 +1,13 @@
 package hudson.plugins.spotinst.cloud;
 
-import edu.umd.cs.findbugs.annotations.CheckForNull;
 import hudson.DescriptorExtensionList;
 import hudson.model.*;
 import hudson.model.labels.LabelAtom;
+import hudson.plugins.spotinst.api.infra.ApiResponse;
 import hudson.plugins.spotinst.api.infra.JsonMapper;
 import hudson.plugins.spotinst.common.*;
+import hudson.plugins.spotinst.repos.IRedisRepo;
+import hudson.plugins.spotinst.repos.RepoManager;
 import hudson.plugins.spotinst.slave.*;
 import hudson.plugins.sshslaves.SSHConnector;
 import hudson.slaves.*;
@@ -19,6 +21,7 @@ import org.kohsuke.stapler.DataBoundSetter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.servlet.ServletException;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -33,6 +36,8 @@ public abstract class BaseSpotinstCloud extends Cloud {
     private static final Logger LOGGER = LoggerFactory.getLogger(BaseSpotinstCloud.class);
 
     protected static final int                               NO_OVERRIDED_NUM_OF_EXECUTORS = -1;
+    private static final   Integer                             REDIS_ENTRY_TIME_TO_LIVE_IN_SECONDS = 60 * 3;
+    public static final    String                               REDIS_OK_STATUS = "OK";
     protected              String                            accountId;
     protected              String                            groupId;
     protected              Map<String, PendingInstance>      pendingInstances;
@@ -110,6 +115,21 @@ public abstract class BaseSpotinstCloud extends Cloud {
         else {
             this.globalExecutorOverride = new SpotGlobalExecutorOverride(false, 1);
         }
+
+        boolean isGroupBelongToCloud = SpotinstContext.getInstance().getGroupsInUse().containsKey(this.groupId);
+
+        if (isGroupBelongToCloud == false) {
+            try {
+                handleGroupDosNotBelongToCloud(this.groupId);
+            }
+            catch (Exception e){
+                LOGGER.error(e.getMessage());
+            }
+        }
+        else {
+            SpotinstContext.getInstance().getGroupsInUse().put(groupId,accountId);
+        }
+
     }
     //endregion
 
@@ -119,29 +139,39 @@ public abstract class BaseSpotinstCloud extends Cloud {
         ProvisionRequest request = new ProvisionRequest(label, excessWorkload);
 
         LOGGER.info(String.format("Got provision slave request: %s", JsonMapper.toJson(request)));
+        boolean isGroupBelongToCloud = SpotinstContext.getInstance().getGroupsInUse().containsKey(this.groupId);
 
-        setNumOfNeededExecutors(request);
+        if (isGroupBelongToCloud) {
 
-        if (request.getExecutors() > 0) {
-            LOGGER.info(String.format("Need to scale up %s units", request.getExecutors()));
+            setNumOfNeededExecutors(request);
 
-            List<SpotinstSlave> slaves = provisionSlaves(request);
+            if (request.getExecutors() > 0) {
+                LOGGER.info(String.format("Need to scale up %s units", request.getExecutors()));
 
-            if (slaves.size() > 0) {
-                for (final SpotinstSlave slave : slaves) {
 
-                    try {
-                        Jenkins.getInstance().addNode(slave);
-                    }
-                    catch (IOException e) {
-                        LOGGER.error(String.format("Failed to create node for slave: %s", slave.getInstanceId()), e);
+                List<SpotinstSlave> slaves = provisionSlaves(request);
+
+                if (slaves.size() > 0) {
+                    for (final SpotinstSlave slave : slaves) {
+
+                        try {
+                            Jenkins.getInstance().addNode(slave);
+                        } catch (IOException e) {
+                            LOGGER.error(String.format("Failed to create node for slave: %s", slave.getInstanceId()), e);
+                        }
                     }
                 }
+            } 
+            else {
+                LOGGER.info("No need to scale up new slaves, there are some that are initiating");
             }
-        }
+        } 
         else {
-            LOGGER.info("No need to scale up new slaves, there are some that are initiating");
-        }
+            try {
+                handleGroupDosNotBelongToCloud(groupId);
+            }catch (Exception e){
+                LOGGER.warn(e.getMessage());
+            }        }
 
         return Collections.emptyList();
     }
@@ -434,6 +464,33 @@ public abstract class BaseSpotinstCloud extends Cloud {
 
         return retVal;
     }
+
+    private void removeFromSuspendedGroupFetching(String groupId) {
+        boolean isGroupExistInSuspendedGroupFetching = SpotinstContext.getInstance().getSuspendedGroupFetching().containsKey(groupId);
+
+        if(isGroupExistInSuspendedGroupFetching){
+            SpotinstContext.getInstance().getSuspendedGroupFetching().remove(groupId);
+        }
+    }
+
+    private void addGroupToRedis(String groupId, String accountId, String orchestratorIdentifier) {
+        IRedisRepo redisRepo = RepoManager.getInstance().getRedisRepo();
+        ApiResponse<String> redisSetKeyResponse = redisRepo.setKey(groupId, accountId, orchestratorIdentifier,REDIS_ENTRY_TIME_TO_LIVE_IN_SECONDS);
+
+        if (redisSetKeyResponse.isRequestSucceed()) {
+            String redisResponseSetKeyValue = redisSetKeyResponse.getValue();
+
+            if(redisResponseSetKeyValue.equals(REDIS_OK_STATUS)){
+                LOGGER.info(String.format("Successfully added group %s to redis memory", groupId));
+            }
+            else{
+                LOGGER.error(String.format("Failed adding group %s to redis memory", groupId));
+            }
+        }
+        else {
+            LOGGER.error("redis request failed");
+        }
+    }
     //endregion
 
     //region Protected Methods
@@ -643,6 +700,71 @@ public abstract class BaseSpotinstCloud extends Cloud {
     protected Integer getSlaveOfflineThreshold() {
         return Constants.SLAVE_OFFLINE_THRESHOLD_IN_MINUTES;
     }
+
+    public void handleGroupDosNotBelongToCloud(String groupId) throws ServletException, IOException {
+        boolean isGroupExistInSuspendedGroupFetching = SpotinstContext.getInstance().getSuspendedGroupFetching().containsKey(groupId);
+        String message;
+        if(isGroupExistInSuspendedGroupFetching){
+            message = String.format("Group %s is might be in use by other Jenkins orchestrator, please make sure it belong to this Jenkins orchestrator and try again after 3 minutes", groupId);
+            LOGGER.warn(message);
+        }
+        else{
+            //pop up message in jenkins UI (ONLY after fetching groupId retries pass the ttl for key in redis is expired)
+            message = String.format("Group %s is in use by other Jenkins orchestrator", groupId);
+            LOGGER.error(message);
+            sendError(message);
+            //throw new ServletException(message);
+        }
+    }
+
+    public void syncGroupsOwner(String groupId, String accountId) {
+        LOGGER.info(String.format("try fetching orchestrator identifier for group %s from redis", groupId));
+
+        IRedisRepo redisRepo = RepoManager.getInstance().getRedisRepo();
+        ApiResponse<Object> redisGetValueResponse = redisRepo.getValue(groupId, accountId);
+        String orchestratorIdentifier = SpotinstContext.getInstance().getOrchestratorIdentifier();
+
+        if (redisGetValueResponse.isRequestSucceed()) {
+            //redis response might return in different types
+            if (redisGetValueResponse.getValue() instanceof String) {
+                String redisResponseValue = (String) redisGetValueResponse.getValue();
+
+                if (redisResponseValue != null) {
+                    boolean isGroupBelongToOrchestrator = redisResponseValue.equals(orchestratorIdentifier);
+                    boolean isGroupExistInLocalCache = SpotinstContext.getInstance().getGroupsInUse().containsKey(groupId);
+
+                    if (isGroupBelongToOrchestrator) {
+                        LOGGER.info(String.format("group %s belong to orchestrator with identifier %s", groupId, orchestratorIdentifier));
+
+                        if (isGroupExistInLocalCache == false) {
+                            SpotinstContext.getInstance().getGroupsInUse().put(groupId,accountId);
+                        }
+
+                        removeFromSuspendedGroupFetching(groupId);
+
+                        //expand TTL of the current orchestrator in redis
+                        addGroupToRedis(groupId, accountId, orchestratorIdentifier);
+                    }
+                    else {
+                        LOGGER.info(String.format("group %s does not belong to orchestrator with identifier %s", groupId, orchestratorIdentifier));
+
+                        if (isGroupExistInLocalCache) {
+                            SpotinstContext.getInstance().getGroupsInUse().remove(groupId);
+                        }
+                    }
+                }
+                else {
+                    LOGGER.warn("redis response value return null");
+                }
+
+            }
+            //there is no orchestrator for the given group in redis, should take ownership
+            else {
+                addGroupToRedis(groupId, accountId, orchestratorIdentifier);
+                removeFromSuspendedGroupFetching(groupId);
+            }
+        }
+    }
     //endregion
 
     //region Getters / Setters
@@ -778,7 +900,6 @@ public abstract class BaseSpotinstCloud extends Cloud {
             this.globalExecutorOverride.setIsEnabled(false);
         }
     }
-
 
     //endregion
 

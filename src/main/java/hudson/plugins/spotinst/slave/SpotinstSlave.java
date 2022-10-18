@@ -3,6 +3,7 @@ package hudson.plugins.spotinst.slave;
 import hudson.Extension;
 import hudson.model.*;
 import hudson.plugins.spotinst.cloud.BaseSpotinstCloud;
+import hudson.plugins.spotinst.common.SpotinstContext;
 import hudson.slaves.*;
 import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
@@ -173,42 +174,64 @@ public class SpotinstSlave extends Slave implements EphemeralNode {
 
     //region Public Methods
     public void terminate() {
-        Boolean isTerminated = getSpotinstCloud().detachInstance(instanceId);
+        String groupId = getSpotinstCloud().getGroupId();
+        boolean isGroupBelongToCloud = SpotinstContext.getInstance().getGroupsInUse().contains(groupId);
 
-        if (isTerminated) {
-            LOGGER.info(String.format("Instance: %s terminated successfully", getInstanceId()));
-            removeIfInPending();
+        if (isGroupBelongToCloud) {
+            Boolean isTerminated = getSpotinstCloud().detachInstance(instanceId);
+
+            if (isTerminated) {
+                LOGGER.info(String.format("Instance: %s terminated successfully", getInstanceId()));
+                removeIfInPending();
+                try {
+                    Jenkins.getInstance().removeNode(this);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            } else {
+                LOGGER.error(String.format("Failed to terminate instance: %s", getInstanceId()));
+            }
+        }
+        else{
             try {
-                Jenkins.getInstance().removeNode(this);
-            }
-            catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        else {
-            LOGGER.error(String.format("Failed to terminate instance: %s", getInstanceId()));
-        }
+                getSpotinstCloud().handleGroupDosNotBelongToCloud(groupId);
+            }catch (Exception e){
+                LOGGER.warn(e.getMessage());
+            }        }
     }
 
     public Boolean forceTerminate() {
-        Boolean isTerminated = getSpotinstCloud().detachInstance(instanceId);
+        Boolean retVal = false;
 
-        if (isTerminated) {
-            LOGGER.info(String.format("Instance: %s terminated successfully", getInstanceId()));
-            removeIfInPending();
-        }
-        else {
-            LOGGER.error(String.format("Failed to terminate instance: %s", getInstanceId()));
-        }
+        String groupId = getSpotinstCloud().getGroupId();
+        boolean isGroupBelongToCloud = SpotinstContext.getInstance().getGroupsInUse().contains(groupId);
 
-        try {
-            Jenkins.get().removeNode(this);
-        }
-        catch (IOException e) {
-            e.printStackTrace();
-        }
+        if (isGroupBelongToCloud) {
+            Boolean isTerminated = getSpotinstCloud().detachInstance(instanceId);
 
-        return isTerminated;
+            if (isTerminated) {
+                LOGGER.info(String.format("Instance: %s terminated successfully", getInstanceId()));
+                removeIfInPending();
+            } else {
+                LOGGER.error(String.format("Failed to terminate instance: %s", getInstanceId()));
+            }
+
+            try {
+                Jenkins.get().removeNode(this);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            retVal = isTerminated;
+        }
+        else{
+            try {
+                getSpotinstCloud().handleGroupDosNotBelongToCloud(groupId);
+            }catch (Exception e){
+                LOGGER.warn(e.getMessage());
+            }        }
+
+        return retVal;
     }
 
     private void removeIfInPending() {
