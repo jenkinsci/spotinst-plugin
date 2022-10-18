@@ -713,7 +713,6 @@ public abstract class BaseSpotinstCloud extends Cloud {
             message = String.format("Group %s is in use by other Jenkins orchestrator", groupId);
             LOGGER.error(message);
             sendError(message);
-            //throw new ServletException(message);
         }
     }
 

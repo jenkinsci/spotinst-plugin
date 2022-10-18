@@ -25,8 +25,6 @@ public class SpotinstComputer extends SlaveComputer {
     //endregion
 
     //region overrides
-    // better than JobListener because in complicated pipelines Jenkins is the initial Node and
-    // we know the Node is a SpotinstNode (I'm not using that word).
     @Override
     public void taskAccepted(Executor executor, Queue.Task task) {
         super.taskAccepted(executor, task);
@@ -42,8 +40,6 @@ public class SpotinstComputer extends SlaveComputer {
                             spotinstNode.getNodeName(), spotinstCloud.getDisplayName());
                     LOGGER.info(msg);
                     this.setAcceptingTasks(false);
-                    // I see much better responsiveness from Jenkins in case of setting offline, both have same effect
-                    // should also be decided with UI because each combo looks different in the node list.
                     SpotinstNonLocalizable spotinstNonLocalizable = new SpotinstNonLocalizable(msg);
                     SpotinstSingleTaskOfflineCause spotinstSingleTaskOfflineCause = new SpotinstSingleTaskOfflineCause(spotinstNonLocalizable);
                     this.setTemporarilyOffline(true,spotinstSingleTaskOfflineCause);
