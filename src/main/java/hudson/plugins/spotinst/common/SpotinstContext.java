@@ -18,7 +18,7 @@ public class SpotinstContext {
     private String accountId;
     private List<AwsInstanceType> awsInstanceTypes;
     private Date awsInstanceTypesLastUpdate;
-    private String orchestratorIdentifier;
+    private String controllerIdentifier;
     private Map<String,String> groupsInUse;
     private PassiveExpiringMap<String, String> suspendedGroupFetching;
     private static final Integer SUSPENDED_GROUP_FETCHING_TIME_TO_LIVE_IN_MILLIS = 1000 * 60 * 2;
@@ -69,11 +69,11 @@ public class SpotinstContext {
         this.awsInstanceTypesLastUpdate = awsInstanceTypesLastUpdate;
     }
 
-    public String getOrchestratorIdentifier() {
-        if(orchestratorIdentifier == null){
-            orchestratorIdentifier = RandomStringUtils.randomAlphanumeric(10);
+    public String getControllerIdentifier() {
+        if(controllerIdentifier == null){
+            controllerIdentifier = RandomStringUtils.randomAlphanumeric(10);
         }
-        return orchestratorIdentifier;
+        return controllerIdentifier;
     }
 
     public  PassiveExpiringMap<String,String> getSuspendedGroupFetching() {

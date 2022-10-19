@@ -7,7 +7,7 @@ public class RedisSetKeyRequest {
 
     //region Memebers
     String groupId;
-    String orchestratorIdentifier;
+    String controllerIdentifier;
     Integer ttl;
     //endregion
 
@@ -16,8 +16,8 @@ public class RedisSetKeyRequest {
         return groupId;
     }
 
-    public String getOrchestratorIdentifier() {
-        return orchestratorIdentifier;
+    public String getControllerIdentifier() {
+        return controllerIdentifier;
     }
 
     public Integer getTtl() {
@@ -28,8 +28,8 @@ public class RedisSetKeyRequest {
         this.groupId = groupId;
     }
 
-    public void setOrchestratorIdentifier(String orchestratorIdentifier) {
-        this.orchestratorIdentifier = orchestratorIdentifier;
+    public void setControllerIdentifier(String controllerIdentifier) {
+        this.controllerIdentifier = controllerIdentifier;
     }
 
     public void setTtl(Integer ttl) {

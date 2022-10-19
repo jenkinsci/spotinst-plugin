@@ -7,11 +7,11 @@ import hudson.plugins.spotinst.api.infra.ExceptionHelper;
 
 public class RedisRepo implements IRedisRepo {
     @Override
-    public ApiResponse<String> setKey(String groupId, String accountId, String orchestratorIdentifier, Integer ttl) {
+    public ApiResponse<String> setKey(String groupId, String accountId, String controllerIdentifier, Integer ttl) {
         ApiResponse<String> retVal;
 
         try {
-            String isKeySet = SpotinstApi.setRedisKey(groupId, accountId, orchestratorIdentifier, ttl);
+            String isKeySet = SpotinstApi.setRedisKey(groupId, accountId, controllerIdentifier, ttl);
 
             retVal = new ApiResponse<>(isKeySet);
 
@@ -28,9 +28,9 @@ public class RedisRepo implements IRedisRepo {
         ApiResponse<Object> retVal;
 
         try {
-            Object orchestratorIdentifier = SpotinstApi.getRedisValue(groupId, accountId);
+            Object controllerIdentifier = SpotinstApi.getRedisValue(groupId, accountId);
 
-            retVal = new ApiResponse<>(orchestratorIdentifier);
+            retVal = new ApiResponse<>(controllerIdentifier);
 
         }
         catch (ApiException e) {

@@ -116,11 +116,11 @@ public abstract class BaseSpotinstCloud extends Cloud {
             this.globalExecutorOverride = new SpotGlobalExecutorOverride(false, 1);
         }
 
-        boolean isGroupBelongToCloud = SpotinstContext.getInstance().getGroupsInUse().containsKey(this.groupId);
+        boolean isGroupManagedByOtherController = SpotinstContext.getInstance().getGroupsInUse().containsKey(this.groupId);
 
-        if (isGroupBelongToCloud == false) {
+        if (isGroupManagedByOtherController) {
             try {
-                handleGroupDosNotBelongToCloud(this.groupId);
+                handleGroupDosNotManageByThisController(this.groupId);
             }
             catch (Exception e){
                 LOGGER.error(e.getMessage());
@@ -139,9 +139,9 @@ public abstract class BaseSpotinstCloud extends Cloud {
         ProvisionRequest request = new ProvisionRequest(label, excessWorkload);
 
         LOGGER.info(String.format("Got provision slave request: %s", JsonMapper.toJson(request)));
-        boolean isGroupBelongToCloud = SpotinstContext.getInstance().getGroupsInUse().containsKey(this.groupId);
+        boolean isGroupManagedByThisController = SpotinstContext.getInstance().getGroupsInUse().containsKey(this.groupId);
 
-        if (isGroupBelongToCloud) {
+        if (isGroupManagedByThisController) {
 
             setNumOfNeededExecutors(request);
 
@@ -168,7 +168,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
         } 
         else {
             try {
-                handleGroupDosNotBelongToCloud(groupId);
+                handleGroupDosNotManageByThisController(groupId);
             }catch (Exception e){
                 LOGGER.warn(e.getMessage());
             }        }
@@ -473,9 +473,9 @@ public abstract class BaseSpotinstCloud extends Cloud {
         }
     }
 
-    private void addGroupToRedis(String groupId, String accountId, String orchestratorIdentifier) {
+    private void addGroupToRedis(String groupId, String accountId, String controllerIdentifier) {
         IRedisRepo redisRepo = RepoManager.getInstance().getRedisRepo();
-        ApiResponse<String> redisSetKeyResponse = redisRepo.setKey(groupId, accountId, orchestratorIdentifier,REDIS_ENTRY_TIME_TO_LIVE_IN_SECONDS);
+        ApiResponse<String> redisSetKeyResponse = redisRepo.setKey(groupId, accountId, controllerIdentifier,REDIS_ENTRY_TIME_TO_LIVE_IN_SECONDS);
 
         if (redisSetKeyResponse.isRequestSucceed()) {
             String redisResponseSetKeyValue = redisSetKeyResponse.getValue();
@@ -701,27 +701,31 @@ public abstract class BaseSpotinstCloud extends Cloud {
         return Constants.SLAVE_OFFLINE_THRESHOLD_IN_MINUTES;
     }
 
-    public void handleGroupDosNotBelongToCloud(String groupId) throws ServletException, IOException {
+    public void handleGroupDosNotManageByThisController(String groupId) {
         boolean isGroupExistInSuspendedGroupFetching = SpotinstContext.getInstance().getSuspendedGroupFetching().containsKey(groupId);
         String message;
         if(isGroupExistInSuspendedGroupFetching){
-            message = String.format("Group %s is might be in use by other Jenkins orchestrator, please make sure it belong to this Jenkins orchestrator and try again after 3 minutes", groupId);
+            message = String.format("Group %s is might be in use by other Jenkins controller, please make sure it belong to this Jenkins controller and try again after 3 minutes", groupId);
             LOGGER.warn(message);
         }
         else{
-            //pop up message in jenkins UI (ONLY after fetching groupId retries pass the ttl for key in redis is expired)
-            message = String.format("Group %s is in use by other Jenkins orchestrator", groupId);
+            //TODO Liron - pop up message in jenkins UI (ONLY after fetching groupId retries pass the ttl for key in redis is expired)
+            message = String.format("Group %s is in use by other Jenkins controller", groupId);
             LOGGER.error(message);
-            sendError(message);
+
+//            StaplerRequest req = new RequestImpl();
+//            StaplerResponse rsp = new RequestImpl();
+//            sendError(message);
         }
     }
 
     public void syncGroupsOwner(String groupId, String accountId) {
-        LOGGER.info(String.format("try fetching orchestrator identifier for group %s from redis", groupId));
+        LOGGER.info(String.format("try fetching controller identifier for group %s from redis", groupId));
 
+        boolean isGroupExistInLocalCache = SpotinstContext.getInstance().getGroupsInUse().containsKey(groupId);
         IRedisRepo redisRepo = RepoManager.getInstance().getRedisRepo();
         ApiResponse<Object> redisGetValueResponse = redisRepo.getValue(groupId, accountId);
-        String orchestratorIdentifier = SpotinstContext.getInstance().getOrchestratorIdentifier();
+        String controllerIdentifier = SpotinstContext.getInstance().getControllerIdentifier();
 
         if (redisGetValueResponse.isRequestSucceed()) {
             //redis response might return in different types
@@ -729,23 +733,15 @@ public abstract class BaseSpotinstCloud extends Cloud {
                 String redisResponseValue = (String) redisGetValueResponse.getValue();
 
                 if (redisResponseValue != null) {
-                    boolean isGroupBelongToOrchestrator = redisResponseValue.equals(orchestratorIdentifier);
-                    boolean isGroupExistInLocalCache = SpotinstContext.getInstance().getGroupsInUse().containsKey(groupId);
+                    boolean isGroupBelongToController = redisResponseValue.equals(controllerIdentifier);
 
-                    if (isGroupBelongToOrchestrator) {
-                        LOGGER.info(String.format("group %s belong to orchestrator with identifier %s", groupId, orchestratorIdentifier));
-
-                        if (isGroupExistInLocalCache == false) {
-                            SpotinstContext.getInstance().getGroupsInUse().put(groupId,accountId);
-                        }
-
-                        removeFromSuspendedGroupFetching(groupId);
-
-                        //expand TTL of the current orchestrator in redis
-                        addGroupToRedis(groupId, accountId, orchestratorIdentifier);
+                    if (isGroupBelongToController) {
+                        handleGroupManagedByThisController(groupId, accountId, isGroupExistInLocalCache, controllerIdentifier);
                     }
                     else {
-                        LOGGER.info(String.format("group %s does not belong to orchestrator with identifier %s", groupId, orchestratorIdentifier));
+                        LOGGER.info(String.format("group %s does not belong to controller with identifier %s", groupId, controllerIdentifier));
+
+                        SpotinstContext.getInstance().getSuspendedGroupFetching().put(groupId, accountId);
 
                         if (isGroupExistInLocalCache) {
                             SpotinstContext.getInstance().getGroupsInUse().remove(groupId);
@@ -755,14 +751,24 @@ public abstract class BaseSpotinstCloud extends Cloud {
                 else {
                     LOGGER.warn("redis response value return null");
                 }
-
             }
-            //there is no orchestrator for the given group in redis, should take ownership
+            //there is no controller for the given group in redis, should take ownership
             else {
-                addGroupToRedis(groupId, accountId, orchestratorIdentifier);
-                removeFromSuspendedGroupFetching(groupId);
+                handleGroupManagedByThisController(groupId, accountId, isGroupExistInLocalCache, controllerIdentifier);
             }
         }
+    }
+
+    private void handleGroupManagedByThisController(String groupId, String accountId, boolean isGroupExistInLocalCache, String controllerIdentifier) {
+        LOGGER.info(String.format("group %s belong to controller with identifier %s", groupId, controllerIdentifier));
+
+        if (isGroupExistInLocalCache == false) {
+            SpotinstContext.getInstance().getGroupsInUse().put(groupId, accountId);
+        }
+
+        removeFromSuspendedGroupFetching(groupId);
+        //expand TTL of the current controller in redis
+        addGroupToRedis(groupId, accountId, controllerIdentifier);
     }
     //endregion
 

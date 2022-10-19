@@ -13,6 +13,7 @@ import jenkins.model.Jenkins;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -39,24 +40,26 @@ public class SpotinstGroupsOwnerMonitor extends AsyncPeriodicWork {
     //region Public Methods
     @Override
     protected void execute(TaskListener taskListener) {
-        List<Cloud> cloudList = Jenkins.getInstance().clouds;
+        synchronized (this) {
+            List<Cloud> cloudList = Jenkins.getInstance().clouds;
 
-        if (cloudList != null && cloudList.size() > 0) {
-            for (Cloud cloud : cloudList) {
-                Map<String,String> groupsNoLongerInUse = SpotinstContext.getInstance().getGroupsInUse();
+            if (cloudList != null && cloudList.size() > 0) {
+                for (Cloud cloud : cloudList) {
+                    Map<String, String> groupsNoLongerInUse = new HashMap<>(SpotinstContext.getInstance().getGroupsInUse());
 
-                if (cloud instanceof BaseSpotinstCloud) {
-                    BaseSpotinstCloud spotinstCloud = (BaseSpotinstCloud) cloud;
-                    String groupId = spotinstCloud.getGroupId();
-                    String accountId = spotinstCloud.getAccountId();
-                    groupsNoLongerInUse.remove(groupId);
+                    if (cloud instanceof BaseSpotinstCloud) {
+                        BaseSpotinstCloud spotinstCloud = (BaseSpotinstCloud) cloud;
+                        String groupId = spotinstCloud.getGroupId();
+                        String accountId = spotinstCloud.getAccountId();
+                        groupsNoLongerInUse.remove(groupId);
 
-                    if(groupId != null && accountId != null){
-                           spotinstCloud.syncGroupsOwner(groupId, accountId);
+                        if (groupId != null && accountId != null) {
+                            spotinstCloud.syncGroupsOwner(groupId, accountId);
+                        }
                     }
-                }
 
-                deallocateGroupsNoLongerInUse(groupsNoLongerInUse);
+                    deallocateGroupsNoLongerInUse(groupsNoLongerInUse);
+                }
             }
         }
     }

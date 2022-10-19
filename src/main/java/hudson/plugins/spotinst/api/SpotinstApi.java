@@ -337,7 +337,7 @@ public class SpotinstApi {
         return retVal;
     }
 
-    public static String setRedisKey(String groupId, String accountId, String orchestratorIdentifier, Integer ttl) throws ApiException {
+    public static String setRedisKey(String groupId, String accountId, String controllerIdentifier, Integer ttl) throws ApiException {
         String retVal      = null;
 
         Map<String, String>    headers     = buildHeaders();
@@ -346,7 +346,7 @@ public class SpotinstApi {
 
         RedisSetKeyRequest request = new RedisSetKeyRequest();
         request.setGroupId(groupId);
-        request.setOrchestratorIdentifier(orchestratorIdentifier);
+        request.setControllerIdentifier(controllerIdentifier);
         request.setTtl(ttl);
 
         String body = JsonMapper.toJson(request);

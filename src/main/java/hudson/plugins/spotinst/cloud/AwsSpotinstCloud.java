@@ -118,9 +118,9 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
 
     @Override
     public void syncGroupInstances() {
-        boolean isGroupBelongToCloud = SpotinstContext.getInstance().getGroupsInUse().containsKey(this.groupId);
+        boolean isGroupManagedByThisController = SpotinstContext.getInstance().getGroupsInUse().containsKey(this.groupId);
 
-        if (isGroupBelongToCloud) {
+        if (isGroupManagedByThisController) {
             IAwsGroupRepo awsGroupRepo = RepoManager.getInstance().getAwsGroupRepo();
             ApiResponse<List<AwsGroupInstance>> instancesResponse = awsGroupRepo.getGroupInstances(groupId, this.accountId);
 
@@ -148,7 +148,7 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
         }
         else{
             try {
-                handleGroupDosNotBelongToCloud(groupId);
+                handleGroupDosNotManageByThisController(groupId);
             }
             catch (Exception e) {
                 LOGGER.error(e.getMessage());
@@ -161,9 +161,9 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
     public Map<String, String> getInstanceIpsById() {
         Map<String, String> retVal = new HashMap<>();
 
-        boolean isGroupBelongToCloud = SpotinstContext.getInstance().getGroupsInUse().containsKey(this.groupId);
+        boolean isGroupManagedByThisController = SpotinstContext.getInstance().getGroupsInUse().containsKey(this.groupId);
 
-        if (isGroupBelongToCloud) {
+        if (isGroupManagedByThisController) {
             IAwsGroupRepo awsGroupRepo = RepoManager.getInstance().getAwsGroupRepo();
             ApiResponse<List<AwsGroupInstance>> instancesResponse = awsGroupRepo.getGroupInstances(groupId, this.accountId);
 
@@ -184,7 +184,7 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
         }
         else{
             try {
-                handleGroupDosNotBelongToCloud(groupId);
+                handleGroupDosNotManageByThisController(groupId);
             }
             catch (Exception e) {
                 LOGGER.warn(e.getMessage());

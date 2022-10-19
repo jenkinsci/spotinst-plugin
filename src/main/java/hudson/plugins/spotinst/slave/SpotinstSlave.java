@@ -175,9 +175,9 @@ public class SpotinstSlave extends Slave implements EphemeralNode {
     //region Public Methods
     public void terminate() {
         String groupId = getSpotinstCloud().getGroupId();
-        boolean isGroupBelongToCloud = SpotinstContext.getInstance().getGroupsInUse().contains(groupId);
+        boolean isGroupManagedByThisController = SpotinstContext.getInstance().getGroupsInUse().containsKey(groupId);
 
-        if (isGroupBelongToCloud) {
+        if (isGroupManagedByThisController) {
             Boolean isTerminated = getSpotinstCloud().detachInstance(instanceId);
 
             if (isTerminated) {
@@ -194,7 +194,7 @@ public class SpotinstSlave extends Slave implements EphemeralNode {
         }
         else{
             try {
-                getSpotinstCloud().handleGroupDosNotBelongToCloud(groupId);
+                getSpotinstCloud().handleGroupDosNotManageByThisController(groupId);
             }catch (Exception e){
                 LOGGER.warn(e.getMessage());
             }        }
@@ -204,9 +204,9 @@ public class SpotinstSlave extends Slave implements EphemeralNode {
         Boolean retVal = false;
 
         String groupId = getSpotinstCloud().getGroupId();
-        boolean isGroupBelongToCloud = SpotinstContext.getInstance().getGroupsInUse().contains(groupId);
+        boolean isGroupManagedByThisController = SpotinstContext.getInstance().getGroupsInUse().containsKey(groupId);
 
-        if (isGroupBelongToCloud) {
+        if (isGroupManagedByThisController) {
             Boolean isTerminated = getSpotinstCloud().detachInstance(instanceId);
 
             if (isTerminated) {
@@ -226,7 +226,7 @@ public class SpotinstSlave extends Slave implements EphemeralNode {
         }
         else{
             try {
-                getSpotinstCloud().handleGroupDosNotBelongToCloud(groupId);
+                getSpotinstCloud().handleGroupDosNotManageByThisController(groupId);
             }catch (Exception e){
                 LOGGER.warn(e.getMessage());
             }        }
