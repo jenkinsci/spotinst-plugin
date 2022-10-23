@@ -21,7 +21,6 @@ import org.kohsuke.stapler.DataBoundSetter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.servlet.ServletException;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -36,8 +35,8 @@ public abstract class BaseSpotinstCloud extends Cloud {
     private static final Logger LOGGER = LoggerFactory.getLogger(BaseSpotinstCloud.class);
 
     protected static final int                               NO_OVERRIDED_NUM_OF_EXECUTORS = -1;
-    private static final   Integer                             REDIS_ENTRY_TIME_TO_LIVE_IN_SECONDS = 60 * 3;
-    public static final    String                               REDIS_OK_STATUS = "OK";
+    private static final   Integer                           REDIS_ENTRY_TIME_TO_LIVE_IN_SECONDS = 60 * 3;
+    public static final    String                            REDIS_OK_STATUS = "OK";
     protected              String                            accountId;
     protected              String                            groupId;
     protected              Map<String, PendingInstance>      pendingInstances;
@@ -116,20 +115,9 @@ public abstract class BaseSpotinstCloud extends Cloud {
             this.globalExecutorOverride = new SpotGlobalExecutorOverride(false, 1);
         }
 
-        boolean isGroupManagedByOtherController = SpotinstContext.getInstance().getGroupsInUse().containsKey(this.groupId);
-
-        if (isGroupManagedByOtherController) {
-            try {
-                handleGroupDosNotManageByThisController(this.groupId);
-            }
-            catch (Exception e){
-                LOGGER.error(e.getMessage());
-            }
+        if (groupId != null && accountId != null) {
+            syncGroupsOwner(this);
         }
-        else {
-            SpotinstContext.getInstance().getGroupsInUse().put(groupId,accountId);
-        }
-
     }
     //endregion
 
@@ -139,7 +127,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
         ProvisionRequest request = new ProvisionRequest(label, excessWorkload);
 
         LOGGER.info(String.format("Got provision slave request: %s", JsonMapper.toJson(request)));
-        boolean isGroupManagedByThisController = SpotinstContext.getInstance().getGroupsInUse().containsKey(this.groupId);
+        boolean isGroupManagedByThisController = isCloudReadyForGroupCommunication(groupId);
 
         if (isGroupManagedByThisController) {
 
@@ -161,17 +149,14 @@ public abstract class BaseSpotinstCloud extends Cloud {
                         }
                     }
                 }
-            } 
+            }
             else {
                 LOGGER.info("No need to scale up new slaves, there are some that are initiating");
             }
-        } 
+        }
         else {
-            try {
-                handleGroupDosNotManageByThisController(groupId);
-            }catch (Exception e){
-                LOGGER.warn(e.getMessage());
-            }        }
+            handleGroupDosNotManageByThisController(groupId);
+        }
 
         return Collections.emptyList();
     }
@@ -377,6 +362,19 @@ public abstract class BaseSpotinstCloud extends Cloud {
 
         return retVal;
     }
+
+    public Boolean isCloudReadyForGroupCommunication(String groupId){
+        Boolean retVal = null;
+
+        SpotinstCloudCommunicationState state = getCloudInitializationResultByGroupId(groupId);
+
+        if(state != null){
+            if(state.equals(SpotinstCloudCommunicationState.SPOTINST_CLOUD_COMMUNICATION_READY));
+            retVal = true;
+        }
+
+        return retVal;
+    }
     //endregion
 
     //region Private Methods
@@ -465,14 +463,6 @@ public abstract class BaseSpotinstCloud extends Cloud {
         return retVal;
     }
 
-    private void removeFromSuspendedGroupFetching(String groupId) {
-        boolean isGroupExistInSuspendedGroupFetching = SpotinstContext.getInstance().getSuspendedGroupFetching().containsKey(groupId);
-
-        if(isGroupExistInSuspendedGroupFetching){
-            SpotinstContext.getInstance().getSuspendedGroupFetching().remove(groupId);
-        }
-    }
-
     private void addGroupToRedis(String groupId, String accountId, String controllerIdentifier) {
         IRedisRepo redisRepo = RepoManager.getInstance().getRedisRepo();
         ApiResponse<String> redisSetKeyResponse = redisRepo.setKey(groupId, accountId, controllerIdentifier,REDIS_ENTRY_TIME_TO_LIVE_IN_SECONDS);
@@ -490,6 +480,18 @@ public abstract class BaseSpotinstCloud extends Cloud {
         else {
             LOGGER.error("redis request failed");
         }
+    }
+
+    private SpotinstCloudCommunicationState getCloudInitializationResultByGroupId(String groupId) {
+        SpotinstCloudCommunicationState state = null;
+
+        for (Map.Entry<BaseSpotinstCloud, SpotinstCloudCommunicationState> cloudsInitializationStateEntry : SpotinstContext.getInstance().getCloudsInitializationState().entrySet()) {
+            if(cloudsInitializationStateEntry.getKey().groupId.equals(groupId)){
+                state = cloudsInitializationStateEntry.getValue();
+            }
+        }
+
+        return state;
     }
     //endregion
 
@@ -702,73 +704,66 @@ public abstract class BaseSpotinstCloud extends Cloud {
     }
 
     public void handleGroupDosNotManageByThisController(String groupId) {
-        boolean isGroupExistInSuspendedGroupFetching = SpotinstContext.getInstance().getSuspendedGroupFetching().containsKey(groupId);
-        String message;
-        if(isGroupExistInSuspendedGroupFetching){
-            message = String.format("Group %s is might be in use by other Jenkins controller, please make sure it belong to this Jenkins controller and try again after 3 minutes", groupId);
-            LOGGER.warn(message);
+        boolean isGroupExistInCandidateGroupsForControllerOwnership = SpotinstContext.getInstance().getCandidateGroupsForControllerOwnership().containsKey(groupId);
+
+        if(isGroupExistInCandidateGroupsForControllerOwnership){
+            SpotinstContext.getInstance().getCloudsInitializationState().put(this, SpotinstCloudCommunicationState.SPOTINST_CLOUD_COMMUNICATION_INITIALIZING);
         }
         else{
-            //TODO Liron - pop up message in jenkins UI (ONLY after fetching groupId retries pass the ttl for key in redis is expired)
-            message = String.format("Group %s is in use by other Jenkins controller", groupId);
-            LOGGER.error(message);
-
-//            StaplerRequest req = new RequestImpl();
-//            StaplerResponse rsp = new RequestImpl();
-//            sendError(message);
+            SpotinstContext.getInstance().getCloudsInitializationState().put(this, SpotinstCloudCommunicationState.SPOTINST_CLOUD_COMMUNICATION_FAILED);
         }
     }
 
-    public void syncGroupsOwner(String groupId, String accountId) {
+    public void syncGroupsOwner(BaseSpotinstCloud cloud) {
+        String groupId = cloud.getGroupId();
+        String accountId = cloud.getAccountId();
         LOGGER.info(String.format("try fetching controller identifier for group %s from redis", groupId));
 
-        boolean isGroupExistInLocalCache = SpotinstContext.getInstance().getGroupsInUse().containsKey(groupId);
-        IRedisRepo redisRepo = RepoManager.getInstance().getRedisRepo();
-        ApiResponse<Object> redisGetValueResponse = redisRepo.getValue(groupId, accountId);
-        String controllerIdentifier = SpotinstContext.getInstance().getControllerIdentifier();
+            IRedisRepo redisRepo = RepoManager.getInstance().getRedisRepo();
+            ApiResponse<Object> redisGetValueResponse = redisRepo.getValue(groupId, accountId);
+            String controllerIdentifier = SpotinstContext.getInstance().getControllerIdentifier();
 
-        if (redisGetValueResponse.isRequestSucceed()) {
-            //redis response might return in different types
-            if (redisGetValueResponse.getValue() instanceof String) {
-                String redisResponseValue = (String) redisGetValueResponse.getValue();
+            if (redisGetValueResponse.isRequestSucceed()) {
+                //redis response might return in different types
+                if (redisGetValueResponse.getValue() instanceof String) {
+                    String redisResponseValue = (String) redisGetValueResponse.getValue();
 
-                if (redisResponseValue != null) {
-                    boolean isGroupBelongToController = redisResponseValue.equals(controllerIdentifier);
+                    if (redisResponseValue != null) {
+                        boolean isGroupBelongToController = redisResponseValue.equals(controllerIdentifier);
 
-                    if (isGroupBelongToController) {
-                        handleGroupManagedByThisController(groupId, accountId, isGroupExistInLocalCache, controllerIdentifier);
-                    }
-                    else {
-                        LOGGER.info(String.format("group %s does not belong to controller with identifier %s", groupId, controllerIdentifier));
-
-                        SpotinstContext.getInstance().getSuspendedGroupFetching().put(groupId, accountId);
-
-                        if (isGroupExistInLocalCache) {
-                            SpotinstContext.getInstance().getGroupsInUse().remove(groupId);
+                        if (isGroupBelongToController) {
+;                           handleGroupManagedByThisController(cloud, controllerIdentifier);
+                        }
+                        else {
+                            LOGGER.info(String.format("group %s does not belong to controller with identifier %s", groupId, controllerIdentifier));
+                            SpotinstContext.getInstance().getCandidateGroupsForControllerOwnership().put(groupId, accountId);
+                            SpotinstContext.getInstance().getCloudsInitializationState().replace(cloud, SpotinstCloudCommunicationState.SPOTINST_CLOUD_COMMUNICATION_INITIALIZING);
                         }
                     }
+                    else {
+                        LOGGER.warn("redis response value return null");
+                    }
                 }
+                //there is no controller for the given group in redis, should take ownership
                 else {
-                    LOGGER.warn("redis response value return null");
+                    handleGroupManagedByThisController(cloud, controllerIdentifier);
                 }
             }
-            //there is no controller for the given group in redis, should take ownership
-            else {
-                handleGroupManagedByThisController(groupId, accountId, isGroupExistInLocalCache, controllerIdentifier);
-            }
-        }
     }
 
-    private void handleGroupManagedByThisController(String groupId, String accountId, boolean isGroupExistInLocalCache, String controllerIdentifier) {
-        LOGGER.info(String.format("group %s belong to controller with identifier %s", groupId, controllerIdentifier));
+    private void handleGroupManagedByThisController(BaseSpotinstCloud cloud, String controllerIdentifier) {
+        LOGGER.info(String.format("group %s belong to controller with identifier %s", cloud.getGroupId(), controllerIdentifier));
+        SpotinstCloudCommunicationState previousCloudState = SpotinstContext.getInstance().getCloudsInitializationState().get(cloud);
 
-        if (isGroupExistInLocalCache == false) {
-            SpotinstContext.getInstance().getGroupsInUse().put(groupId, accountId);
+        if(previousCloudState != null){
+            if(previousCloudState.equals(SpotinstCloudCommunicationState.SPOTINST_CLOUD_COMMUNICATION_READY) == false){
+                SpotinstContext.getInstance().getCloudsInitializationState().remove(cloud);
+            }
         }
 
-        removeFromSuspendedGroupFetching(groupId);
+        SpotinstContext.getInstance().getCloudsInitializationState().put(this, SpotinstCloudCommunicationState.SPOTINST_CLOUD_COMMUNICATION_READY);
         //expand TTL of the current controller in redis
-        addGroupToRedis(groupId, accountId, controllerIdentifier);
+        addGroupToRedis(cloud.getGroupId(), cloud.getAccountId(), controllerIdentifier);
     }
     //endregion
 

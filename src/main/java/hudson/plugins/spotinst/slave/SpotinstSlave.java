@@ -3,7 +3,6 @@ package hudson.plugins.spotinst.slave;
 import hudson.Extension;
 import hudson.model.*;
 import hudson.plugins.spotinst.cloud.BaseSpotinstCloud;
-import hudson.plugins.spotinst.common.SpotinstContext;
 import hudson.slaves.*;
 import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
@@ -175,7 +174,7 @@ public class SpotinstSlave extends Slave implements EphemeralNode {
     //region Public Methods
     public void terminate() {
         String groupId = getSpotinstCloud().getGroupId();
-        boolean isGroupManagedByThisController = SpotinstContext.getInstance().getGroupsInUse().containsKey(groupId);
+        boolean isGroupManagedByThisController = getSpotinstCloud().isCloudReadyForGroupCommunication(groupId);
 
         if (isGroupManagedByThisController) {
             Boolean isTerminated = getSpotinstCloud().detachInstance(instanceId);
@@ -204,7 +203,7 @@ public class SpotinstSlave extends Slave implements EphemeralNode {
         Boolean retVal = false;
 
         String groupId = getSpotinstCloud().getGroupId();
-        boolean isGroupManagedByThisController = SpotinstContext.getInstance().getGroupsInUse().containsKey(groupId);
+        boolean isGroupManagedByThisController = getSpotinstCloud().isCloudReadyForGroupCommunication(groupId);
 
         if (isGroupManagedByThisController) {
             Boolean isTerminated = getSpotinstCloud().detachInstance(instanceId);
@@ -225,11 +224,8 @@ public class SpotinstSlave extends Slave implements EphemeralNode {
             retVal = isTerminated;
         }
         else{
-            try {
-                getSpotinstCloud().handleGroupDosNotManageByThisController(groupId);
-            }catch (Exception e){
-                LOGGER.warn(e.getMessage());
-            }        }
+            getSpotinstCloud().handleGroupDosNotManageByThisController(groupId);
+        }
 
         return retVal;
     }

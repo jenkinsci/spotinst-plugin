@@ -1,6 +1,7 @@
 package hudson.plugins.spotinst.common;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import hudson.plugins.spotinst.cloud.BaseSpotinstCloud;
 import hudson.plugins.spotinst.model.aws.AwsInstanceType;
 import org.apache.commons.collections4.map.PassiveExpiringMap;
 import org.apache.commons.lang.RandomStringUtils;
@@ -19,9 +20,12 @@ public class SpotinstContext {
     private List<AwsInstanceType> awsInstanceTypes;
     private Date awsInstanceTypesLastUpdate;
     private String controllerIdentifier;
-    private Map<String,String> groupsInUse;
-    private PassiveExpiringMap<String, String> suspendedGroupFetching;
-    private static final Integer SUSPENDED_GROUP_FETCHING_TIME_TO_LIVE_IN_MILLIS = 1000 * 60 * 2;
+    private Map<String,String> groupsManageByController;
+    private List<String> groupsDoesNotManageByController;
+    private PassiveExpiringMap<String, String> candidateGroupsForControllerOwnership;
+    private Map<BaseSpotinstCloud, SpotinstCloudCommunicationState> cloudsInitializationState;
+
+    private static final Integer SUSPENDED_GROUP_FETCHING_TIME_TO_LIVE_IN_MILLIS = 1000 * 60 * 4;
     //endregion
 
     public static SpotinstContext getInstance() {
@@ -73,22 +77,26 @@ public class SpotinstContext {
         if(controllerIdentifier == null){
             controllerIdentifier = RandomStringUtils.randomAlphanumeric(10);
         }
+
         return controllerIdentifier;
     }
 
-    public  PassiveExpiringMap<String,String> getSuspendedGroupFetching() {
-        if (suspendedGroupFetching == null) {
-            suspendedGroupFetching = new PassiveExpiringMap<>(SUSPENDED_GROUP_FETCHING_TIME_TO_LIVE_IN_MILLIS);
+    public  PassiveExpiringMap<String,String> getCandidateGroupsForControllerOwnership() {
+        if (candidateGroupsForControllerOwnership == null) {
+            candidateGroupsForControllerOwnership = new PassiveExpiringMap<>(SUSPENDED_GROUP_FETCHING_TIME_TO_LIVE_IN_MILLIS);
         }
-        return suspendedGroupFetching;
+
+        return candidateGroupsForControllerOwnership;
     }
 
-    public Map<String,String> getGroupsInUse() {
-        if (groupsInUse == null) {
-            groupsInUse = new HashMap<>();
+    public Map<BaseSpotinstCloud, SpotinstCloudCommunicationState> getCloudsInitializationState() {
+        if (cloudsInitializationState == null) {
+            cloudsInitializationState = new HashMap<>();
         }
-        return groupsInUse;
+
+        return cloudsInitializationState;
     }
+
     //endregion
 
 }

@@ -13,9 +13,7 @@ import jenkins.model.Jenkins;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -42,45 +40,46 @@ public class SpotinstGroupsOwnerMonitor extends AsyncPeriodicWork {
     protected void execute(TaskListener taskListener) {
         synchronized (this) {
             List<Cloud> cloudList = Jenkins.getInstance().clouds;
+            Set<BaseSpotinstCloud> cloudsFromContext = SpotinstContext.getInstance().getCloudsInitializationState().keySet();
+            Set<BaseSpotinstCloud> cloudsNoLongerExist = new HashSet<>(cloudsFromContext);
 
             if (cloudList != null && cloudList.size() > 0) {
                 for (Cloud cloud : cloudList) {
-                    Map<String, String> groupsNoLongerInUse = new HashMap<>(SpotinstContext.getInstance().getGroupsInUse());
 
                     if (cloud instanceof BaseSpotinstCloud) {
                         BaseSpotinstCloud spotinstCloud = (BaseSpotinstCloud) cloud;
                         String groupId = spotinstCloud.getGroupId();
                         String accountId = spotinstCloud.getAccountId();
-                        groupsNoLongerInUse.remove(groupId);
+                        cloudsNoLongerExist.remove(spotinstCloud);
 
                         if (groupId != null && accountId != null) {
-                            spotinstCloud.syncGroupsOwner(groupId, accountId);
+                            spotinstCloud.syncGroupsOwner(spotinstCloud);
                         }
                     }
 
-                    deallocateGroupsNoLongerInUse(groupsNoLongerInUse);
+                    deallocateGroupsNoLongerInUse(cloudsNoLongerExist);
                 }
             }
         }
     }
 
-    private void deallocateGroupsNoLongerInUse(Map<String, String> groupsNoLongerInUse) {
-        for (Map.Entry<String,String> entry : groupsNoLongerInUse.entrySet()){
-            String groupId = entry.getKey();
-            String accountId = entry.getValue();
+    private void deallocateGroupsNoLongerInUse(Set<BaseSpotinstCloud> cloudsNoLongerExist) {
+        for (BaseSpotinstCloud cloud : cloudsNoLongerExist){
+            String groupId = cloud.getGroupId();
+            String accountId = cloud.getAccountId();
+            SpotinstContext.getInstance().getCloudsInitializationState().remove(cloud);
 
-            SpotinstContext.getInstance().getGroupsInUse().remove(groupId, accountId);
-            IRedisRepo redisRepo = RepoManager.getInstance().getRedisRepo();
-            ApiResponse<Integer> redisGetValueResponse = redisRepo.deleteKey(groupId, accountId);
+            if (groupId != null && accountId != null) {
+                IRedisRepo redisRepo = RepoManager.getInstance().getRedisRepo();
+                ApiResponse<Integer> redisGetValueResponse = redisRepo.deleteKey(groupId, accountId);
 
-            if (redisGetValueResponse.isRequestSucceed()) {
-                LOGGER.info(String.format("Successfully removed group %s from redis", groupId));
-            }
-            else {
-                LOGGER.error(String.format("Failed to remove group %s from redis", groupId));
+                if (redisGetValueResponse.isRequestSucceed()) {
+                    LOGGER.info(String.format("Successfully removed group %s from redis", groupId));
+                } else {
+                    LOGGER.error(String.format("Failed to remove group %s from redis", groupId));
+                }
             }
         }
-
     }
 
     @Override

@@ -6,7 +6,6 @@ import hudson.plugins.spotinst.api.infra.ApiResponse;
 import hudson.plugins.spotinst.api.infra.JsonMapper;
 import hudson.plugins.spotinst.common.ConnectionMethodEnum;
 import hudson.plugins.spotinst.common.SpotAwsInstanceTypesHelper;
-import hudson.plugins.spotinst.common.SpotinstContext;
 import hudson.plugins.spotinst.model.aws.*;
 import hudson.plugins.spotinst.repos.IAwsGroupRepo;
 import hudson.plugins.spotinst.repos.RepoManager;
@@ -118,7 +117,7 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
 
     @Override
     public void syncGroupInstances() {
-        boolean isGroupManagedByThisController = SpotinstContext.getInstance().getGroupsInUse().containsKey(this.groupId);
+        boolean isGroupManagedByThisController = isCloudReadyForGroupCommunication(groupId);
 
         if (isGroupManagedByThisController) {
             IAwsGroupRepo awsGroupRepo = RepoManager.getInstance().getAwsGroupRepo();
@@ -161,7 +160,7 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
     public Map<String, String> getInstanceIpsById() {
         Map<String, String> retVal = new HashMap<>();
 
-        boolean isGroupManagedByThisController = SpotinstContext.getInstance().getGroupsInUse().containsKey(this.groupId);
+        boolean isGroupManagedByThisController = isCloudReadyForGroupCommunication(groupId);
 
         if (isGroupManagedByThisController) {
             IAwsGroupRepo awsGroupRepo = RepoManager.getInstance().getAwsGroupRepo();
@@ -183,12 +182,7 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
             }
         }
         else{
-            try {
-                handleGroupDosNotManageByThisController(groupId);
-            }
-            catch (Exception e) {
-                LOGGER.warn(e.getMessage());
-            }
+            handleGroupDosNotManageByThisController(groupId);
         }
 
         return retVal;
