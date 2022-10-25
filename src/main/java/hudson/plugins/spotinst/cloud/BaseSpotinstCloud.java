@@ -17,6 +17,7 @@ import hudson.tools.ToolInstallation;
 import hudson.tools.ToolLocationNodeProperty;
 import jenkins.model.Jenkins;
 import org.apache.commons.lang.BooleanUtils;
+import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -115,7 +116,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
             this.globalExecutorOverride = new SpotGlobalExecutorOverride(false, 1);
         }
 
-        if (groupId != null && accountId != null) {
+        if (StringUtils.isNotEmpty(groupId) && StringUtils.isNotEmpty(accountId)) {
             syncGroupsOwner(this);
         }
     }
@@ -363,14 +364,17 @@ public abstract class BaseSpotinstCloud extends Cloud {
         return retVal;
     }
 
-    public Boolean isCloudReadyForGroupCommunication(String groupId){
-        Boolean retVal = null;
+    public boolean isCloudReadyForGroupCommunication(String groupId){
+        boolean retVal = false;
 
-        SpotinstCloudCommunicationState state = getCloudInitializationResultByGroupId(groupId);
+        if(StringUtils.isNotEmpty(groupId)) {
+            SpotinstCloudCommunicationState state = getCloudInitializationResultByGroupId(groupId);
 
-        if(state != null){
-            if(state.equals(SpotinstCloudCommunicationState.SPOTINST_CLOUD_COMMUNICATION_READY));
-            retVal = true;
+            if (state != null) {
+                if (state.equals(SpotinstCloudCommunicationState.SPOTINST_CLOUD_COMMUNICATION_READY)) {
+                    retVal = true;
+                }
+            }
         }
 
         return retVal;
@@ -486,7 +490,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
         SpotinstCloudCommunicationState state = null;
 
         for (Map.Entry<BaseSpotinstCloud, SpotinstCloudCommunicationState> cloudsInitializationStateEntry : SpotinstContext.getInstance().getCloudsInitializationState().entrySet()) {
-            if(cloudsInitializationStateEntry.getKey().groupId.equals(groupId)){
+            if(cloudsInitializationStateEntry.getKey().getGroupId().equals(groupId)){
                 state = cloudsInitializationStateEntry.getValue();
             }
         }

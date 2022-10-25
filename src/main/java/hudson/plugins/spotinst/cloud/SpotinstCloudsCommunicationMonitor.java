@@ -5,17 +5,17 @@ import hudson.model.AdministrativeMonitor;
 import hudson.plugins.spotinst.common.SpotinstCloudCommunicationState;
 import hudson.plugins.spotinst.common.SpotinstContext;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 @Extension
-public class GroupsManagedByControllerMonitor extends AdministrativeMonitor {
+public class SpotinstCloudsCommunicationMonitor extends AdministrativeMonitor {
 
     //region Members
     private static final Logger LOGGER = LoggerFactory.getLogger(BaseSpotinstCloud.class);
@@ -39,7 +39,9 @@ public class GroupsManagedByControllerMonitor extends AdministrativeMonitor {
 
     //region getters & setters
     public boolean isSpotinstCloudsCommunicationFailuresExist() {
-        return SpotinstContext.getInstance().getCloudsInitializationState().containsValue(SpotinstCloudCommunicationState.SPOTINST_CLOUD_COMMUNICATION_FAILED);
+        boolean isCloudsWithFailureStateExist = SpotinstContext.getInstance().getCloudsInitializationState().containsValue(SpotinstCloudCommunicationState.SPOTINST_CLOUD_COMMUNICATION_FAILED);
+        boolean isCloudsWithGroupIdExist = CollectionUtils.isNotEmpty(getGroupsIdByCloudInitializationState(SpotinstCloudCommunicationState.SPOTINST_CLOUD_COMMUNICATION_FAILED));
+        return isCloudsWithFailureStateExist && isCloudsWithGroupIdExist;
     }
 
     public boolean isSpotinstCloudsCommunicationInitializingExist() {
@@ -84,7 +86,7 @@ public class GroupsManagedByControllerMonitor extends AdministrativeMonitor {
             if (cloudsInitializationStateEntry.getValue().equals(state)) {
                 BaseSpotinstCloud cloud = cloudsInitializationStateEntry.getKey();
 
-                if (cloud.getGroupId() != null) {
+                if (StringUtils.isNotEmpty(cloud.getGroupId())) {
                     retVal.add(cloud.getGroupId());
                 }
             }

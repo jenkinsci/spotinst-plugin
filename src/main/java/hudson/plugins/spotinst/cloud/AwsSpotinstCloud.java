@@ -146,12 +146,7 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
             }
         }
         else{
-            try {
                 handleGroupDosNotManageByThisController(groupId);
-            }
-            catch (Exception e) {
-                LOGGER.error(e.getMessage());
-            }
         }
     }
 

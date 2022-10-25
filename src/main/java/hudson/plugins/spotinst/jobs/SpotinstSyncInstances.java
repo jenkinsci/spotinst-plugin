@@ -46,7 +46,7 @@ public class SpotinstSyncInstances extends AsyncPeriodicWork {
                     BaseSpotinstCloud spotinstCloud = (BaseSpotinstCloud) cloud;
 
                     if(this.isJobExecuted == false) {
-                        ExtensionList<PeriodicWork> spotinstGroupsOwnerMonitorPeriodicWork = SpotinstGroupsOwnerMonitor.all();
+                        ExtensionList<PeriodicWork> spotinstGroupsOwnerMonitorPeriodicWork = SpotinstSyncGroupsOwner.all();
 
                         if (CollectionUtils.isNotEmpty(spotinstGroupsOwnerMonitorPeriodicWork)) {
                             spotinstGroupsOwnerMonitorPeriodicWork.get(0).run();

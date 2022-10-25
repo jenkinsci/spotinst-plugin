@@ -10,6 +10,7 @@ import hudson.plugins.spotinst.repos.IRedisRepo;
 import hudson.plugins.spotinst.repos.RepoManager;
 import hudson.slaves.Cloud;
 import jenkins.model.Jenkins;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,17 +21,17 @@ import java.util.concurrent.TimeUnit;
  * Created by ohadmuchnik on 25/05/2016.
  */
 @Extension
-public class SpotinstGroupsOwnerMonitor extends AsyncPeriodicWork {
+public class SpotinstSyncGroupsOwner extends AsyncPeriodicWork {
 
     //region Members
-    private static final Logger LOGGER = LoggerFactory.getLogger(SpotinstGroupsOwnerMonitor.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(SpotinstSyncGroupsOwner.class);
     public static final Integer JOB_INTERVAL_IN_SECONDS = 60;
     final long recurrencePeriod;
     //endregion
 
     //region Constructor
-    public SpotinstGroupsOwnerMonitor() {
-        super("Groups Monitor");
+    public SpotinstSyncGroupsOwner() {
+        super("Sync Groups Owner");
         recurrencePeriod = TimeUnit.SECONDS.toMillis(JOB_INTERVAL_IN_SECONDS);
     }
     //endregion
@@ -52,24 +53,26 @@ public class SpotinstGroupsOwnerMonitor extends AsyncPeriodicWork {
                         String accountId = spotinstCloud.getAccountId();
                         cloudsNoLongerExist.remove(spotinstCloud);
 
-                        if (groupId != null && accountId != null) {
+                        if (StringUtils.isNotEmpty(groupId) && StringUtils.isNotEmpty(accountId)) {
                             spotinstCloud.syncGroupsOwner(spotinstCloud);
                         }
                     }
-
-                    deallocateGroupsNoLongerInUse(cloudsNoLongerExist);
                 }
             }
+            
+            deallocateGroupsNoLongerInUse(cloudsNoLongerExist);
         }
     }
 
-    private void deallocateGroupsNoLongerInUse(Set<BaseSpotinstCloud> cloudsNoLongerExist) {
+    public void deallocateGroupsNoLongerInUse(Set<BaseSpotinstCloud> cloudsNoLongerExist) {
+        Map<String,String> groupsAccountMapping = extractGroupsToDeallocate();
+
         for (BaseSpotinstCloud cloud : cloudsNoLongerExist){
             String groupId = cloud.getGroupId();
             String accountId = cloud.getAccountId();
             SpotinstContext.getInstance().getCloudsInitializationState().remove(cloud);
 
-            if (groupId != null && accountId != null) {
+            if (StringUtils.isNotEmpty(groupId) && StringUtils.isNotEmpty(accountId)) {
                 IRedisRepo redisRepo = RepoManager.getInstance().getRedisRepo();
                 ApiResponse<Integer> redisGetValueResponse = redisRepo.deleteKey(groupId, accountId);
 
@@ -80,6 +83,11 @@ public class SpotinstGroupsOwnerMonitor extends AsyncPeriodicWork {
                 }
             }
         }
+    }
+
+    private Map<String, String> extractGroupsToDeallocate() {
+        HashMap retVal = new HashMap<>();
+        return retVal;
     }
 
     @Override
