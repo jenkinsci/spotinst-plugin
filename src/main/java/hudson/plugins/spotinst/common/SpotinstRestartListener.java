@@ -11,6 +11,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+//TODO Liron - this part not working yet
 public class SpotinstRestartListener extends RestartListener {
     @Override
     public boolean isReadyToRestart() throws IOException, InterruptedException {

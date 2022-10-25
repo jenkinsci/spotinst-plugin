@@ -65,8 +65,6 @@ public class SpotinstSyncGroupsOwner extends AsyncPeriodicWork {
     }
 
     public void deallocateGroupsNoLongerInUse(Set<BaseSpotinstCloud> cloudsNoLongerExist) {
-        Map<String,String> groupsAccountMapping = extractGroupsToDeallocate();
-
         for (BaseSpotinstCloud cloud : cloudsNoLongerExist){
             String groupId = cloud.getGroupId();
             String accountId = cloud.getAccountId();
@@ -83,11 +81,6 @@ public class SpotinstSyncGroupsOwner extends AsyncPeriodicWork {
                 }
             }
         }
-    }
-
-    private Map<String, String> extractGroupsToDeallocate() {
-        HashMap retVal = new HashMap<>();
-        return retVal;
     }
 
     @Override
