@@ -5,6 +5,8 @@ import hudson.plugins.spotinst.cloud.BaseSpotinstCloud;
 import hudson.plugins.spotinst.jobs.SpotinstSyncGroupsOwner;
 import hudson.slaves.Cloud;
 import jenkins.model.Jenkins;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -13,6 +15,18 @@ import java.util.Set;
 
 //TODO Liron - this part not working yet
 public class SpotinstRestartListener extends RestartListener {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SpotinstRestartListener.class);
+
+    //TODO Liron - check if necessary
+    public static SpotinstRestartListener getInstance() {
+        return Jenkins.get()
+                .getExtensionList(RestartListener.class)
+                .get(SpotinstRestartListener.class);
+    }
+
+    //TODO Liron - check if necessary
+    public SpotinstRestartListener(){}
+
     @Override
     public boolean isReadyToRestart() throws IOException, InterruptedException {
         return true;
@@ -32,6 +46,7 @@ public class SpotinstRestartListener extends RestartListener {
             }
         }
 
+        LOGGER.info(String.format("deallocating %s Spotinst clouds", cloudSet.size()));
         groupsOwnerJob.deallocateGroupsNoLongerInUse(cloudSet);
     }
 }
