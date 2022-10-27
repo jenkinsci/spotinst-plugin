@@ -8,7 +8,7 @@ import hudson.plugins.spotinst.model.aws.*;
 import hudson.plugins.spotinst.model.azure.*;
 import hudson.plugins.spotinst.model.gcp.*;
 import jenkins.model.Jenkins;
-import org.apache.commons.httpclient.HttpStatus;
+import java.net.HttpURLConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,10 +49,10 @@ public class SpotinstApi {
         try {
             RestResponse response =
                     RestClient.sendGet(SPOTINST_API_HOST + "/events/subscription", headers, queryParams);
-            if (response.getStatusCode() == HttpStatus.SC_OK) {
+            if (response.getStatusCode() == HttpURLConnection.HTTP_OK) {
                 isValid = 0;
             }
-            else if (response.getStatusCode() == HttpStatus.SC_UNAUTHORIZED) {
+            else if (response.getStatusCode() == HttpURLConnection.HTTP_UNAUTHORIZED) {
                 isValid = 1;
             }
             else {
@@ -361,7 +361,7 @@ public class SpotinstApi {
     private static <T> T getCastedResponse(RestResponse response, Class<T> contentClass) throws ApiException {
         T retVal;
 
-        if (response.getStatusCode() == org.apache.http.HttpStatus.SC_OK) {
+        if (response.getStatusCode() == org.apache.http.HttpURLConnection.HTTP_OK) {
             retVal = JsonMapper.fromJson(response.getBody(), contentClass);
             if (retVal == null) {
                 throw new ApiException(String.format("Can't parse response to class: %s", contentClass.toString()));
