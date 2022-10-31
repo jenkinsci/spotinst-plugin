@@ -28,6 +28,8 @@
             <strong>${%Title}</strong>
             <p/>
 
+            <strong>rootURL</strong>
+
             ${%SpotinstCloudsCommunicationReady(it.spotinstCloudsCommunicationReady)}
             <p/>
         </j:if>
