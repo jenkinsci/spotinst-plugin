@@ -375,7 +375,18 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
             for (SpotinstInstanceWeight instance : this.executorsForTypes) {
                 if (instance.getExecutors() != null) {
                     Integer executors = instance.getExecutors();
-                    String  type      = instance.getAwsInstanceTypeFromAPI();
+                    String  type      = null;
+
+                    switch(instance.getSearchMethod()){
+                        case SEARCH:
+                            type = instance.getAwsInstanceTypeFromAPISearch();
+                            break;
+                        case SELECT:
+                        default:
+                            type = instance.getAwsInstanceTypeFromAPISelect();
+                            break;
+                    }
+
                     this.executorsByInstanceType.put(type, executors);
                 }
             }
