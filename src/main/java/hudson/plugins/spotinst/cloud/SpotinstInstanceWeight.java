@@ -68,6 +68,57 @@ public class SpotinstInstanceWeight implements Describable<SpotinstInstanceWeigh
     }
     //endregion
 
+    //region Methods
+    public String getAwsInstanceTypeFromAPI() {
+        String type = null;
+        switch(getSearchMethod()){
+            case SEARCH:
+                type = getAwsInstanceTypeFromAPISearch();
+                break;
+            case SELECT:
+            default:
+                type = getAwsInstanceTypeFromAPISelect();
+                break;
+        }
+        return type;
+    }
+    //endregion
+
+    //region Private Methods
+    private String getAwsInstanceType(String awsInstanceTypeFromAPI){
+        String retVal = null;
+
+        if (awsInstanceTypeFromAPI != null) {
+
+            /*
+            If the user Previously chosen was a type that not exist in the hard coded list
+             and did not configure the token right, we will present the chosen type and set the default vCPU to 1
+             The descriptor of this class will show a warning message will note the user that something is wrong,
+             and point to authentication fix before saving this configuration.
+             */
+            List<AwsInstanceType> types = SpotAwsInstanceTypesHelper.getAllInstanceTypes();
+            boolean isTypeInList = types.stream().anyMatch(i -> i.getInstanceType().equals(awsInstanceTypeFromAPI));
+
+            if (isTypeInList == false) {
+                AwsInstanceType instanceType = new AwsInstanceType();
+                instanceType.setInstanceType(awsInstanceTypeFromAPI);
+                instanceType.setvCPU(1);
+                SpotinstContext.getInstance().getAwsInstanceTypes().add(instanceType);
+            }
+
+            retVal = awsInstanceTypeFromAPI;
+
+        }
+        else {
+            if(awsInstanceType != null){
+                retVal = awsInstanceType.getValue();
+            }
+        }
+
+        return retVal;
+    }
+    //endregion
+
     //region Classes
     @Extension
     public static final class DescriptorImpl extends Descriptor<SpotinstInstanceWeight> {
@@ -124,7 +175,7 @@ public class SpotinstInstanceWeight implements Describable<SpotinstInstanceWeigh
             String  accountId                 = SpotinstContext.getInstance().getAccountId();
             String  token                     = SpotinstContext.getInstance().getSpotinstToken();
             int     isValid                   = validateToken(token, accountId);
-            Boolean isInstanceTypesListUpdate = SpotAwsInstanceTypesHelper.isInstanceTypesListUpdate();
+            boolean isInstanceTypesListUpdate = SpotAwsInstanceTypesHelper.isInstanceTypesListUpdate();
 
             if (isValid != 0 || isInstanceTypesListUpdate == false) {
                 retVal = FormValidation.error(
@@ -152,70 +203,15 @@ public class SpotinstInstanceWeight implements Describable<SpotinstInstanceWeigh
     }
 
     public String getAwsInstanceTypeFromAPISelect() {
-        String retVal = null;
-
-        if (this.awsInstanceTypeFromAPISelect != null) {
-
-            /*
-            If the user Previously chosen was a type that not exist in the hard coded list
-             and did not configure the token right, we will present the chosen type and set the default vCPU to 1
-             The descriptor of this class will show a warning message will note the user that something is wrong,
-             and point to authentication fix before saving this configuration.
-             */
-            List<AwsInstanceType> types = SpotAwsInstanceTypesHelper.getAllInstanceTypes();
-            boolean isTypeInList = types.stream().anyMatch(i -> i.getInstanceType().equals(this.awsInstanceTypeFromAPISelect));
-
-            if (isTypeInList == false) {
-                AwsInstanceType instanceType = new AwsInstanceType();
-                instanceType.setInstanceType(awsInstanceTypeFromAPISelect);
-                instanceType.setvCPU(1);
-                SpotinstContext.getInstance().getAwsInstanceTypes().add(instanceType);
-            }
-
-            retVal = awsInstanceTypeFromAPISelect;
-
-        }
-        else {
-            if(awsInstanceType != null){
-                retVal = awsInstanceType.getValue();
-            }
-        }
-
+        String retVal = getAwsInstanceType(this.awsInstanceTypeFromAPISelect);
         return retVal;
     }
 
     public String getAwsInstanceTypeFromAPISearch() {
-        String retVal = null;
-
-        if (this.awsInstanceTypeFromAPISearch != null) {
-
-            /*
-            If the user Previously chosen was a type that not exist in the hard coded list
-             and did not configure the token right, we will present the chosen type and set the default vCPU to 1
-             The descriptor of this class will show a warning message will note the user that something is wrong,
-             and point to authentication fix before saving this configuration.
-             */
-            List<AwsInstanceType> types = SpotAwsInstanceTypesHelper.getAllInstanceTypes();
-            boolean isTypeInList = types.stream().anyMatch(i -> i.getInstanceType().equals(this.awsInstanceTypeFromAPISearch));
-
-            if (isTypeInList == false) {
-                AwsInstanceType instanceType = new AwsInstanceType();
-                instanceType.setInstanceType(awsInstanceTypeFromAPISearch);
-                instanceType.setvCPU(1);
-                SpotinstContext.getInstance().getAwsInstanceTypes().add(instanceType);
-            }
-
-            retVal = awsInstanceTypeFromAPISearch;
-
-        }
-        else {
-            if(awsInstanceType != null){
-                retVal = awsInstanceType.getValue();
-            }
-        }
-
+        String retVal = getAwsInstanceType(this.awsInstanceTypeFromAPISearch);
         return retVal;
     }
+
     @DataBoundSetter
     public void setAwsInstanceTypeFromAPISearch(String awsInstanceTypeFromAPISearch) {
         this.awsInstanceTypeFromAPISearch = awsInstanceTypeFromAPISearch;
