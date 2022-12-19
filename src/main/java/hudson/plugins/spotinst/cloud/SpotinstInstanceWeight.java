@@ -36,22 +36,9 @@ public class SpotinstInstanceWeight implements Describable<SpotinstInstanceWeigh
 
     //region Constructors
     @DataBoundConstructor
-    public SpotinstInstanceWeight(AwsInstanceTypeEnum awsInstanceType, Integer executors,
-                                  AwsInstanceTypeSearchMethodEnum searchMethod) {
-        this.awsInstanceType = awsInstanceType;
-        this.executors = executors;
-        if(searchMethod != null) {
-            this.searchMethod = searchMethod;
-        }
-        else{
-            this.searchMethod = AwsInstanceTypeSearchMethodEnum.SELECT;
-        }
-    }
-
     public SpotinstInstanceWeight(AwsInstanceTypeEnum awsInstanceType, Integer executors) {
         this.awsInstanceType = awsInstanceType;
         this.executors = executors;
-        this.searchMethod = AwsInstanceTypeSearchMethodEnum.SELECT;
     }
     //endregion
 
@@ -226,7 +213,13 @@ public class SpotinstInstanceWeight implements Describable<SpotinstInstanceWeigh
     }
     @DataBoundSetter
     public void setSearchMethod(AwsInstanceTypeSearchMethodEnum searchMethod) {
-        this.searchMethod = searchMethod;
+
+        if(searchMethod == null){
+            this.searchMethod = AwsInstanceTypeSearchMethodEnum.SELECT;
+        }
+        else {
+            this.searchMethod = searchMethod;
+        }
     }
     //endregion
 }
