@@ -26,9 +26,9 @@ import static hudson.plugins.spotinst.api.SpotinstApi.validateToken;
  */
 public class SpotinstInstanceWeight implements Describable<SpotinstInstanceWeight> {
     //region Members
-    private Integer             executors;
-    private String              awsInstanceTypeFromAPISelect;
-    private String              awsInstanceTypeFromAPISearch;
+    private Integer                         executors;
+    private String                          awsInstanceTypeFromAPISelect;
+    private String                          awsInstanceTypeFromAPISearch;
     private AwsInstanceTypeSearchMethodEnum searchMethod;
     //Deprecated
     private AwsInstanceTypeEnum             awsInstanceType;
@@ -57,14 +57,13 @@ public class SpotinstInstanceWeight implements Describable<SpotinstInstanceWeigh
 
     //region Methods
     public String getAwsInstanceTypeFromAPI() {
-        String type = null;
+        String                          type         = null;
         AwsInstanceTypeSearchMethodEnum searchMethod = getSearchMethod();
-        switch(searchMethod){
+        switch (searchMethod) {
             case SEARCH:
                 type = getAwsInstanceTypeFromAPISearch();
                 break;
             case SELECT:
-            default:
                 type = getAwsInstanceTypeFromAPISelect();
                 break;
         }
@@ -73,7 +72,7 @@ public class SpotinstInstanceWeight implements Describable<SpotinstInstanceWeigh
     //endregion
 
     //region Private Methods
-    private String getAwsInstanceType(String awsInstanceTypeFromAPI){
+    private String getAwsInstanceType(String awsInstanceTypeFromAPI) {
         String retVal = null;
 
         if (awsInstanceTypeFromAPI != null) {
@@ -84,10 +83,11 @@ public class SpotinstInstanceWeight implements Describable<SpotinstInstanceWeigh
              The descriptor of this class will show a warning message will note the user that something is wrong,
              and point to authentication fix before saving this configuration.
              */
-            List<AwsInstanceType> types = SpotAwsInstanceTypesHelper.getAllInstanceTypes();
-            boolean isTypeInList = types.stream().anyMatch(i -> i.getInstanceType().equals(awsInstanceTypeFromAPI));
+            List<AwsInstanceType> types        = SpotAwsInstanceTypesHelper.getAllInstanceTypes();
+            boolean               isTypeInList =
+                    types.stream().anyMatch(i -> i.getInstanceType().equals(awsInstanceTypeFromAPI));
 
-            if (isTypeInList == false) {
+            if (isTypeInList == false && getSearchMethod() != AwsInstanceTypeSearchMethodEnum.SEARCH) {
                 AwsInstanceType instanceType = new AwsInstanceType();
                 instanceType.setInstanceType(awsInstanceTypeFromAPI);
                 instanceType.setvCPU(1);
@@ -98,7 +98,7 @@ public class SpotinstInstanceWeight implements Describable<SpotinstInstanceWeigh
 
         }
         else {
-            if(awsInstanceType != null){
+            if (awsInstanceType != null) {
                 retVal = awsInstanceType.getValue();
             }
         }
@@ -130,17 +130,14 @@ public class SpotinstInstanceWeight implements Describable<SpotinstInstanceWeigh
         }
 
         public AutoCompletionCandidates doAutoCompleteAwsInstanceTypeFromAPISearch(@QueryParameter String value) {
-            AutoCompletionCandidates retVal = new AutoCompletionCandidates();
-            List<AwsInstanceType> allAwsInstanceTypes = SpotAwsInstanceTypesHelper.getAllInstanceTypes();
-            Stream<String> allTypes      = allAwsInstanceTypes.stream()
-                                                              .map(awsInstanceType -> awsInstanceType.getInstanceType().toLowerCase());
-            String filterValue = value.toLowerCase();
-            Object[] matchingTypes = allTypes.filter(type -> type.startsWith(filterValue)).toArray();
-
-            for (Object objectType: matchingTypes) {
-                String stringType = objectType.toString();
-                retVal.add(stringType);
-            }
+            AutoCompletionCandidates retVal              = new AutoCompletionCandidates();
+            List<AwsInstanceType>    allAwsInstanceTypes = SpotAwsInstanceTypesHelper.getAllInstanceTypes();
+            Stream<String> allTypes = allAwsInstanceTypes.stream()
+                                                         .map(awsInstanceType -> awsInstanceType.getInstanceType()
+                                                                                                .toLowerCase());
+            String         filterValue   = value.toLowerCase();
+            Stream<String> matchingTypes = allTypes.filter(type -> type.startsWith(filterValue));
+            matchingTypes.forEach(retVal::add);
 
             return retVal;
         }
@@ -151,8 +148,12 @@ public class SpotinstInstanceWeight implements Describable<SpotinstInstanceWeigh
             return retVal;
         }
 
-        public FormValidation doCheckAwsInstanceTypeFromAPISearch() {
+        public FormValidation doCheckAwsInstanceTypeFromAPISearch(@QueryParameter String value) {
             FormValidation retVal = doCheckAwsInstanceTypeFromAPI();
+
+            if (retVal == null || retVal.kind != FormValidation.Kind.ERROR) {
+                retVal = this.CheckAwsInstanceTypeFromAPISearch(value);
+            }
 
             return retVal;
         }
@@ -168,6 +169,26 @@ public class SpotinstInstanceWeight implements Describable<SpotinstInstanceWeigh
             if (isValid != 0 || isInstanceTypesListUpdate == false) {
                 retVal = FormValidation.error(
                         "Usage of this configuration might not work as expected. In order to get the up-to-date instance types please check the Spot token on the “Configure System” page.");
+            }
+
+            return retVal;
+        }
+
+        private FormValidation CheckAwsInstanceTypeFromAPISearch(String value) {
+            FormValidation        retVal              = null;
+            List<AwsInstanceType> allAwsInstanceTypes = SpotAwsInstanceTypesHelper.getAllInstanceTypes();
+
+            if (allAwsInstanceTypes != null) {
+                Stream<String> allTypes =
+                        allAwsInstanceTypes.stream().map(awsInstanceType -> awsInstanceType.getInstanceType());
+                Stream<String> matchingTypes = allTypes.filter(type -> type.equals(value));
+
+                if (matchingTypes.count() == 0) {
+                    retVal = FormValidation.error("Invalid Instance Type");
+                }
+            }
+            else {
+                retVal = FormValidation.error("Invalid Instance Type: instance types were not found");
             }
 
             return retVal;
@@ -207,15 +228,16 @@ public class SpotinstInstanceWeight implements Describable<SpotinstInstanceWeigh
 
     public AwsInstanceTypeSearchMethodEnum getSearchMethod() {
 
-        if(searchMethod == null){
+        if (searchMethod == null) {
             return AwsInstanceTypeSearchMethodEnum.SELECT;
         }
         return searchMethod;
     }
+
     @DataBoundSetter
     public void setSearchMethod(AwsInstanceTypeSearchMethodEnum searchMethod) {
 
-        if(searchMethod == null){
+        if (searchMethod == null) {
             this.searchMethod = AwsInstanceTypeSearchMethodEnum.SELECT;
         }
         else {
