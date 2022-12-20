@@ -58,7 +58,8 @@ public class SpotinstInstanceWeight implements Describable<SpotinstInstanceWeigh
     //region Methods
     public String getAwsInstanceTypeFromAPI() {
         String type = null;
-        switch(getSearchMethod()){
+        AwsInstanceTypeSearchMethodEnum searchMethod = getSearchMethod();
+        switch(searchMethod){
             case SEARCH:
                 type = getAwsInstanceTypeFromAPISearch();
                 break;
@@ -129,7 +130,7 @@ public class SpotinstInstanceWeight implements Describable<SpotinstInstanceWeigh
         }
 
         public AutoCompletionCandidates doAutoCompleteAwsInstanceTypeFromAPISearch(@QueryParameter String value) {
-            AutoCompletionCandidates c = new AutoCompletionCandidates();
+            AutoCompletionCandidates retVal = new AutoCompletionCandidates();
             List<AwsInstanceType> allAwsInstanceTypes = SpotAwsInstanceTypesHelper.getAllInstanceTypes();
             Stream<String> allTypes      = allAwsInstanceTypes.stream()
                                                               .map(awsInstanceType -> awsInstanceType.getInstanceType().toLowerCase());
@@ -138,10 +139,10 @@ public class SpotinstInstanceWeight implements Describable<SpotinstInstanceWeigh
 
             for (Object objectType: matchingTypes) {
                 String stringType = objectType.toString();
-                c.add(stringType);
+                retVal.add(stringType);
             }
 
-            return c;
+            return retVal;
         }
 
         public FormValidation doCheckAwsInstanceTypeFromAPISelect() {
