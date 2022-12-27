@@ -401,9 +401,6 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
                 }
             }
         }
-
-        //        List<String> invalidInstances = getInvalidInstanceTypes();
-        //        SpotinstContext.getInstance().getInvalidInstanceTypes().addAll(invalidInstances);
     }
     //endregion
 
