@@ -20,6 +20,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Created by ohadmuchnik on 20/03/2017.
@@ -187,6 +189,25 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
 
         if (awsInstanceType.isPresent()) {
             retVal = awsInstanceType.get().getVCPU();
+        }
+
+        return retVal;
+    }
+    //endregion
+
+    //region Methods
+    public List<String> getInvalidInstanceTypes() {
+        List<String> retVal = null;
+
+        if (this.executorsForTypes != null) {
+            List<AwsInstanceType> allinstanceTypes = SpotAwsInstanceTypesHelper.getAllInstanceTypes();
+            List<String> allValidTypes =
+                    allinstanceTypes.stream().map(AwsInstanceType::getInstanceType).collect(Collectors.toList());
+            Stream<String> configuredInstanceTypes =
+                    executorsForTypes.stream().map(SpotinstInstanceWeight::getAwsInstanceTypeFromAPIInput).distinct();
+
+            retVal = configuredInstanceTypes.filter(type -> type == null || allValidTypes.contains(type) == false)
+                                            .collect(Collectors.toList());
         }
 
         return retVal;
@@ -375,11 +396,14 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
             for (SpotinstInstanceWeight instance : this.executorsForTypes) {
                 if (instance.getExecutors() != null) {
                     Integer executors = instance.getExecutors();
-                    String  type      = instance.getAwsInstanceTypeFromAPI();
+                    String  type      = instance.getAwsInstanceTypeFromAPIInput();
                     this.executorsByInstanceType.put(type, executors);
                 }
             }
         }
+
+        //        List<String> invalidInstances = getInvalidInstanceTypes();
+        //        SpotinstContext.getInstance().getInvalidInstanceTypes().addAll(invalidInstances);
     }
     //endregion
 

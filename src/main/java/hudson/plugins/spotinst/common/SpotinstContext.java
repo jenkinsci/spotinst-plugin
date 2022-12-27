@@ -3,6 +3,7 @@ package hudson.plugins.spotinst.common;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.plugins.spotinst.model.aws.AwsInstanceType;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -17,6 +18,7 @@ public class SpotinstContext {
     private        String                accountId;
     private        List<AwsInstanceType> awsInstanceTypes;
     private        Date                  awsInstanceTypesLastUpdate;
+    private        List<String>          invalidInstanceTypes;
     //endregion
 
     public static SpotinstContext getInstance() {
@@ -62,6 +64,18 @@ public class SpotinstContext {
     @SuppressFBWarnings(value = {"EI_EXPOSE_REP"})
     public void setAwsInstanceTypesLastUpdate(Date awsInstanceTypesLastUpdate) {
         this.awsInstanceTypesLastUpdate = awsInstanceTypesLastUpdate;
+    }
+
+    public List<String> getInvalidInstanceTypes() {
+        if(invalidInstanceTypes == null){
+            invalidInstanceTypes = new ArrayList<>();
+        }
+
+        return invalidInstanceTypes;
+    }
+
+    public void setInvalidInstanceTypes(List<String> invalidInstanceTypes) {
+        this.invalidInstanceTypes = invalidInstanceTypes;
     }
     //endregion
 
