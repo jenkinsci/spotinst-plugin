@@ -1,12 +1,14 @@
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form" xmlns:st="jelly:stapler">
-    <f:radioBlock checked="${instance == null || instance.searchMethod == null || instance.searchMethod == 'SELECT'}" name="searchMethod" title="Choose Instance Type" value="SELECT" inline="true">
+    <f:radioBlock checked="${instance == null || instance.selectMethod == null || instance.selectMethod == 'PICK'}"
+                  name="selectMethod" title="Pick Instance Type" value="PICK" inline="true">
         <f:entry field="awsInstanceTypeFromAPI" title="${%Instance type}">
             <f:select/>
         </f:entry>
     </f:radioBlock>
 
-    <f:radioBlock checked="${instance.searchMethod == 'SEARCH'}" name="searchMethod" title="Search Instance Type" value="SEARCH" inline="true">
+    <f:radioBlock checked="${instance.selectMethod == 'SEARCH'}" name="selectMethod" title="Search Instance Type"
+                  value="SEARCH" inline="true">
         <f:entry field="awsInstanceTypeFromAPISearch" title="${%Instance type}">
             <f:textbox/>
         </f:entry>

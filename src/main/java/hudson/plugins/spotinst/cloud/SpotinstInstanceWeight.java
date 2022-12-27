@@ -5,7 +5,7 @@ import hudson.model.AutoCompletionCandidates;
 import hudson.model.Describable;
 import hudson.model.Descriptor;
 import hudson.plugins.spotinst.common.AwsInstanceTypeEnum;
-import hudson.plugins.spotinst.common.AwsInstanceTypeSearchMethodEnum;
+import hudson.plugins.spotinst.common.AwsInstanceTypeSelectMethodEnum;
 import hudson.plugins.spotinst.common.SpotAwsInstanceTypesHelper;
 import hudson.plugins.spotinst.common.SpotinstContext;
 import hudson.plugins.spotinst.model.aws.AwsInstanceType;
@@ -29,7 +29,7 @@ public class SpotinstInstanceWeight implements Describable<SpotinstInstanceWeigh
     private Integer                         executors;
     private String                          awsInstanceTypeFromAPI;
     private String                          awsInstanceTypeFromAPISearch;
-    private AwsInstanceTypeSearchMethodEnum searchMethod;
+    private AwsInstanceTypeSelectMethodEnum selectMethod;
     //Deprecated
     private AwsInstanceTypeEnum             awsInstanceType;
     //endregion
@@ -58,9 +58,9 @@ public class SpotinstInstanceWeight implements Describable<SpotinstInstanceWeigh
     //region Methods
     public String getAwsInstanceTypeFromAPIInput() {
         String                          type;
-        AwsInstanceTypeSearchMethodEnum searchMethod = getSearchMethod();
+        AwsInstanceTypeSelectMethodEnum selectMethod = getSelectMethod();
 
-        if (searchMethod == AwsInstanceTypeSearchMethodEnum.SEARCH) {
+        if (selectMethod == AwsInstanceTypeSelectMethodEnum.SEARCH) {
             type = getAwsInstanceTypeFromAPISearch();
         }
         else {
@@ -87,7 +87,7 @@ public class SpotinstInstanceWeight implements Describable<SpotinstInstanceWeigh
             boolean               isTypeInList =
                     types.stream().anyMatch(i -> i.getInstanceType().equals(awsInstanceTypeFromAPIName));
 
-            if (isTypeInList == false && getSearchMethod() != AwsInstanceTypeSearchMethodEnum.SEARCH) {
+            if (isTypeInList == false && getSelectMethod() != AwsInstanceTypeSelectMethodEnum.SEARCH) {
                 AwsInstanceType instanceType = new AwsInstanceType();
                 instanceType.setInstanceType(awsInstanceTypeFromAPIName);
                 instanceType.setvCPU(1);
@@ -190,7 +190,7 @@ public class SpotinstInstanceWeight implements Describable<SpotinstInstanceWeigh
     public void setAwsInstanceTypeFromAPI(String awsInstanceTypeFromAPI) {
         this.awsInstanceTypeFromAPI = awsInstanceTypeFromAPI;
 
-        if(searchMethod != AwsInstanceTypeSearchMethodEnum.SEARCH){
+        if(selectMethod != AwsInstanceTypeSelectMethodEnum.SEARCH){
             this.awsInstanceTypeFromAPISearch = awsInstanceTypeFromAPI;
         }
     }
@@ -198,7 +198,7 @@ public class SpotinstInstanceWeight implements Describable<SpotinstInstanceWeigh
     public String getAwsInstanceTypeFromAPISearch() {
         String retVal;
 
-        if (searchMethod == AwsInstanceTypeSearchMethodEnum.SEARCH) {
+        if (selectMethod == AwsInstanceTypeSelectMethodEnum.SEARCH) {
             retVal = getAwsInstanceTypeByName(this.awsInstanceTypeFromAPISearch);
         }
         else {
@@ -212,29 +212,29 @@ public class SpotinstInstanceWeight implements Describable<SpotinstInstanceWeigh
     public void setAwsInstanceTypeFromAPISearch(String awsInstanceTypeFromAPISearch) {
         this.awsInstanceTypeFromAPISearch = awsInstanceTypeFromAPISearch;
 
-        if(searchMethod == AwsInstanceTypeSearchMethodEnum.SEARCH){
+        if(selectMethod == AwsInstanceTypeSelectMethodEnum.SEARCH){
             this.awsInstanceTypeFromAPI = awsInstanceTypeFromAPISearch;
         }
     }
 
-    public AwsInstanceTypeSearchMethodEnum getSearchMethod() {
-        AwsInstanceTypeSearchMethodEnum retVal = AwsInstanceTypeSearchMethodEnum.SELECT;
+    public AwsInstanceTypeSelectMethodEnum getSelectMethod() {
+        AwsInstanceTypeSelectMethodEnum retVal = AwsInstanceTypeSelectMethodEnum.PICK;
 
-        if (searchMethod != null) {
-            retVal = searchMethod;
+        if (selectMethod != null) {
+            retVal = selectMethod;
         }
 
         return retVal;
     }
 
     @DataBoundSetter
-    public void setSearchMethod(AwsInstanceTypeSearchMethodEnum searchMethod) {
+    public void setSelectMethod(AwsInstanceTypeSelectMethodEnum selectMethod) {
 
-        if (searchMethod == null) {
-            this.searchMethod = AwsInstanceTypeSearchMethodEnum.SELECT;
+        if (selectMethod == null) {
+            this.selectMethod = AwsInstanceTypeSelectMethodEnum.PICK;
         }
         else {
-            this.searchMethod = searchMethod;
+            this.selectMethod = selectMethod;
         }
     }
     //endregion
