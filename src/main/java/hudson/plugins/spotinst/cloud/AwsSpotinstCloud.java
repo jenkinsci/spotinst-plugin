@@ -20,8 +20,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * Created by ohadmuchnik on 20/03/2017.
@@ -34,6 +32,7 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
     private static final String                                 CLOUD_URL = "aws/ec2";
     protected            Map<String, Integer>                   executorsByInstanceType;
     private              List<? extends SpotinstInstanceWeight> executorsForTypes;
+    private List<String>                                        invalidInstanceTypes;
     //endregion
 
     //region Constructor
@@ -189,25 +188,6 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
 
         if (awsInstanceType.isPresent()) {
             retVal = awsInstanceType.get().getVCPU();
-        }
-
-        return retVal;
-    }
-    //endregion
-
-    //region Methods
-    public List<String> getInvalidInstanceTypes() {
-        List<String> retVal = null;
-
-        if (this.executorsForTypes != null) {
-            List<AwsInstanceType> allinstanceTypes = SpotAwsInstanceTypesHelper.getAllInstanceTypes();
-            List<String> allValidTypes =
-                    allinstanceTypes.stream().map(AwsInstanceType::getInstanceType).collect(Collectors.toList());
-            Stream<String> configuredInstanceTypes =
-                    executorsForTypes.stream().map(SpotinstInstanceWeight::getAwsInstanceTypeFromAPIInput).distinct();
-
-            retVal = configuredInstanceTypes.filter(type -> type == null || allValidTypes.contains(type) == false)
-                                            .collect(Collectors.toList());
         }
 
         return retVal;
@@ -391,6 +371,7 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
 
     private void initExecutorsByInstanceType() {
         this.executorsByInstanceType = new HashMap<>();
+        this.invalidInstanceTypes = new LinkedList<>();
 
         if (this.executorsForTypes != null) {
             for (SpotinstInstanceWeight instance : this.executorsForTypes) {
@@ -398,6 +379,11 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
                     Integer executors = instance.getExecutors();
                     String  type      = instance.getAwsInstanceTypeFromAPIInput();
                     this.executorsByInstanceType.put(type, executors);
+
+                    if(instance.IsValid() == false){
+                        LOGGER.error(String.format("Invalid type %s in group %s", type, this.getGroupId()));
+                        invalidInstanceTypes.add(type);
+                    }
                 }
             }
         }
@@ -407,6 +393,10 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
     //region Getters
     public List<? extends SpotinstInstanceWeight> getExecutorsForTypes() {
         return executorsForTypes;
+    }
+
+    public List<String> getInvalidInstanceTypes() {
+        return this.invalidInstanceTypes;
     }
     //endregion
 

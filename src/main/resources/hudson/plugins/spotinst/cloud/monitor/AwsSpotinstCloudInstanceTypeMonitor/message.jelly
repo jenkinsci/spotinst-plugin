@@ -5,7 +5,7 @@
             <strong>${%Title}</strong>
             <p/>
 
-            ${%InvalidInstanceType(it.invalidInstances)}
+            ${%InvalidInstanceType(it.invalidInstancesByGroupId)}
             <p/>
 
             ${%Explanation(rootURL)}
