@@ -21,7 +21,7 @@ public class AwsSpotinstCloudInstanceTypeMonitor extends AdministrativeMonitor {
     @Override
     public boolean isActivated() {
         boolean retVal;
-        initinvalidInstances();
+        initInvalidInstances();
         retVal = hasInvalidInstanceType();
         return retVal;
     }
@@ -49,7 +49,7 @@ public class AwsSpotinstCloudInstanceTypeMonitor extends AdministrativeMonitor {
     //endregion
 
     //region private Methods
-    private void initinvalidInstances() {
+    private void initInvalidInstances() {
         invalidInstancesByGroupId = new HashMap<>();
         Jenkins jenkinsInstance = Jenkins.getInstance();
         List<Cloud> clouds = jenkinsInstance != null ? jenkinsInstance.clouds : new LinkedList<>();
