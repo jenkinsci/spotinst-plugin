@@ -381,7 +381,7 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
                     this.executorsByInstanceType.put(type, executors);
 
                     if(instance.IsValid() == false){
-                        LOGGER.error(String.format("Invalid type %s in group %s", type, this.getGroupId()));
+                        LOGGER.error(String.format("Invalid type \'%s\' in group \'%s\'", type, this.getGroupId()));
                         invalidInstanceTypes.add(type);
                     }
                 }
