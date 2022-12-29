@@ -380,7 +380,7 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
                     String  type      = instance.getAwsInstanceTypeFromAPIInput();
                     this.executorsByInstanceType.put(type, executors);
 
-                    if(instance.IsValid() == false){
+                    if(instance.getIsValid() == false){
                         LOGGER.error(String.format("Invalid type \'%s\' in group \'%s\'", type, this.getGroupId()));
                         invalidInstanceTypes.add(type);
                     }

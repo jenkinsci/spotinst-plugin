@@ -255,8 +255,8 @@ public class SpotinstInstanceWeight implements Describable<SpotinstInstanceWeigh
         }
     }
 
-    public boolean IsValid() {
-        return isValid;
+    public boolean getIsValid() {
+        return this.isValid;
     }
     //endregion
 }
