@@ -40,6 +40,11 @@ termination"
 
 [SpotinstPlugin-Versionhistory]
 == Version history
+[SpotinstPlugin-Version2.2.9(Dec29,2022)]
+=== Version 2.2.9 (Dec 29, 2022)
+
+* Added capability to search for instances by instance types
+
 [SpotinstPlugin-Version2.2.8(Jul14,2022)]
 === Version 2.2.8 (Jul 14, 2022)
 

@@ -1,0 +1,15 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form">
+    <div class="alert alert-danger">
+        <j:if test="${it.hasInvalidInstanceType()}">
+            <strong>${%Title}</strong>
+            <p/>
+
+            ${%InvalidInstanceType(it.invalidInstancesByGroupId)}
+            <p/>
+
+            ${%Explanation(rootURL)}
+            <p/>
+        </j:if>
+    </div>
+</j:jelly>

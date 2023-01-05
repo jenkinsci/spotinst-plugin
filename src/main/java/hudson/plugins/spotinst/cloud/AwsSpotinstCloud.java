@@ -32,6 +32,7 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
     private static final String                                 CLOUD_URL = "aws/ec2";
     protected            Map<String, Integer>                   executorsByInstanceType;
     private              List<? extends SpotinstInstanceWeight> executorsForTypes;
+    private List<String>                                        invalidInstanceTypes;
     //endregion
 
     //region Constructor
@@ -382,13 +383,19 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
 
     private void initExecutorsByInstanceType() {
         this.executorsByInstanceType = new HashMap<>();
+        this.invalidInstanceTypes = new LinkedList<>();
 
         if (this.executorsForTypes != null) {
             for (SpotinstInstanceWeight instance : this.executorsForTypes) {
                 if (instance.getExecutors() != null) {
                     Integer executors = instance.getExecutors();
-                    String  type      = instance.getAwsInstanceTypeFromAPI();
+                    String  type      = instance.getAwsInstanceTypeFromAPIInput();
                     this.executorsByInstanceType.put(type, executors);
+
+                    if(instance.getIsValid() == false){
+                        LOGGER.error(String.format("Invalid type \'%s\' in group \'%s\'", type, this.getGroupId()));
+                        invalidInstanceTypes.add(type);
+                    }
                 }
             }
         }
@@ -398,6 +405,10 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
     //region Getters
     public List<? extends SpotinstInstanceWeight> getExecutorsForTypes() {
         return executorsForTypes;
+    }
+
+    public List<String> getInvalidInstanceTypes() {
+        return this.invalidInstanceTypes;
     }
     //endregion
 
