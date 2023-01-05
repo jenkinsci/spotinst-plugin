@@ -23,7 +23,7 @@ public class SpotinstApi {
 
     //region Members
     private static final Logger LOGGER                  = LoggerFactory.getLogger(SpotinstApi.class);
-    private final static String SPOTINST_API_HOST       = "http://localhost:3100";
+    private final static String SPOTINST_API_HOST       = "https://api.spotinst.io";
     private final static String HEADER_AUTH             = "Authorization";
     private final static String AUTH_PREFIX             = "Bearer ";
     private final static String HEADER_CONTENT_TYPE     = "Content-Type";
