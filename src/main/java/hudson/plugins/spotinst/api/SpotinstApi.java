@@ -23,7 +23,7 @@ public class SpotinstApi {
 
     //region Members
     private static final Logger LOGGER                  = LoggerFactory.getLogger(SpotinstApi.class);
-    private final static String SPOTINST_API_HOST       = "https://api.spotinst.io";
+    private final static String SPOTINST_API_HOST       = "http://localhost:3100";
     private final static String HEADER_AUTH             = "Authorization";
     private final static String AUTH_PREFIX             = "Bearer ";
     private final static String HEADER_CONTENT_TYPE     = "Content-Type";
@@ -318,6 +318,7 @@ public class SpotinstApi {
     //endregion
 
     //Redis
+    //TODO Liron - change name to getLock
     public static <T> T getRedisValue(String groupId, String accountId) throws ApiException {
         T retVal      = null;
 
@@ -337,7 +338,8 @@ public class SpotinstApi {
         return retVal;
     }
 
-    public static String setRedisKey(String groupId, String accountId, String controllerIdentifier, Integer ttl) throws ApiException {
+    //TODO Liron - change method name lock
+    public static String setRedisKey(String lockKey, String accountId, String lockValue, Integer ttl) throws ApiException {
         String retVal      = null;
 
         Map<String, String>    headers     = buildHeaders();
@@ -345,8 +347,8 @@ public class SpotinstApi {
         Map<String, String>    queryParams = buildQueryParams(accountId);
 
         RedisSetKeyRequest request = new RedisSetKeyRequest();
-        request.setGroupId(groupId);
-        request.setControllerIdentifier(controllerIdentifier);
+        request.setGroupId(lockKey);
+        request.setControllerIdentifier(lockValue);
         request.setTtl(ttl);
 
         String body = JsonMapper.toJson(request);
@@ -363,6 +365,7 @@ public class SpotinstApi {
         return retVal;
     }
 
+    //TODO Liron - change name to unlock
     public static Integer deleteRedisKey(String groupId, String accountId) throws ApiException {
         Integer retVal      = null;
 

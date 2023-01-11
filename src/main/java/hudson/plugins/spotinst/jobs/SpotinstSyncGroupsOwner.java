@@ -25,7 +25,7 @@ public class SpotinstSyncGroupsOwner extends AsyncPeriodicWork {
 
     //region Members
     private static final Logger LOGGER = LoggerFactory.getLogger(SpotinstSyncGroupsOwner.class);
-    public static final Integer JOB_INTERVAL_IN_SECONDS = 60;
+    public static final Integer JOB_INTERVAL_IN_SECONDS = SpotinstContext.getInstance().getRedisTimeToLeave() / 3;
     final long recurrencePeriod;
     //endregion
 

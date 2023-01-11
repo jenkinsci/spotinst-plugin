@@ -24,8 +24,8 @@ public class SpotinstContext {
     private List<String> groupsDoesNotManageByController;
     private PassiveExpiringMap<String, String> candidateGroupsForControllerOwnership;
     private Map<BaseSpotinstCloud, SpotinstCloudCommunicationState> cloudsInitializationState;
+    private static final Integer SUSPENDED_GROUP_FETCHING_TIME_TO_LIVE_IN_MILLIS = generateSuspendedGroupFetchingTime();
 
-    private static final Integer SUSPENDED_GROUP_FETCHING_TIME_TO_LIVE_IN_MILLIS = 1000 * 60 * 4;
     //endregion
 
     public static SpotinstContext getInstance() {
@@ -33,6 +33,15 @@ public class SpotinstContext {
             instance = new SpotinstContext();
         }
         return instance;
+    }
+
+    private static Integer generateSuspendedGroupFetchingTime() {
+        Integer retVal;
+
+        Integer redisTimeToLeaveInSeconds = getRedisTimeToLeave();
+        retVal =  1000 * redisTimeToLeaveInSeconds + 1;
+
+        return retVal;
     }
 
     //region Public Methods
@@ -97,6 +106,9 @@ public class SpotinstContext {
         return cloudsInitializationState;
     }
 
+    public static Integer getRedisTimeToLeave() {
+        return 60 * 3;
+    }
     //endregion
 
 }
