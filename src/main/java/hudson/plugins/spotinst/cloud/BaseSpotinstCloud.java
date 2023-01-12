@@ -35,9 +35,9 @@ public abstract class BaseSpotinstCloud extends Cloud {
     //region Members
     private static final Logger LOGGER = LoggerFactory.getLogger(BaseSpotinstCloud.class);
 
-    protected static final int                               NO_OVERRIDED_NUM_OF_EXECUTORS = -1;
+    protected static final int                               NO_OVERRIDED_NUM_OF_EXECUTORS       = -1;
     private static final   Integer                           REDIS_ENTRY_TIME_TO_LIVE_IN_SECONDS = 60 * 3;
-    public static final    String                            REDIS_OK_STATUS = "OK";
+    public static final    String                            REDIS_OK_STATUS                     = "OK";
     protected              String                            accountId;
     protected              String                            groupId;
     protected              Map<String, PendingInstance>      pendingInstances;
@@ -145,8 +145,10 @@ public abstract class BaseSpotinstCloud extends Cloud {
 
                         try {
                             Jenkins.getInstance().addNode(slave);
-                        } catch (IOException e) {
-                            LOGGER.error(String.format("Failed to create node for slave: %s", slave.getInstanceId()), e);
+                        }
+                        catch (IOException e) {
+                            LOGGER.error(String.format("Failed to create node for slave: %s", slave.getInstanceId()),
+                                         e);
                         }
                     }
                 }
@@ -364,10 +366,10 @@ public abstract class BaseSpotinstCloud extends Cloud {
         return retVal;
     }
 
-    public boolean isCloudReadyForGroupCommunication(String groupId){
+    public boolean isCloudReadyForGroupCommunication(String groupId) {
         boolean retVal = false;
 
-        if(StringUtils.isNotEmpty(groupId)) {
+        if (StringUtils.isNotEmpty(groupId)) {
             SpotinstCloudCommunicationState state = getCloudInitializationResultByGroupId(groupId);
 
             if (state != null) {
@@ -468,16 +470,17 @@ public abstract class BaseSpotinstCloud extends Cloud {
     }
 
     private void addGroupToRedis(String groupId, String accountId, String controllerIdentifier) {
-        IRedisRepo redisRepo = RepoManager.getInstance().getRedisRepo();
-        ApiResponse<String> redisSetKeyResponse = redisRepo.setKey(groupId, accountId, controllerIdentifier,REDIS_ENTRY_TIME_TO_LIVE_IN_SECONDS);
+        IRedisRepo          redisRepo           = RepoManager.getInstance().getRedisRepo();
+        ApiResponse<String> redisSetKeyResponse =
+                redisRepo.setKey(groupId, accountId, controllerIdentifier, REDIS_ENTRY_TIME_TO_LIVE_IN_SECONDS);
 
         if (redisSetKeyResponse.isRequestSucceed()) {
             String redisResponseSetKeyValue = redisSetKeyResponse.getValue();
 
-            if(redisResponseSetKeyValue.equals(REDIS_OK_STATUS)){
+            if (redisResponseSetKeyValue.equals(REDIS_OK_STATUS)) {
                 LOGGER.info(String.format("Successfully added group %s to redis memory", groupId));
             }
-            else{
+            else {
                 LOGGER.error(String.format("Failed adding group %s to redis memory", groupId));
             }
         }
@@ -489,8 +492,10 @@ public abstract class BaseSpotinstCloud extends Cloud {
     private SpotinstCloudCommunicationState getCloudInitializationResultByGroupId(String groupId) {
         SpotinstCloudCommunicationState state = null;
 
-        for (Map.Entry<BaseSpotinstCloud, SpotinstCloudCommunicationState> cloudsInitializationStateEntry : SpotinstContext.getInstance().getCloudsInitializationState().entrySet()) {
-            if(cloudsInitializationStateEntry.getKey().getGroupId().equals(groupId)){
+        for (Map.Entry<BaseSpotinstCloud, SpotinstCloudCommunicationState> cloudsInitializationStateEntry : SpotinstContext.getInstance()
+                                                                                                                           .getCloudsInitializationState()
+                                                                                                                           .entrySet()) {
+            if (cloudsInitializationStateEntry.getKey().getGroupId().equals(groupId)) {
                 state = cloudsInitializationStateEntry.getValue();
             }
         }
@@ -657,10 +662,10 @@ public abstract class BaseSpotinstCloud extends Cloud {
             retVal = 1;
         }
         else {
-            int overridedNumOfExecutors = getOverridedNumberOfExecutors(instanceType);
+            int     overridedNumOfExecutors   = getOverridedNumberOfExecutors(instanceType);
             boolean isNumOfExecutorsOverrided = overridedNumOfExecutors != NO_OVERRIDED_NUM_OF_EXECUTORS;
 
-            if(isNumOfExecutorsOverrided){
+            if (isNumOfExecutorsOverrided) {
                 retVal = overridedNumOfExecutors;
             }
             else {
@@ -708,64 +713,81 @@ public abstract class BaseSpotinstCloud extends Cloud {
     }
 
     public void handleGroupDosNotManageByThisController(String groupId) {
-        boolean isGroupExistInCandidateGroupsForControllerOwnership = SpotinstContext.getInstance().getCandidateGroupsForControllerOwnership().containsKey(groupId);
+        boolean isGroupExistInCandidateGroupsForControllerOwnership =
+                SpotinstContext.getInstance().getCandidateGroupsForControllerOwnership().containsKey(groupId);
 
-        if(isGroupExistInCandidateGroupsForControllerOwnership){
-            SpotinstContext.getInstance().getCloudsInitializationState().put(this, SpotinstCloudCommunicationState.SPOTINST_CLOUD_COMMUNICATION_INITIALIZING);
+        if (isGroupExistInCandidateGroupsForControllerOwnership) {
+            SpotinstContext.getInstance().getCloudsInitializationState()
+                           .put(this, SpotinstCloudCommunicationState.SPOTINST_CLOUD_COMMUNICATION_INITIALIZING);
         }
-        else{
-            SpotinstContext.getInstance().getCloudsInitializationState().put(this, SpotinstCloudCommunicationState.SPOTINST_CLOUD_COMMUNICATION_FAILED);
+        else {
+            SpotinstContext.getInstance().getCloudsInitializationState()
+                           .put(this, SpotinstCloudCommunicationState.SPOTINST_CLOUD_COMMUNICATION_FAILED);
         }
     }
 
     public void syncGroupsOwner(BaseSpotinstCloud cloud) {
-        String groupId = cloud.getGroupId();
+        String groupId   = cloud.getGroupId();
         String accountId = cloud.getAccountId();
         LOGGER.info(String.format("try fetching controller identifier for group %s from redis", groupId));
 
-            IRedisRepo redisRepo = RepoManager.getInstance().getRedisRepo();
-            ApiResponse<Object> redisGetValueResponse = redisRepo.getValue(groupId, accountId);
-            String controllerIdentifier = SpotinstContext.getInstance().getControllerIdentifier();
+        IRedisRepo          redisRepo             = RepoManager.getInstance().getRedisRepo();
+        ApiResponse<Object> redisGetValueResponse = redisRepo.getValue(groupId, accountId);
+        String              controllerIdentifier  = SpotinstContext.getInstance().getControllerIdentifier();
 
-            if (redisGetValueResponse.isRequestSucceed()) {
-                //redis response might return in different types
-                if (redisGetValueResponse.getValue() instanceof String) {
-                    String redisResponseValue = (String) redisGetValueResponse.getValue();
+        if (redisGetValueResponse.isRequestSucceed()) {
+            //redis response might return in different types
+            if (redisGetValueResponse.getValue() instanceof String) {
+                String redisResponseValue = (String) redisGetValueResponse.getValue();
 
-                    if (redisResponseValue != null) {
-                        boolean isGroupBelongToController = redisResponseValue.equals(controllerIdentifier);
+                if (redisResponseValue != null) {
+                    boolean isGroupBelongToController = redisResponseValue.equals(controllerIdentifier);
 
-                        if (isGroupBelongToController) {
-;                           handleGroupManagedByThisController(cloud, controllerIdentifier);
-                        }
-                        else {
-                            LOGGER.info(String.format("group %s does not belong to controller with identifier %s", groupId, controllerIdentifier));
-                            SpotinstContext.getInstance().getCandidateGroupsForControllerOwnership().put(groupId, accountId);
-                            SpotinstContext.getInstance().getCloudsInitializationState().replace(cloud, SpotinstCloudCommunicationState.SPOTINST_CLOUD_COMMUNICATION_INITIALIZING);
-                        }
+                    if (isGroupBelongToController) {
+                        ;
+                        handleGroupManagedByThisController(cloud, controllerIdentifier);
                     }
                     else {
-                        LOGGER.warn("redis response value return null");
+                        LOGGER.info(String.format("group %s does not belong to controller with identifier %s", groupId,
+                                                  controllerIdentifier));
+                        boolean isContainsCandidates =
+                                SpotinstContext.getInstance().getCandidateGroupsForControllerOwnership()
+                                               .containsKey(groupId);
+
+                        if (isContainsCandidates == false) {
+                            SpotinstContext.getInstance().getCandidateGroupsForControllerOwnership()
+                                           .put(groupId, accountId);
+                            SpotinstContext.getInstance().getCloudsInitializationState().replace(cloud,
+                                                                                                 SpotinstCloudCommunicationState.SPOTINST_CLOUD_COMMUNICATION_INITIALIZING);
+                        }
                     }
                 }
-                //there is no controller for the given group in redis, should take ownership
                 else {
-                    handleGroupManagedByThisController(cloud, controllerIdentifier);
+                    LOGGER.warn("redis response value return null");
                 }
             }
+            //there is no controller for the given group in redis, should take ownership
+            else {
+                handleGroupManagedByThisController(cloud, controllerIdentifier);
+            }
+        }
     }
 
     private void handleGroupManagedByThisController(BaseSpotinstCloud cloud, String controllerIdentifier) {
-        LOGGER.info(String.format("group %s belong to controller with identifier %s", cloud.getGroupId(), controllerIdentifier));
-        SpotinstCloudCommunicationState previousCloudState = SpotinstContext.getInstance().getCloudsInitializationState().get(cloud);
+        LOGGER.info(String.format("group %s belong to controller with identifier %s", cloud.getGroupId(),
+                                  controllerIdentifier));
+        SpotinstCloudCommunicationState previousCloudState =
+                SpotinstContext.getInstance().getCloudsInitializationState().get(cloud);
 
-        if(previousCloudState != null){
-            if(previousCloudState.equals(SpotinstCloudCommunicationState.SPOTINST_CLOUD_COMMUNICATION_READY) == false){
+        if (previousCloudState != null) {
+            if (previousCloudState.equals(SpotinstCloudCommunicationState.SPOTINST_CLOUD_COMMUNICATION_READY) ==
+                false) {
                 SpotinstContext.getInstance().getCloudsInitializationState().remove(cloud);
             }
         }
 
-        SpotinstContext.getInstance().getCloudsInitializationState().put(this, SpotinstCloudCommunicationState.SPOTINST_CLOUD_COMMUNICATION_READY);
+        SpotinstContext.getInstance().getCloudsInitializationState()
+                       .put(this, SpotinstCloudCommunicationState.SPOTINST_CLOUD_COMMUNICATION_READY);
         //expand TTL of the current controller in redis
         addGroupToRedis(cloud.getGroupId(), cloud.getAccountId(), controllerIdentifier);
     }
@@ -899,7 +921,8 @@ public abstract class BaseSpotinstCloud extends Cloud {
 
         // if enabled, enable and override GlobalExecutorOverride to 1
         // better clarity to user, avoid race conditions
-        boolean shouldDisableGlobalExecutors = isSingleTaskNodesEnabled != null && isSingleTaskNodesEnabled && this.globalExecutorOverride != null;
+        boolean shouldDisableGlobalExecutors =
+                isSingleTaskNodesEnabled != null && isSingleTaskNodesEnabled && this.globalExecutorOverride != null;
         if (shouldDisableGlobalExecutors) {
             this.globalExecutorOverride.setIsEnabled(false);
         }
