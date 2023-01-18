@@ -47,6 +47,6 @@ public class SpotinstRestartListener extends RestartListener {
         }
 
         LOGGER.info(String.format("deallocating %s Spotinst clouds", cloudSet.size()));
-        groupsOwnerJob.deallocateGroupsNoLongerInUse(cloudSet);
+        groupsOwnerJob.deallocateCloudsNoLongerInUse(cloudSet);//TODO: execute instead?
     }
 }

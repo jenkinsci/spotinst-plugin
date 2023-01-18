@@ -18,6 +18,7 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.*;
 
@@ -32,7 +33,7 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
     private static final String                                 CLOUD_URL = "aws/ec2";
     protected            Map<String, Integer>                   executorsByInstanceType;
     private              List<? extends SpotinstInstanceWeight> executorsForTypes;
-    private List<String>                                        invalidInstanceTypes;
+    private              List<String>                           invalidInstanceTypes;
     //endregion
 
     //region Constructor
@@ -117,37 +118,31 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
     }
 
     @Override
-    public void syncGroupInstances() {
-        boolean isGroupManagedByThisController = isCloudReadyForGroupCommunication(groupId);
+    protected void handleSyncGroupInstances() {
+        IAwsGroupRepo                       awsGroupRepo      = RepoManager.getInstance().getAwsGroupRepo();
+        ApiResponse<List<AwsGroupInstance>> instancesResponse = awsGroupRepo.getGroupInstances(groupId, this.accountId);
 
-        if (isGroupManagedByThisController) {
-            IAwsGroupRepo awsGroupRepo = RepoManager.getInstance().getAwsGroupRepo();
-            ApiResponse<List<AwsGroupInstance>> instancesResponse = awsGroupRepo.getGroupInstances(groupId, this.accountId);
+        if (instancesResponse.isRequestSucceed()) {
+            List<AwsGroupInstance> instances = instancesResponse.getValue();
+            LOGGER.info(String.format("There are %s instances in group %s", instances.size(), groupId));
 
-            if (instancesResponse.isRequestSucceed()) {
-                List<AwsGroupInstance> instances = instancesResponse.getValue();
-                LOGGER.info(String.format("There are %s instances in group %s", instances.size(), groupId));
+            Map<String, SlaveInstanceDetails> slaveInstancesDetailsByInstanceId = new HashMap<>();
 
-                Map<String, SlaveInstanceDetails> slaveInstancesDetailsByInstanceId = new HashMap<>();
-
-                for (AwsGroupInstance instance : instances) {
-                    SlaveInstanceDetails instanceDetails = SlaveInstanceDetails.build(instance);
-                    slaveInstancesDetailsByInstanceId.put(instanceDetails.getInstanceId(), instanceDetails);
-                }
-
-                this.slaveInstancesDetailsByInstanceId = new HashMap<>(slaveInstancesDetailsByInstanceId);
-
-                addNewSlaveInstances(instances);
-                removeOldSlaveInstances(instances);
-
-
-            } else {
-                LOGGER.error(String.format("Failed to get group %s instances. Errors: %s", groupId,
-                        instancesResponse.getErrors()));
+            for (AwsGroupInstance instance : instances) {
+                SlaveInstanceDetails instanceDetails = SlaveInstanceDetails.build(instance);
+                slaveInstancesDetailsByInstanceId.put(instanceDetails.getInstanceId(), instanceDetails);
             }
+
+            this.slaveInstancesDetailsByInstanceId = new HashMap<>(slaveInstancesDetailsByInstanceId);
+
+            addNewSlaveInstances(instances);
+            removeOldSlaveInstances(instances);
+
+
         }
-        else{
-                handleGroupDosNotManageByThisController(groupId);
+        else {
+            LOGGER.error(String.format("Failed to get group %s instances. Errors: %s", groupId,
+                                       instancesResponse.getErrors()));
         }
     }
 
@@ -159,8 +154,9 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
         boolean isGroupManagedByThisController = isCloudReadyForGroupCommunication(groupId);
 
         if (isGroupManagedByThisController) {
-            IAwsGroupRepo awsGroupRepo = RepoManager.getInstance().getAwsGroupRepo();
-            ApiResponse<List<AwsGroupInstance>> instancesResponse = awsGroupRepo.getGroupInstances(groupId, this.accountId);
+            IAwsGroupRepo                       awsGroupRepo      = RepoManager.getInstance().getAwsGroupRepo();
+            ApiResponse<List<AwsGroupInstance>> instancesResponse =
+                    awsGroupRepo.getGroupInstances(groupId, this.accountId);
 
             if (instancesResponse.isRequestSucceed()) {
                 List<AwsGroupInstance> instances = instancesResponse.getValue();
@@ -168,17 +164,19 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
                 for (AwsGroupInstance instance : instances) {
                     if (this.getShouldUsePrivateIp()) {
                         retVal.put(instance.getInstanceId(), instance.getPrivateIp());
-                    } else {
+                    }
+                    else {
                         retVal.put(instance.getInstanceId(), instance.getPublicIp());
                     }
                 }
-            } else {
+            }
+            else {
                 LOGGER.error(String.format("Failed to get group %s instances. Errors: %s", groupId,
-                        instancesResponse.getErrors()));
+                                           instancesResponse.getErrors()));
             }
         }
-        else{
-            handleGroupDosNotManageByThisController(groupId);
+        else {
+            handleGroupDoesNotManageByThisController(accountId, groupId);
         }
 
         return retVal;
@@ -392,7 +390,7 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
                     String  type      = instance.getAwsInstanceTypeFromAPIInput();
                     this.executorsByInstanceType.put(type, executors);
 
-                    if(instance.getIsValid() == false){
+                    if (instance.getIsValid() == false) {
                         LOGGER.error(String.format("Invalid type \'%s\' in group \'%s\'", type, this.getGroupId()));
                         invalidInstanceTypes.add(type);
                     }
@@ -416,6 +414,7 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
     @Extension
     public static class DescriptorImpl extends BaseSpotinstCloud.DescriptorImpl {
 
+        @Nonnull
         @Override
         public String getDisplayName() {
             return "Spot AWS Elastigroup";

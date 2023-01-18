@@ -1,9 +1,7 @@
 package hudson.plugins.spotinst.common;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import hudson.plugins.spotinst.cloud.BaseSpotinstCloud;
 import hudson.plugins.spotinst.model.aws.AwsInstanceType;
-import org.apache.commons.collections4.map.PassiveExpiringMap;
 import org.apache.commons.lang.RandomStringUtils;
 
 import java.util.*;
@@ -20,12 +18,9 @@ public class SpotinstContext {
     private List<AwsInstanceType> awsInstanceTypes;
     private Date awsInstanceTypesLastUpdate;
     private String controllerIdentifier;
-    private Map<String,String> groupsManageByController;
-    private List<String> groupsDoesNotManageByController;
-    private PassiveExpiringMap<String, String> candidateGroupsForControllerOwnership;
-    private Map<BaseSpotinstCloud, SpotinstCloudCommunicationState> cloudsInitializationState;
-    private static final Integer SUSPENDED_GROUP_FETCHING_TIME_TO_LIVE_IN_MILLIS = generateSuspendedGroupFetchingTime();
-
+    private Map<String, GroupStateTracker> connectionStateByGroupId;
+//    private PassiveExpiringMap<String, String> candidateGroupsForControllerOwnership;
+//    private Map<BaseSpotinstCloud, SpotinstCloudCommunicationState> cloudsInitializationState;
     //endregion
 
     public static SpotinstContext getInstance() {
@@ -33,15 +28,6 @@ public class SpotinstContext {
             instance = new SpotinstContext();
         }
         return instance;
-    }
-
-    private static Integer generateSuspendedGroupFetchingTime() {
-        Integer retVal;
-
-        Integer redisTimeToLeaveInSeconds = getRedisTimeToLeave();
-        retVal =  1000 * redisTimeToLeaveInSeconds + 1;
-
-        return retVal;
     }
 
     //region Public Methods
@@ -90,24 +76,28 @@ public class SpotinstContext {
         return controllerIdentifier;
     }
 
-    public  PassiveExpiringMap<String,String> getCandidateGroupsForControllerOwnership() {
-        if (candidateGroupsForControllerOwnership == null) {
-            candidateGroupsForControllerOwnership = new PassiveExpiringMap<>(SUSPENDED_GROUP_FETCHING_TIME_TO_LIVE_IN_MILLIS);
+//    public  PassiveExpiringMap<String,String> getCandidateGroupsForControllerOwnership() {
+//        if (candidateGroupsForControllerOwnership == null) {
+//            candidateGroupsForControllerOwnership = new PassiveExpiringMap<>(SUSPENDED_GROUP_FETCHING_TIME_TO_LIVE_IN_MILLIS);
+//        }
+//
+//        return candidateGroupsForControllerOwnership;
+//    }
+//
+//    public Map<BaseSpotinstCloud, SpotinstCloudCommunicationState> getCloudsInitializationState() {
+//        if (cloudsInitializationState == null) {
+//            cloudsInitializationState = new HashMap<>();
+//        }
+//
+//        return cloudsInitializationState;
+//    }
+
+    public Map<String, GroupStateTracker> getConnectionStateByGroupId() {
+        if(connectionStateByGroupId == null){
+            connectionStateByGroupId = new HashMap<>();
         }
 
-        return candidateGroupsForControllerOwnership;
-    }
-
-    public Map<BaseSpotinstCloud, SpotinstCloudCommunicationState> getCloudsInitializationState() {
-        if (cloudsInitializationState == null) {
-            cloudsInitializationState = new HashMap<>();
-        }
-
-        return cloudsInitializationState;
-    }
-
-    public static Integer getRedisTimeToLeave() {
-        return 60 * 3;
+        return connectionStateByGroupId;
     }
     //endregion
 

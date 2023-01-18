@@ -8,7 +8,7 @@ import java.util.concurrent.TimeUnit;
  * Created by ohadmuchnik on 21/03/2017.
  */
 public class TimeUtils {
-    public static Boolean isTimePassed(Date from, Integer minutes) {
+    public static Boolean isTimePassedInMinutes(Date from, Integer minutes) {
         Boolean  retVal   = false;
         Date     now      = new Date();
         Calendar calendar = Calendar.getInstance();

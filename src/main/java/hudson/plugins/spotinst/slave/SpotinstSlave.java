@@ -10,6 +10,7 @@ import org.kohsuke.stapler.StaplerRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.Date;
 import java.util.List;
@@ -174,6 +175,7 @@ public class SpotinstSlave extends Slave implements EphemeralNode {
     //region Public Methods
     public void terminate() {
         String groupId = getSpotinstCloud().getGroupId();
+        String accountId = getSpotinstCloud().getAccountId();
         boolean isGroupManagedByThisController = getSpotinstCloud().isCloudReadyForGroupCommunication(groupId);
 
         if (isGroupManagedByThisController) {
@@ -193,7 +195,7 @@ public class SpotinstSlave extends Slave implements EphemeralNode {
         }
         else{
             try {
-                getSpotinstCloud().handleGroupDosNotManageByThisController(groupId);
+                getSpotinstCloud().handleGroupDoesNotManageByThisController(accountId, groupId);
             }catch (Exception e){
                 LOGGER.warn(e.getMessage());
             }        }
@@ -203,6 +205,7 @@ public class SpotinstSlave extends Slave implements EphemeralNode {
         Boolean retVal = false;
 
         String groupId = getSpotinstCloud().getGroupId();
+        String accountId = getSpotinstCloud().getAccountId();
         boolean isGroupManagedByThisController = getSpotinstCloud().isCloudReadyForGroupCommunication(groupId);
 
         if (isGroupManagedByThisController) {
@@ -224,7 +227,7 @@ public class SpotinstSlave extends Slave implements EphemeralNode {
             retVal = isTerminated;
         }
         else{
-            getSpotinstCloud().handleGroupDosNotManageByThisController(groupId);
+            getSpotinstCloud().handleGroupDoesNotManageByThisController(accountId, groupId);
         }
 
         return retVal;
@@ -254,6 +257,7 @@ public class SpotinstSlave extends Slave implements EphemeralNode {
     @Extension
     public static class DescriptorImpl extends SlaveDescriptor {
 
+        @Nonnull
         @Override
         public String getDisplayName() {
             return "Spot Node";

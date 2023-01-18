@@ -5,6 +5,7 @@ import hudson.model.*;
 import hudson.model.labels.LabelAtom;
 import hudson.plugins.spotinst.api.infra.ApiResponse;
 import hudson.plugins.spotinst.api.infra.JsonMapper;
+import hudson.plugins.spotinst.cloud.helpers.TimeHelper;
 import hudson.plugins.spotinst.common.*;
 import hudson.plugins.spotinst.repos.IRedisRepo;
 import hudson.plugins.spotinst.repos.RepoManager;
@@ -26,6 +27,9 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+
+import static hudson.plugins.spotinst.common.SpotinstCloudCommunicationState.SPOTINST_CLOUD_COMMUNICATION_INITIALIZING;
+import static hudson.plugins.spotinst.common.SpotinstCloudCommunicationState.SPOTINST_CLOUD_COMMUNICATION_READY;
 
 /**
  * Created by ohadmuchnik on 25/05/2016.
@@ -158,7 +162,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
             }
         }
         else {
-            handleGroupDosNotManageByThisController(groupId);
+            handleGroupDoesNotManageByThisController(accountId, groupId);
         }
 
         return Collections.emptyList();
@@ -216,7 +220,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
 
                     Integer pendingThreshold = getPendingThreshold();
                     Boolean isPendingOverThreshold =
-                            TimeUtils.isTimePassed(pendingInstance.getCreatedAt(), pendingThreshold);
+                            TimeUtils.isTimePassedInMinutes(pendingInstance.getCreatedAt(), pendingThreshold);
 
                     if (isPendingOverThreshold) {
                         LOGGER.info(String.format(
@@ -347,7 +351,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
 
 
             Date    slaveCreatedAt         = slave.getCreatedAt();
-            Boolean isOverOfflineThreshold = TimeUtils.isTimePassed(slaveCreatedAt, offlineThreshold);
+            Boolean isOverOfflineThreshold = TimeUtils.isTimePassedInMinutes(slaveCreatedAt, offlineThreshold);
 
             if (isSlaveOffline && isSlaveConnecting == false && isOverOfflineThreshold && temporarilyOffline == false &&
                 isOverIdleThreshold) {
@@ -366,14 +370,31 @@ public abstract class BaseSpotinstCloud extends Cloud {
         return retVal;
     }
 
+    //    public boolean isCloudReadyForGroupCommunication(String groupId) {
+    //        boolean retVal = false;
+    //
+    //        if (StringUtils.isNotEmpty(groupId)) {
+    //            SpotinstCloudCommunicationState state = getCloudInitializationResultByGroupId(groupId);
+    //
+    //            if (state != null) {
+    //                if (state.equals(SpotinstCloudCommunicationState.SPOTINST_CLOUD_COMMUNICATION_READY)) {
+    //                    retVal = true;
+    //                }
+    //            }
+    //        }
+    //
+    //        return retVal;
+    //    }
+
     public boolean isCloudReadyForGroupCommunication(String groupId) {
         boolean retVal = false;
 
         if (StringUtils.isNotEmpty(groupId)) {
-            SpotinstCloudCommunicationState state = getCloudInitializationResultByGroupId(groupId);
+            GroupStateTracker stateDetails = SpotinstContext.getInstance().getConnectionStateByGroupId().get(groupId);
 
-            if (state != null) {
-                if (state.equals(SpotinstCloudCommunicationState.SPOTINST_CLOUD_COMMUNICATION_READY)) {
+            if (stateDetails != null && stateDetails.getState() != null) {
+                if (stateDetails.getState()
+                                .equals(SpotinstCloudCommunicationState.SPOTINST_CLOUD_COMMUNICATION_READY)) {
                     retVal = true;
                 }
             }
@@ -387,8 +408,8 @@ public abstract class BaseSpotinstCloud extends Cloud {
     private synchronized List<SpotinstSlave> provisionSlaves(ProvisionRequest request) {
         LOGGER.info(String.format("Scale up group: %s with %s workload units", groupId, request.getExecutors()));
 
-        List<SpotinstSlave> slaves = scaleUp(request);
-        return slaves;
+        List<SpotinstSlave> retVal = scaleUp(request);
+        return retVal;
     }
 
     private void setNumOfNeededExecutors(ProvisionRequest request) {
@@ -470,7 +491,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
     }
 
     private void addGroupToRedis(String groupId, String accountId, String controllerIdentifier) {
-        IRedisRepo          redisRepo           = RepoManager.getInstance().getRedisRepo();
+        IRedisRepo redisRepo = RepoManager.getInstance().getRedisRepo();
         ApiResponse<String> redisSetKeyResponse =
                 redisRepo.setKey(groupId, accountId, controllerIdentifier, REDIS_ENTRY_TIME_TO_LIVE_IN_SECONDS);
 
@@ -489,19 +510,19 @@ public abstract class BaseSpotinstCloud extends Cloud {
         }
     }
 
-    private SpotinstCloudCommunicationState getCloudInitializationResultByGroupId(String groupId) {
-        SpotinstCloudCommunicationState state = null;
-
-        for (Map.Entry<BaseSpotinstCloud, SpotinstCloudCommunicationState> cloudsInitializationStateEntry : SpotinstContext.getInstance()
-                                                                                                                           .getCloudsInitializationState()
-                                                                                                                           .entrySet()) {
-            if (cloudsInitializationStateEntry.getKey().getGroupId().equals(groupId)) {
-                state = cloudsInitializationStateEntry.getValue();
-            }
-        }
-
-        return state;
-    }
+    //    private SpotinstCloudCommunicationState getCloudInitializationResultByGroupId(String groupId) {
+    //        SpotinstCloudCommunicationState state = null;
+    //
+    //        for (Map.Entry<BaseSpotinstCloud, SpotinstCloudCommunicationState> cloudsInitializationStateEntry : SpotinstContext.getInstance()
+    //                                                                                                                           .getCloudsInitializationState()
+    //                                                                                                                           .entrySet()) {
+    //            if (cloudsInitializationStateEntry.getKey().getGroupId().equals(groupId)) {
+    //                state = cloudsInitializationStateEntry.getValue();
+    //            }
+    //        }
+    //
+    //        return state;
+    //    }
     //endregion
 
     //region Protected Methods
@@ -712,19 +733,101 @@ public abstract class BaseSpotinstCloud extends Cloud {
         return Constants.SLAVE_OFFLINE_THRESHOLD_IN_MINUTES;
     }
 
-    public void handleGroupDosNotManageByThisController(String groupId) {
-        boolean isGroupExistInCandidateGroupsForControllerOwnership =
-                SpotinstContext.getInstance().getCandidateGroupsForControllerOwnership().containsKey(groupId);
+    //    public void handleGroupDosNotManageByThisController(String groupId) {
+    //        boolean isGroupExistInCandidateGroupsForControllerOwnership =
+    //                SpotinstContext.getInstance().getCandidateGroupsForControllerOwnership().containsKey(groupId);
+    //
+    //        if (isGroupExistInCandidateGroupsForControllerOwnership) {
+    //            Boolean hasValidState = SpotinstContext.getInstance().getCloudsInitializationState().containsKey(this);
+    //
+    //            if (hasValidState == false) {
+    //                SpotinstContext.getInstance().getCloudsInitializationState()
+    //                               .put(this, SPOTINST_CLOUD_COMMUNICATION_INITIALIZING);
+    //            }
+    //        }
+    //        else {
+    //            SpotinstContext.getInstance().getCloudsInitializationState()
+    //                           .put(this, SpotinstCloudCommunicationState.SPOTINST_CLOUD_COMMUNICATION_FAILED);
+    //        }
+    //    }
 
-        if (isGroupExistInCandidateGroupsForControllerOwnership) {
-            SpotinstContext.getInstance().getCloudsInitializationState()
-                           .put(this, SpotinstCloudCommunicationState.SPOTINST_CLOUD_COMMUNICATION_INITIALIZING);
+    public void handleGroupDoesNotManageByThisController(String accountId, String groupId) {
+        GroupStateTracker groupStateDetails = SpotinstContext.getInstance().getConnectionStateByGroupId().get(groupId);
+
+        if (groupStateDetails == null || groupStateDetails.getState().equals(SPOTINST_CLOUD_COMMUNICATION_READY)) {
+            if (groupStateDetails == null) {
+                groupStateDetails = new GroupStateTracker();
+            }
+
+            groupStateDetails.setGroupId(groupId);
+            groupStateDetails.setAccountId(accountId);
+            groupStateDetails.setState(SPOTINST_CLOUD_COMMUNICATION_INITIALIZING);
+            Date now = new Date();
+            groupStateDetails.setTimeStamp(now);
+
+            SpotinstContext.getInstance().getConnectionStateByGroupId().put(groupId, groupStateDetails);
         }
-        else {
-            SpotinstContext.getInstance().getCloudsInitializationState()
-                           .put(this, SpotinstCloudCommunicationState.SPOTINST_CLOUD_COMMUNICATION_FAILED);
+        else if (groupStateDetails.getState().equals(SPOTINST_CLOUD_COMMUNICATION_INITIALIZING)) {
+            Date    timeStamp  = groupStateDetails.getTimeStamp();
+            boolean shouldFail = TimeHelper.isTimePassedInSeconds(timeStamp);
+
+            if (shouldFail) {
+                groupStateDetails.setState(SpotinstCloudCommunicationState.SPOTINST_CLOUD_COMMUNICATION_FAILED);
+                SpotinstContext.getInstance().getConnectionStateByGroupId().put(groupId, groupStateDetails);
+            }
         }
     }
+
+    //    public void syncGroupsOwner(BaseSpotinstCloud cloud) {
+    //        String groupId   = cloud.getGroupId();
+    //        String accountId = cloud.getAccountId();
+    //        LOGGER.info(String.format("try fetching controller identifier for group %s from redis", groupId));
+    //
+    //        IRedisRepo          redisRepo             = RepoManager.getInstance().getRedisRepo();
+    //        ApiResponse<Object> redisGetValueResponse = redisRepo.getValue(groupId, accountId);
+    //        String              controllerIdentifier  = SpotinstContext.getInstance().getControllerIdentifier();
+    //
+    //        if (redisGetValueResponse.isRequestSucceed()) {
+    //            //redis response might return in different types
+    //            if (redisGetValueResponse.getValue() instanceof String) {
+    //                String redisResponseValue = (String) redisGetValueResponse.getValue();
+    //
+    //                if (redisResponseValue != null) {
+    //                    boolean isGroupBelongToController = redisResponseValue.equals(controllerIdentifier);
+    //
+    //                    if (isGroupBelongToController) {
+    //                        handleGroupManagedByThisController(cloud, controllerIdentifier);
+    //                    }
+    //                    else {
+    //                        LOGGER.info(String.format("group %s does not belong to controller with identifier %s", groupId,
+    //                                                  controllerIdentifier));
+    //                        boolean isContainsCandidates =
+    //                                SpotinstContext.getInstance().getCandidateGroupsForControllerOwnership()
+    //                                               .containsKey(groupId);
+    //
+    //                        if (isContainsCandidates == false) {
+    //                            SpotinstCloudCommunicationState cloudState =
+    //                                    SpotinstContext.getInstance().getCloudsInitializationState().get(cloud);
+    //
+    //                            if (cloudState == null) {
+    //                                SpotinstContext.getInstance().getCandidateGroupsForControllerOwnership()
+    //                                               .put(groupId, accountId);
+    //                                SpotinstContext.getInstance().getCloudsInitializationState()
+    //                                               .put(cloud, SPOTINST_CLOUD_COMMUNICATION_INITIALIZING);
+    //                            }
+    //                        }
+    //                    }
+    //                }
+    //                else {
+    //                    LOGGER.warn("redis response value return null");
+    //                }
+    //            }
+    //            //there is no controller for the given group in redis, should take ownership
+    //            else {
+    //                handleGroupManagedByThisController(cloud, controllerIdentifier);
+    //            }
+    //        }
+    //    }
 
     public void syncGroupsOwner(BaseSpotinstCloud cloud) {
         String groupId   = cloud.getGroupId();
@@ -744,50 +847,61 @@ public abstract class BaseSpotinstCloud extends Cloud {
                     boolean isGroupBelongToController = redisResponseValue.equals(controllerIdentifier);
 
                     if (isGroupBelongToController) {
-                        ;
                         handleGroupManagedByThisController(cloud, controllerIdentifier);
                     }
                     else {
                         LOGGER.info(String.format("group %s does not belong to controller with identifier %s", groupId,
                                                   controllerIdentifier));
-                        boolean isContainsCandidates =
-                                SpotinstContext.getInstance().getCandidateGroupsForControllerOwnership()
-                                               .containsKey(groupId);
+                        GroupStateTracker groupStateDetails =
+                                SpotinstContext.getInstance().getConnectionStateByGroupId().get(groupId);
 
-                        if (isContainsCandidates == false) {
-                            SpotinstContext.getInstance().getCandidateGroupsForControllerOwnership()
-                                           .put(groupId, accountId);
-                            SpotinstContext.getInstance().getCloudsInitializationState().replace(cloud,
-                                                                                                 SpotinstCloudCommunicationState.SPOTINST_CLOUD_COMMUNICATION_INITIALIZING);
+                        if (groupStateDetails == null) {
+                            groupStateDetails = new GroupStateTracker();
+                            groupStateDetails.setGroupId(groupId);
+                            groupStateDetails.setAccountId(accountId);
+                            groupStateDetails.setState(SPOTINST_CLOUD_COMMUNICATION_INITIALIZING);
+                            Date now = new Date();
+                            groupStateDetails.setTimeStamp(now);
+                            SpotinstContext.getInstance().getConnectionStateByGroupId().put(groupId, groupStateDetails);
                         }
                     }
                 }
-                else {
-                    LOGGER.warn("redis response value return null");
-                }
             }
-            //there is no controller for the given group in redis, should take ownership
             else {
-                handleGroupManagedByThisController(cloud, controllerIdentifier);
+                LOGGER.warn("redis response value return null");
             }
         }
+        //there is no controller for the given group in redis, should take ownership
+        else {
+            handleGroupManagedByThisController(cloud, controllerIdentifier);
+        }
     }
+
 
     private void handleGroupManagedByThisController(BaseSpotinstCloud cloud, String controllerIdentifier) {
         LOGGER.info(String.format("group %s belong to controller with identifier %s", cloud.getGroupId(),
                                   controllerIdentifier));
-        SpotinstCloudCommunicationState previousCloudState =
-                SpotinstContext.getInstance().getCloudsInitializationState().get(cloud);
+        GroupStateTracker cloudDetails =
+                SpotinstContext.getInstance().getConnectionStateByGroupId().get(cloud.getGroupId());
 
-        if (previousCloudState != null) {
-            if (previousCloudState.equals(SpotinstCloudCommunicationState.SPOTINST_CLOUD_COMMUNICATION_READY) ==
-                false) {
-                SpotinstContext.getInstance().getCloudsInitializationState().remove(cloud);
+        if (cloudDetails != null) {
+
+            SpotinstCloudCommunicationState cloudState = cloudDetails.getState();
+
+            if (cloudState != null && cloudState.equals(SPOTINST_CLOUD_COMMUNICATION_READY) == false) {
+                SpotinstContext.getInstance().getConnectionStateByGroupId().remove(cloud.getGroupId());
             }
         }
+        else {
+            cloudDetails = new GroupStateTracker();
+        }
 
-        SpotinstContext.getInstance().getCloudsInitializationState()
-                       .put(this, SpotinstCloudCommunicationState.SPOTINST_CLOUD_COMMUNICATION_READY);
+        cloudDetails.setGroupId(cloud.getGroupId());
+        cloudDetails.setAccountId(cloud.getAccountId());
+        cloudDetails.setState(SPOTINST_CLOUD_COMMUNICATION_READY);
+        Date now = new Date();
+        cloudDetails.setTimeStamp(now);
+        SpotinstContext.getInstance().getConnectionStateByGroupId().put(cloud.getGroupId(), cloudDetails);
         //expand TTL of the current controller in redis
         addGroupToRedis(cloud.getGroupId(), cloud.getAccountId(), controllerIdentifier);
     }
@@ -937,7 +1051,18 @@ public abstract class BaseSpotinstCloud extends Cloud {
 
     public abstract String getCloudUrl();
 
-    public abstract void syncGroupInstances();
+    public void syncGroupInstances(){
+        boolean isGroupManagedByThisController = isCloudReadyForGroupCommunication(groupId);
+
+        if (isGroupManagedByThisController) {
+            handleSyncGroupInstances();
+        }
+        else{
+            handleGroupDoesNotManageByThisController(accountId, groupId);
+        }
+    }
+
+    protected abstract void handleSyncGroupInstances();
 
     public abstract Map<String, String> getInstanceIpsById();
 
