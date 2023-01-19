@@ -137,8 +137,6 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
 
             addNewSlaveInstances(instances);
             removeOldSlaveInstances(instances);
-
-
         }
         else {
             LOGGER.error(String.format("Failed to get group %s instances. Errors: %s", groupId,
@@ -148,35 +146,26 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
 
 
     @Override
-    public Map<String, String> getInstanceIpsById() {
-        Map<String, String> retVal = new HashMap<>();
+    public Map<String, String> handleGetInstanceIpsById() {
+        Map<String, String> retVal       = new HashMap<>();
+        IAwsGroupRepo       awsGroupRepo = RepoManager.getInstance().getAwsGroupRepo();
+        ApiResponse<List<AwsGroupInstance>> instancesResponse = awsGroupRepo.getGroupInstances(groupId, accountId);
 
-        boolean isGroupManagedByThisController = isCloudReadyForGroupCommunication(groupId);
+        if (instancesResponse.isRequestSucceed()) {
+            List<AwsGroupInstance> instances = instancesResponse.getValue();
 
-        if (isGroupManagedByThisController) {
-            IAwsGroupRepo                       awsGroupRepo      = RepoManager.getInstance().getAwsGroupRepo();
-            ApiResponse<List<AwsGroupInstance>> instancesResponse =
-                    awsGroupRepo.getGroupInstances(groupId, this.accountId);
-
-            if (instancesResponse.isRequestSucceed()) {
-                List<AwsGroupInstance> instances = instancesResponse.getValue();
-
-                for (AwsGroupInstance instance : instances) {
-                    if (this.getShouldUsePrivateIp()) {
-                        retVal.put(instance.getInstanceId(), instance.getPrivateIp());
-                    }
-                    else {
-                        retVal.put(instance.getInstanceId(), instance.getPublicIp());
-                    }
+            for (AwsGroupInstance instance : instances) {
+                if (this.getShouldUsePrivateIp()) {
+                    retVal.put(instance.getInstanceId(), instance.getPrivateIp());
                 }
-            }
-            else {
-                LOGGER.error(String.format("Failed to get group %s instances. Errors: %s", groupId,
-                                           instancesResponse.getErrors()));
+                else {
+                    retVal.put(instance.getInstanceId(), instance.getPublicIp());
+                }
             }
         }
         else {
-            handleGroupDoesNotManageByThisController(accountId, groupId);
+            LOGGER.error(String.format("Failed to get group %s instances. Errors: %s", groupId,
+                                       instancesResponse.getErrors()));
         }
 
         return retVal;
@@ -218,7 +207,7 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
             LOGGER.info(String.format("We have a weight definition for this type of %s", retVal));
         }
         else {
-            retVal = NO_OVERRIDED_NUM_OF_EXECUTORS;
+            retVal = NO_OVERRIDDEN_NUM_OF_EXECUTORS;
         }
 
         return retVal;

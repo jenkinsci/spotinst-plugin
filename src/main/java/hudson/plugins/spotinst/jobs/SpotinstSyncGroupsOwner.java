@@ -8,7 +8,7 @@ import hudson.plugins.spotinst.cloud.BaseSpotinstCloud;
 import hudson.plugins.spotinst.cloud.helpers.TimeHelper;
 import hudson.plugins.spotinst.common.GroupStateTracker;
 import hudson.plugins.spotinst.common.SpotinstContext;
-import hudson.plugins.spotinst.repos.IRedisRepo;
+import hudson.plugins.spotinst.repos.ILockRepo;
 import hudson.plugins.spotinst.repos.RepoManager;
 import hudson.slaves.Cloud;
 import jenkins.model.Jenkins;
@@ -88,7 +88,7 @@ public class SpotinstSyncGroupsOwner extends AsyncPeriodicWork {
                         groupsNoLongerExist.remove(groupId);
 
                         if (StringUtils.isNotEmpty(groupId) && StringUtils.isNotEmpty(accountId)) {
-                            spotinstCloud.syncGroupsOwner(spotinstCloud);
+                            spotinstCloud.syncGroupsOwner();
                         }
                     }
                 }
@@ -105,7 +105,7 @@ public class SpotinstSyncGroupsOwner extends AsyncPeriodicWork {
     //            SpotinstContext.getInstance().getCloudsInitializationState().remove(cloud);
     //
     //            if (StringUtils.isNotEmpty(groupId) && StringUtils.isNotEmpty(accountId)) {
-    //                IRedisRepo           redisRepo             = RepoManager.getInstance().getRedisRepo();
+    //                ILockRepo           redisRepo             = RepoManager.getInstance().getRedisRepo();
     //                ApiResponse<Integer> redisGetValueResponse = redisRepo.deleteKey(groupId, accountId);
     //
     //                if (redisGetValueResponse.isRequestSucceed()) {
@@ -131,8 +131,8 @@ public class SpotinstSyncGroupsOwner extends AsyncPeriodicWork {
             SpotinstContext.getInstance().getConnectionStateByGroupId().remove(groupId);
 
             if (StringUtils.isNotEmpty(groupId) && StringUtils.isNotEmpty(accountId)) {
-                IRedisRepo           redisRepo             = RepoManager.getInstance().getRedisRepo();
-                ApiResponse<Integer> redisGetValueResponse = redisRepo.deleteKey(groupId, accountId);
+                ILockRepo            redisRepo             = RepoManager.getInstance().getLockRepo();
+                ApiResponse<Integer> redisGetValueResponse = redisRepo.Unlock(groupId, accountId);
 
                 if (redisGetValueResponse.isRequestSucceed()) {
                     LOGGER.info(String.format("Successfully removed group %s from redis", groupId));

@@ -68,7 +68,7 @@ public class SpotinstContext {
         this.awsInstanceTypesLastUpdate = awsInstanceTypesLastUpdate;
     }
 
-    public String getControllerIdentifier() {
+    public String getControllerIdentifier() {//TODO: verify with Ziv
         if(controllerIdentifier == null){
             controllerIdentifier = RandomStringUtils.randomAlphanumeric(10);
         }

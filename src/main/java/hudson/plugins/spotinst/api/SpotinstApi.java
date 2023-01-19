@@ -7,10 +7,10 @@ import hudson.plugins.spotinst.common.SpotinstContext;
 import hudson.plugins.spotinst.model.aws.*;
 import hudson.plugins.spotinst.model.azure.*;
 import hudson.plugins.spotinst.model.gcp.*;
-import hudson.plugins.spotinst.model.redis.RedisDeleteKeyResponse;
-import hudson.plugins.spotinst.model.redis.RedisGetValueResponse;
-import hudson.plugins.spotinst.model.redis.RedisSetKeyRequest;
-import hudson.plugins.spotinst.model.redis.RedisSetKeyResponse;
+import hudson.plugins.spotinst.model.redis.UnlockGroupControllerResponse;
+import hudson.plugins.spotinst.model.redis.GetGroupControllerLockResponse;
+import hudson.plugins.spotinst.model.redis.LockGroupControllerRequest;
+import hudson.plugins.spotinst.model.redis.LockGroupControllerResponse;
 import jenkins.model.Jenkins;
 import org.apache.commons.httpclient.HttpStatus;
 import org.slf4j.Logger;
@@ -93,8 +93,9 @@ public class SpotinstApi {
         Map<String, String> queryParams = buildQueryParams(accountId);
         queryParams.put(QUERY_PARAM_ADJUSTMENT, String.valueOf(adjustment));
 
-        RestResponse response = RestClient
-                .sendPut(SPOTINST_API_HOST + "/aws/ec2/group/" + groupId + "/scale/up", null, headers, queryParams);
+        RestResponse response =
+                RestClient.sendPut(SPOTINST_API_HOST + "/aws/ec2/group/" + groupId + "/scale/up", null, headers,
+                                   queryParams);
 
         AwsScaleUpResponse scaleUpResponse = getCastedResponse(response, AwsScaleUpResponse.class);
 
@@ -129,13 +130,12 @@ public class SpotinstApi {
         List<AwsInstanceType> retVal;
         Map<String, String>   headers     = buildHeaders();
         Map<String, String>   queryParams = buildQueryParams(accountId);
-        queryParams.put("distinctTypesList","true");
+        queryParams.put("distinctTypesList", "true");
 
-        RestResponse response =
-                RestClient.sendGet(SPOTINST_API_HOST + "/aws/ec2/instanceType", headers, queryParams);
+        RestResponse response = RestClient.sendGet(SPOTINST_API_HOST + "/aws/ec2/instanceType", headers, queryParams);
 
-        AwsInstanceTypesResponse
-                allAwsInstanceTypesResponse = getCastedResponse(response, AwsInstanceTypesResponse.class);
+        AwsInstanceTypesResponse allAwsInstanceTypesResponse =
+                getCastedResponse(response, AwsInstanceTypesResponse.class);
 
         retVal = allAwsInstanceTypesResponse.getResponse().getItems();
 
@@ -153,8 +153,9 @@ public class SpotinstApi {
         Map<String, String> queryParams = buildQueryParams(accountId);
         queryParams.put(QUERY_PARAM_ADJUSTMENT, String.valueOf(adjustment));
 
-        RestResponse response = RestClient
-                .sendPut(SPOTINST_API_HOST + "/gcp/gce/group/" + groupId + "/scale/up", null, headers, queryParams);
+        RestResponse response =
+                RestClient.sendPut(SPOTINST_API_HOST + "/gcp/gce/group/" + groupId + "/scale/up", null, headers,
+                                   queryParams);
 
         GcpScaleUpResponse scaleUpResponse = getCastedResponse(response, GcpScaleUpResponse.class);
 
@@ -175,9 +176,9 @@ public class SpotinstApi {
         request.setShouldTerminateInstances(true);
         String body = JsonMapper.toJson(request);
 
-        RestResponse response = RestClient
-                .sendPut(SPOTINST_API_HOST + "/gcp/gce/group/" + groupId + "/detachInstances", body, headers,
-                         queryParams);
+        RestResponse response =
+                RestClient.sendPut(SPOTINST_API_HOST + "/gcp/gce/group/" + groupId + "/detachInstances", body, headers,
+                                   queryParams);
 
         getCastedResponse(response, ApiEmptyResponse.class);
         Boolean retVal = true;
@@ -210,8 +211,9 @@ public class SpotinstApi {
         Map<String, String>      headers     = buildHeaders();
         Map<String, String>      queryParams = buildQueryParams(accountId);
 
-        RestResponse response = RestClient
-                .sendGet(SPOTINST_API_HOST + "/compute/azure/group/" + groupId + "/status", headers, queryParams);
+        RestResponse response =
+                RestClient.sendGet(SPOTINST_API_HOST + "/compute/azure/group/" + groupId + "/status", headers,
+                                   queryParams);
 
         AzureGroupInstancesResponse instancesResponse = getCastedResponse(response, AzureGroupInstancesResponse.class);
 
@@ -228,9 +230,9 @@ public class SpotinstApi {
         Map<String, String> queryParams = buildQueryParams(accountId);
         queryParams.put("adjustment", String.valueOf(adjustment));
 
-        RestResponse response = RestClient
-                .sendPut(SPOTINST_API_HOST + "/compute/azure/group/" + groupId + "/scale/up", null, headers,
-                         queryParams);
+        RestResponse response =
+                RestClient.sendPut(SPOTINST_API_HOST + "/compute/azure/group/" + groupId + "/scale/up", null, headers,
+                                   queryParams);
 
         getCastedResponse(response, ApiEmptyResponse.class);
         Boolean retVal = true;
@@ -247,9 +249,9 @@ public class SpotinstApi {
         request.setShouldDecrementTargetCapacity(true);
         String body = JsonMapper.toJson(request);
 
-        RestResponse response = RestClient
-                .sendPut(SPOTINST_API_HOST + "/compute/azure/group/" + groupId + "/detachInstances", body, headers,
-                         queryParams);
+        RestResponse response =
+                RestClient.sendPut(SPOTINST_API_HOST + "/compute/azure/group/" + groupId + "/detachInstances", body,
+                                   headers, queryParams);
 
         getCastedResponse(response, ApiEmptyResponse.class);
         Boolean retVal = true;
@@ -264,9 +266,9 @@ public class SpotinstApi {
         Map<String, String> headers     = buildHeaders();
         Map<String, String> queryParams = buildQueryParams(accountId);
 
-        RestResponse response = RestClient
-                .sendGet(SPOTINST_API_HOST + AZURE_VM_SERVICE_PREFIX + "/group/" + groupId + "/status", headers,
-                         queryParams);
+        RestResponse response =
+                RestClient.sendGet(SPOTINST_API_HOST + AZURE_VM_SERVICE_PREFIX + "/group/" + groupId + "/status",
+                                   headers, queryParams);
 
         AzureGroupStatusResponse vmsResponse = getCastedResponse(response, AzureGroupStatusResponse.class);
 
@@ -285,9 +287,9 @@ public class SpotinstApi {
         Map<String, String> queryParams = buildQueryParams(accountId);
         queryParams.put("adjustment", String.valueOf(adjustment));
 
-        RestResponse response = RestClient
-                .sendPut(SPOTINST_API_HOST + AZURE_VM_SERVICE_PREFIX + "/group/" + groupId + "/scale/up", null, headers,
-                         queryParams);
+        RestResponse response =
+                RestClient.sendPut(SPOTINST_API_HOST + AZURE_VM_SERVICE_PREFIX + "/group/" + groupId + "/scale/up",
+                                   null, headers, queryParams);
 
         AzureScaleUpResponse scaleUpResponse = getCastedResponse(response, AzureScaleUpResponse.class);
 
@@ -307,9 +309,9 @@ public class SpotinstApi {
         request.setShouldDecrementTargetCapacity(true);
         request.setShouldTerminateVms(true);
         String body = JsonMapper.toJson(request);
-        RestResponse response = RestClient
-                .sendPut(SPOTINST_API_HOST + AZURE_VM_SERVICE_PREFIX + "/group/" + groupId + "/detachVms", body,
-                         headers, queryParams);
+        RestResponse response =
+                RestClient.sendPut(SPOTINST_API_HOST + AZURE_VM_SERVICE_PREFIX + "/group/" + groupId + "/detachVms",
+                                   body, headers, queryParams);
         getCastedResponse(response, ApiEmptyResponse.class);
         Boolean retVal = true;
 
@@ -318,65 +320,57 @@ public class SpotinstApi {
     //endregion
 
     //Redis
-    //TODO Liron - change name to getLock
-    public static <T> T getRedisValue(String groupId, String accountId) throws ApiException {
-        T retVal      = null;
+    public static String getGroupLockValueById(String groupId, String accountId) throws ApiException {
+        String retVal = null;
 
-        Map<String, String>    headers     = buildHeaders();
+        Map<String, String> headers = buildHeaders();
 
-        Map<String, String>    queryParams = buildQueryParams(accountId);
+        Map<String, String> queryParams = buildQueryParams(accountId);
 
         RestResponse response =
-                RestClient.sendGet(SPOTINST_API_HOST + "/aws/ec2/group/" + groupId + "/jenkinsPlugin", headers, queryParams);
+                RestClient.sendGet(SPOTINST_API_HOST + "/aws/ec2/group/" + groupId + "/jenkinsPlugin/lock", headers,
+                                   queryParams);
 
-        RedisGetValueResponse<T> redisValue = getCastedResponse(response, RedisGetValueResponse.class);
+        GetGroupControllerLockResponse lockResponse = getCastedResponse(response, GetGroupControllerLockResponse.class);
 
-        if (redisValue.getResponse().getItems().size() > 0) {
-            retVal = redisValue.getResponse().getItems().get(0);
+        if (CollectionUtils.isEmpty(lockResponse.getResponse().getItems()) == false) {
+            retVal = lockResponse.getResponse().getItems().get(0);
         }
 
         return retVal;
     }
 
-    //TODO Liron - change method name lock
-    public static String setRedisKey(String lockKey, String accountId, String lockValue, Integer ttl) throws ApiException {
-        String retVal      = null;
-
-        Map<String, String>    headers     = buildHeaders();
-
-        Map<String, String>    queryParams = buildQueryParams(accountId);
-
-        RedisSetKeyRequest request = new RedisSetKeyRequest();
-        request.setGroupId(lockKey);
-        request.setControllerIdentifier(lockValue);
-        request.setTtl(ttl);
-
+    public static String LockGroupController(String lockKey, String accountId, String lockValue,
+                                             Integer ttl) throws ApiException {
+        String retVal = null;
+        Map<String, String> headers = buildHeaders();
+        Map<String, String> queryParams = buildQueryParams(accountId);
+        LockGroupControllerRequest request = new LockGroupControllerRequest(lockKey, lockValue, ttl);
         String body = JsonMapper.toJson(request);
 
         RestResponse response =
-                RestClient.sendPost(SPOTINST_API_HOST + "/aws/ec2/group/jenkinsPlugin", body, headers, queryParams);
+                RestClient.sendPost(SPOTINST_API_HOST + "/aws/ec2/group/jenkinsPlugin/lock", body, headers,
+                                    queryParams);
 
-        RedisSetKeyResponse redisValue = getCastedResponse(response, RedisSetKeyResponse.class);
-
-        if (redisValue.getResponse().getItems().size() > 0) {
-            retVal = redisValue.getResponse().getItems().get(0);
+        LockGroupControllerResponse lockControllerValue =
+                getCastedResponse(response, LockGroupControllerResponse.class);
+        //TODO: check optimizer and service response
+        if (lockControllerValue.getResponse().getItems().size() > 0) {
+            retVal = lockControllerValue.getResponse().getItems().get(0);
         }
 
         return retVal;
     }
 
-    //TODO Liron - change name to unlock
-    public static Integer deleteRedisKey(String groupId, String accountId) throws ApiException {
-        Integer retVal      = null;
+    public static Integer UnlockGroupController(String groupId, String accountId) throws ApiException {
+        Integer retVal = null;
 
-        Map<String, String>    headers     = buildHeaders();
-
-        Map<String, String>    queryParams = buildQueryParams(accountId);
-
+        Map<String, String> headers = buildHeaders();
+        Map<String, String> queryParams = buildQueryParams(accountId);
         RestResponse response =
-                RestClient.sendDelete(SPOTINST_API_HOST + "/aws/ec2/group/" + groupId + "/jenkinsPlugin", headers, queryParams);
-
-        RedisDeleteKeyResponse redisValue = getCastedResponse(response, RedisDeleteKeyResponse.class);
+                RestClient.sendDelete(SPOTINST_API_HOST + "/aws/ec2/group/" + groupId + "/jenkinsPlugin/lock", headers,
+                                      queryParams);
+        UnlockGroupControllerResponse redisValue = getCastedResponse(response, UnlockGroupControllerResponse.class);
 
         if (redisValue.getResponse().getItems().size() > 0) {
             retVal = redisValue.getResponse().getItems().get(0);

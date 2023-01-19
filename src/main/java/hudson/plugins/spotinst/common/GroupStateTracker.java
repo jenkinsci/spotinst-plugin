@@ -2,12 +2,23 @@ package hudson.plugins.spotinst.common;
 
 import java.util.Date;
 
+import static hudson.plugins.spotinst.common.SpotinstCloudCommunicationState.SPOTINST_CLOUD_COMMUNICATION_INITIALIZING;
+
 public class GroupStateTracker {
     //region members
-    private String groupId;
-    private String accountId;
-    private SpotinstCloudCommunicationState state;
-    private Date timeStamp;
+    private final String                          groupId;
+    private final String                          accountId;
+    private       SpotinstCloudCommunicationState state;
+    private final Date                            timeStamp;
+    //endregion
+
+    //region Constructor
+    public GroupStateTracker(String groupId, String accountId) {
+        this.groupId = groupId;
+        this.accountId = accountId;
+        state = SPOTINST_CLOUD_COMMUNICATION_INITIALIZING;
+        timeStamp = new Date();
+    }
     //endregion
 
     //region getters & setters
@@ -15,16 +26,8 @@ public class GroupStateTracker {
         return groupId;
     }
 
-    public void setGroupId(String groupId) {
-        this.groupId = groupId;
-    }
-
     public String getAccountId() {
         return accountId;
-    }
-
-    public void setAccountId(String accountId) {
-        this.accountId = accountId;
     }
 
     public SpotinstCloudCommunicationState getState() {
@@ -37,10 +40,6 @@ public class GroupStateTracker {
 
     public Date getTimeStamp() {
         return timeStamp;
-    }
-
-    public void setTimeStamp(Date timeStamp) {
-        this.timeStamp = timeStamp;
     }
     //endregion
 }

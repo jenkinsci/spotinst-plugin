@@ -145,12 +145,11 @@ public class GcpSpotinstCloud extends BaseSpotinstCloud {
     }
 
     @Override
-    public Map<String, String> getInstanceIpsById() {
+    public Map<String, String> handleGetInstanceIpsById() {
         Map<String, String> retVal = new HashMap<>();
 
-        //TODO Liron - add boolean isGroupManagedByThisController = isCloudReadyForGroupCommunication(groupId);
         IGcpGroupRepo                       awsGroupRepo      = RepoManager.getInstance().getGcpGroupRepo();
-        ApiResponse<List<GcpGroupInstance>> instancesResponse = awsGroupRepo.getGroupInstances(groupId, this.accountId);
+        ApiResponse<List<GcpGroupInstance>> instancesResponse = awsGroupRepo.getGroupInstances(groupId, accountId);
 
         if (instancesResponse.isRequestSucceed()) {
             List<GcpGroupInstance> instances = instancesResponse.getValue();

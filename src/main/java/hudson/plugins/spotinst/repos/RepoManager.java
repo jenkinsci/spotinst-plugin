@@ -10,7 +10,7 @@ public class RepoManager {
     private IAzureGroupRepo       azureGroupRepo;
     private IAzureVmGroupRepo     azureVmGroupRepo;
     private IAwsInstanceTypesRepo awsInstanceTypesRepo;
-    private IRedisRepo            redisRepo;
+    private ILockRepo             lockRepo;
     //endregion
 
     //region Constructor
@@ -20,7 +20,7 @@ public class RepoManager {
         this.azureGroupRepo = new AzureGroupRepo();
         this.azureVmGroupRepo = new AzureVmGroupRepo();
         this.awsInstanceTypesRepo = new AwsInstanceTypesRepo();
-        this.redisRepo = new RedisRepo();
+        this.lockRepo = new LockRepo();
     }
 
     private static RepoManager instance = new RepoManager();
@@ -71,12 +71,12 @@ public class RepoManager {
         this.awsInstanceTypesRepo = awsInstanceTypesRepo;
     }
 
-    public IRedisRepo getRedisRepo() {
-        return redisRepo;
+    public ILockRepo getLockRepo() {
+        return lockRepo;
     }
 
-    public void setRedisRepo(IRedisRepo redisRepo) {
-        this.redisRepo = redisRepo;
+    public void setLockRepo(ILockRepo lockRepo) {
+        this.lockRepo = lockRepo;
     }
     //endregion
 }

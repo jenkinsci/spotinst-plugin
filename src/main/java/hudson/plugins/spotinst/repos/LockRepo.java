@@ -5,15 +5,16 @@ import hudson.plugins.spotinst.api.infra.ApiException;
 import hudson.plugins.spotinst.api.infra.ApiResponse;
 import hudson.plugins.spotinst.api.infra.ExceptionHelper;
 
-public class RedisRepo implements IRedisRepo {
+public class LockRepo implements ILockRepo {
+
     @Override
-    public ApiResponse<String> setKey(String groupId, String accountId, String controllerIdentifier, Integer ttl) {
+    public ApiResponse<String> Lock(String groupId, String accountId, String controllerIdentifier, Integer ttl) {
         ApiResponse<String> retVal;
 
         try {
-            String isKeySet = SpotinstApi.setRedisKey(groupId, accountId, controllerIdentifier, ttl);
+            String lockResult = SpotinstApi.LockGroupController(groupId, accountId, controllerIdentifier, ttl);
 
-            retVal = new ApiResponse<>(isKeySet);
+            retVal = new ApiResponse<>(lockResult);
 
         }
         catch (ApiException e) {
@@ -24,12 +25,11 @@ public class RedisRepo implements IRedisRepo {
     }
 
     @Override
-    public ApiResponse<Object> getValue(String groupId, String accountId) {
-        ApiResponse<Object> retVal;
+    public ApiResponse<String> getLockValueById(String groupId, String accountId) {
+        ApiResponse<String> retVal;
 
         try {
-            Object controllerIdentifier = SpotinstApi.getRedisValue(groupId, accountId);
-
+            String controllerIdentifier = SpotinstApi.getGroupLockValueById(groupId, accountId);
             retVal = new ApiResponse<>(controllerIdentifier);
 
         }
@@ -41,11 +41,11 @@ public class RedisRepo implements IRedisRepo {
     }
 
     @Override
-    public ApiResponse<Integer> deleteKey(String groupId, String accountId) {
+    public ApiResponse<Integer> Unlock(String groupId, String accountId) {
         ApiResponse<Integer> retVal;
 
         try {
-            Integer isKeyDeleted = SpotinstApi.deleteRedisKey(groupId, accountId);
+            Integer isKeyDeleted = SpotinstApi.UnlockGroupController(groupId, accountId);
 
             retVal = new ApiResponse<>(isKeyDeleted);
 

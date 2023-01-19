@@ -3,12 +3,20 @@ package hudson.plugins.spotinst.model.redis;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class RedisSetKeyRequest {
+public class LockGroupControllerRequest {
 
     //region Memebers
-    String groupId;
-    String controllerIdentifier;
-    Integer ttl;
+    private final String  groupId;
+    private final String  controllerIdentifier;
+    private final Integer ttl;
+    //endregion
+
+    //region Constructor
+    public LockGroupControllerRequest(String groupId, String controllerIdentifier, Integer ttl) {
+        this.groupId = groupId;
+        this.controllerIdentifier = controllerIdentifier;
+        this.ttl = ttl;
+    }
     //endregion
 
     //region Getters & Setters
@@ -22,18 +30,6 @@ public class RedisSetKeyRequest {
 
     public Integer getTtl() {
         return ttl;
-    }
-
-    public void setGroupId(String groupId) {
-        this.groupId = groupId;
-    }
-
-    public void setControllerIdentifier(String controllerIdentifier) {
-        this.controllerIdentifier = controllerIdentifier;
-    }
-
-    public void setTtl(Integer ttl) {
-        this.ttl = ttl;
     }
     //endregion
 }

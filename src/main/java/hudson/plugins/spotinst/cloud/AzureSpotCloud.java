@@ -136,12 +136,11 @@ public class AzureSpotCloud extends BaseSpotinstCloud {
     }
 
     @Override
-    public Map<String, String> getInstanceIpsById() {
-        //TODO Liron - add boolean isGroupManagedByThisController = isCloudReadyForGroupCommunication(groupId);
+    public Map<String, String> handleGetInstanceIpsById() {
         Map<String, String> retVal = new HashMap<>();
 
         IAzureVmGroupRepo               awsGroupRepo      = RepoManager.getInstance().getAzureVmGroupRepo();
-        ApiResponse<List<AzureGroupVm>> instancesResponse = awsGroupRepo.getGroupVms(groupId, this.accountId);
+        ApiResponse<List<AzureGroupVm>> instancesResponse = awsGroupRepo.getGroupVms(groupId, accountId);
 
         if (instancesResponse.isRequestSucceed()) {
             List<AzureGroupVm> instances = instancesResponse.getValue();
