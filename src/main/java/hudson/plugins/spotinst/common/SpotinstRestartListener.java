@@ -19,13 +19,12 @@ public class SpotinstRestartListener extends RestartListener {
 
     //TODO Liron - check if necessary
     public static SpotinstRestartListener getInstance() {
-        return Jenkins.get()
-                .getExtensionList(RestartListener.class)
-                .get(SpotinstRestartListener.class);
+        return Jenkins.get().getExtensionList(RestartListener.class).get(SpotinstRestartListener.class);
     }
 
     //TODO Liron - check if necessary
-    public SpotinstRestartListener(){}
+    public SpotinstRestartListener() {
+    }
 
     @Override
     public boolean isReadyToRestart() throws IOException, InterruptedException {
@@ -34,19 +33,24 @@ public class SpotinstRestartListener extends RestartListener {
 
     @Override
     public void onRestart() {
-        SpotinstSyncGroupsOwner groupsOwnerJob = new SpotinstSyncGroupsOwner();
-        List<Cloud> cloudList = Jenkins.getInstance().clouds;
-        Set<BaseSpotinstCloud> cloudSet = new HashSet<>();
+        SpotinstSyncGroupsOwner groupsOwnerJob        = new SpotinstSyncGroupsOwner();
+        List<Cloud>             cloudList             = Jenkins.getInstance().clouds;
+        Set<BaseSpotinstCloud>  cloudSet              = new HashSet<>();
+        Set<GroupLockKey>       groupLockAcquiringSet = new HashSet<>();
 
         if (cloudList != null && cloudList.size() > 0) {
             for (Cloud cloud : cloudList) {
                 if (cloud instanceof BaseSpotinstCloud) {
-                   cloudSet.add((BaseSpotinstCloud) cloud);
+                    BaseSpotinstCloud spotinstCloud = (BaseSpotinstCloud) cloud;
+                    cloudSet.add(spotinstCloud);
+                    GroupLockKey groupLockKey =
+                            new GroupLockKey(spotinstCloud.getGroupId(), spotinstCloud.getAccountId());
+                    groupLockAcquiringSet.add(groupLockKey);
                 }
             }
         }
 
         LOGGER.info(String.format("deallocating %s Spotinst clouds", cloudSet.size()));
-        groupsOwnerJob.deallocateCloudsNoLongerInUse(cloudSet);//TODO: execute instead?
+        groupsOwnerJob.deallocateGroupsNoLongerInUse(groupLockAcquiringSet);
     }
 }

@@ -3,10 +3,11 @@ package hudson.plugins.spotinst.jobs;
 import hudson.Extension;
 import hudson.model.AsyncPeriodicWork;
 import hudson.model.TaskListener;
+import hudson.plugins.spotinst.api.infra.ApiError;
 import hudson.plugins.spotinst.api.infra.ApiResponse;
 import hudson.plugins.spotinst.cloud.BaseSpotinstCloud;
 import hudson.plugins.spotinst.cloud.helpers.TimeHelper;
-import hudson.plugins.spotinst.common.GroupStateTracker;
+import hudson.plugins.spotinst.common.GroupLockKey;
 import hudson.plugins.spotinst.common.SpotinstContext;
 import hudson.plugins.spotinst.repos.ILockRepo;
 import hudson.plugins.spotinst.repos.RepoManager;
@@ -18,7 +19,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 /**
  * Created by ohadmuchnik on 25/05/2016.
@@ -43,40 +43,14 @@ public class SpotinstSyncGroupsOwner extends AsyncPeriodicWork {
     //endregion
 
     //region Public Methods
-    //    @Override
-    //    protected void execute(TaskListener taskListener) {
-    //        synchronized (this) {
-    //            List<Cloud>            cloudList           = Jenkins.getInstance().clouds;
-    //            Set<BaseSpotinstCloud> cloudsFromContext   =
-    //                    SpotinstContext.getInstance().getCloudsInitializationState().keySet();
-    //            Set<BaseSpotinstCloud> cloudsNoLongerExist = new HashSet<>(cloudsFromContext);
-    //
-    //            if (cloudList != null && cloudList.size() > 0) {
-    //                for (Cloud cloud : cloudList) {
-    //
-    //                    if (cloud instanceof BaseSpotinstCloud) {
-    //                        BaseSpotinstCloud spotinstCloud = (BaseSpotinstCloud) cloud;
-    //                        String            groupId       = spotinstCloud.getGroupId();
-    //                        String            accountId     = spotinstCloud.getAccountId();
-    //                        cloudsNoLongerExist.remove(spotinstCloud);
-    //
-    //                        if (StringUtils.isNotEmpty(groupId) && StringUtils.isNotEmpty(accountId)) {
-    //                            spotinstCloud.syncGroupsOwner(spotinstCloud);
-    //                        }
-    //                    }
-    //                }
-    //            }
-    //
-    //            deallocateGroupsNoLongerInUse(cloudsNoLongerExist);
-    //        }
-    //    }
-
     @Override
     protected void execute(TaskListener taskListener) {
         synchronized (this) {
-            List<Cloud> cloudList           = Jenkins.getInstance().clouds;
-            Set<String> groupsFromContext   = SpotinstContext.getInstance().getConnectionStateByGroupId().keySet();
-            Set<String> groupsNoLongerExist = new HashSet<>(groupsFromContext);
+            List<Cloud> cloudList = Jenkins.getInstance().clouds;
+            Set<GroupLockKey>       currentGroupKeys    = new HashSet<>();
+            Set<GroupLockKey>       groupsFromContext   = SpotinstContext.getInstance().getCachedProcessedGroupIds();
+            Set<GroupLockKey>       groupsNoLongerExist = new HashSet<>(groupsFromContext);
+            List<BaseSpotinstCloud> activeClouds        = new ArrayList<>();
 
             if (cloudList != null && cloudList.size() > 0) {
                 for (Cloud cloud : cloudList) {
@@ -85,62 +59,75 @@ public class SpotinstSyncGroupsOwner extends AsyncPeriodicWork {
                         BaseSpotinstCloud spotinstCloud = (BaseSpotinstCloud) cloud;
                         String            groupId       = spotinstCloud.getGroupId();
                         String            accountId     = spotinstCloud.getAccountId();
-                        groupsNoLongerExist.remove(groupId);
 
-                        if (StringUtils.isNotEmpty(groupId) && StringUtils.isNotEmpty(accountId)) {
-                            spotinstCloud.syncGroupsOwner();
+                        GroupLockKey groupLockKey = new GroupLockKey(groupId, accountId);
+                        currentGroupKeys.add(groupLockKey);
+                        groupsNoLongerExist.remove(groupLockKey);
+
+                        boolean isActiveCloud = StringUtils.isNotEmpty(groupId) && StringUtils.isNotEmpty(accountId);
+
+                        if (isActiveCloud) {
+                            activeClouds.add(spotinstCloud);
                         }
                     }
                 }
             }
 
             deallocateGroupsNoLongerInUse(groupsNoLongerExist);
+
+            SpotinstContext.getInstance().setCachedProcessedGroupIds(currentGroupKeys);
+            activeClouds.forEach(BaseSpotinstCloud::syncGroupOwner);
+        }
+    }
+    
+    public void deallocateGroupsNoLongerInUse(Set<GroupLockKey> groupsNoLongerExist) {
+        for (GroupLockKey groupKeyNoLongerExists : groupsNoLongerExist) {
+            String  groupId       = groupKeyNoLongerExists.getGroupId(), accountId =
+                    groupKeyNoLongerExists.getAccountId();
+            boolean isActiveCloud = StringUtils.isNotEmpty(groupId) && StringUtils.isNotEmpty(accountId);
+
+            if (isActiveCloud) {
+                ILockRepo groupControllerLockRepo = RepoManager.getInstance().getLockRepo();
+                ApiResponse<String> lockGroupControllerResponse =
+                        groupControllerLockRepo.getGroupControllerLock(groupId, accountId);
+
+                if (lockGroupControllerResponse.isRequestSucceed()) {
+                    String  lockGroupControllerValue  = lockGroupControllerResponse.getValue();
+                    String  controllerIdentifier      = SpotinstContext.getInstance().getControllerIdentifier();
+                    boolean isGroupBelongToController = controllerIdentifier.equals(lockGroupControllerValue);
+
+                    if (isGroupBelongToController) {
+                        deallocateGroupNoLongerInUse(groupKeyNoLongerExists, groupControllerLockRepo);
+                    }
+                    else {
+                        LOGGER.warn("Could not unlock group {} - already locked by Controller {}", groupId,
+                                    lockGroupControllerValue);
+                    }
+                }
+                else {
+                    List<ApiError> errors =
+                            lockGroupControllerResponse.getErrors() != null ? lockGroupControllerResponse.getErrors() :
+                            new LinkedList<>();
+                    LOGGER.error("group unlocking service failed to get lock for groupId {}, accountId {}. Errors: {}",
+                                 groupId, accountId, errors);
+                }
+            }
         }
     }
 
-    //    public void deallocateGroupsNoLongerInUse(Set<BaseSpotinstCloud> cloudsNoLongerExist) {
-    //        for (BaseSpotinstCloud cloud : cloudsNoLongerExist) {
-    //            String groupId   = cloud.getGroupId();
-    //            String accountId = cloud.getAccountId();
-    //            SpotinstContext.getInstance().getCloudsInitializationState().remove(cloud);
-    //
-    //            if (StringUtils.isNotEmpty(groupId) && StringUtils.isNotEmpty(accountId)) {
-    //                ILockRepo           redisRepo             = RepoManager.getInstance().getRedisRepo();
-    //                ApiResponse<Integer> redisGetValueResponse = redisRepo.deleteKey(groupId, accountId);
-    //
-    //                if (redisGetValueResponse.isRequestSucceed()) {
-    //                    LOGGER.info(String.format("Successfully removed group %s from redis", groupId));
-    //                }
-    //                else {
-    //                    LOGGER.error(String.format("Failed to remove group %s from redis", groupId));
-    //                }
-    //            }
-    //        }
-    //    }
+    private void deallocateGroupNoLongerInUse(GroupLockKey groupNoLongerExists, ILockRepo groupControllerLockRepo) {
+        String groupId = groupNoLongerExists.getGroupId(), accountId = groupNoLongerExists.getAccountId();
+        ApiResponse<Integer> groupControllerValueResponse =
+                groupControllerLockRepo.unlockGroupController(groupId, accountId);
 
-    public void deallocateCloudsNoLongerInUse(Set<BaseSpotinstCloud> cloudsNoLongerExist) {
-        Set<String> groupsNoLongerExist =
-                cloudsNoLongerExist.stream().map(BaseSpotinstCloud::getGroupId).collect(Collectors.toSet());
-        deallocateGroupsNoLongerInUse(groupsNoLongerExist);
-    }
-
-    private void deallocateGroupsNoLongerInUse(Set<String> groupsNoLongerExist) {
-        for (String groupId : groupsNoLongerExist) {
-            GroupStateTracker groupDetails = SpotinstContext.getInstance().getConnectionStateByGroupId().get(groupId);
-            String            accountId    = groupDetails.getAccountId();
-            SpotinstContext.getInstance().getConnectionStateByGroupId().remove(groupId);
-
-            if (StringUtils.isNotEmpty(groupId) && StringUtils.isNotEmpty(accountId)) {
-                ILockRepo            redisRepo             = RepoManager.getInstance().getLockRepo();
-                ApiResponse<Integer> redisGetValueResponse = redisRepo.Unlock(groupId, accountId);
-
-                if (redisGetValueResponse.isRequestSucceed()) {
-                    LOGGER.info(String.format("Successfully removed group %s from redis", groupId));
-                }
-                else {
-                    LOGGER.error(String.format("Failed to remove group %s from redis", groupId));
-                }
-            }
+        if (groupControllerValueResponse.isRequestSucceed()) {
+            LOGGER.info("Successfully unlocked group {}", groupId);
+        }
+        else {
+            List<ApiError> errors =
+                    groupControllerValueResponse.getErrors() != null ? groupControllerValueResponse.getErrors() :
+                    new LinkedList<>();
+            LOGGER.error("Failed to unlock group {}. Errors: {}", groupId, errors);
         }
     }
 

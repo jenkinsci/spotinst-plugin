@@ -22,16 +22,4 @@
             <p/>
         </j:if>
     </div>
-
-    <div class="alert alert-info">
-        <j:if test="${it.isSpotinstCloudsCommunicationReadyExist()}">
-            <strong>${%Title}</strong>
-            <p/>
-
-            <strong>rootURL</strong>
-
-            ${%SpotinstCloudsCommunicationReady(it.spotinstCloudsCommunicationReady)}
-            <p/>
-        </j:if>
-    </div>
 </j:jelly>

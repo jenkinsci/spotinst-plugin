@@ -3,6 +3,7 @@ package hudson.plugins.spotinst.cloud;
 import hudson.DescriptorExtensionList;
 import hudson.model.*;
 import hudson.model.labels.LabelAtom;
+import hudson.plugins.spotinst.api.infra.ApiError;
 import hudson.plugins.spotinst.api.infra.ApiResponse;
 import hudson.plugins.spotinst.api.infra.JsonMapper;
 import hudson.plugins.spotinst.cloud.helpers.TimeHelper;
@@ -59,6 +60,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
     private                ConnectionMethodEnum              connectionMethod;
     private                Boolean                           shouldUsePrivateIp;
     private                SpotGlobalExecutorOverride        globalExecutorOverride;
+    private                GroupAcquiringDetails             groupAcquiringDetails;
     //endregion
 
     //region Constructor
@@ -117,8 +119,11 @@ public abstract class BaseSpotinstCloud extends Cloud {
             this.globalExecutorOverride = new SpotGlobalExecutorOverride(false, 1);
         }
 
-        if (StringUtils.isNotEmpty(groupId) && StringUtils.isNotEmpty(accountId)) {
-            syncGroupsOwner();
+        groupAcquiringDetails = null;
+        boolean isActiveCloud = StringUtils.isNotEmpty(groupId) && StringUtils.isNotEmpty(accountId);
+
+        if (isActiveCloud) {
+            syncGroupOwner();
         }
     }
     //endregion
@@ -363,30 +368,12 @@ public abstract class BaseSpotinstCloud extends Cloud {
         return retVal;
     }
 
-    //    public boolean isCloudReadyForGroupCommunication(String groupId) {
-    //        boolean retVal = false;
-    //
-    //        if (StringUtils.isNotEmpty(groupId)) {
-    //            SpotinstCloudCommunicationState state = getCloudInitializationResultByGroupId(groupId);
-    //
-    //            if (state != null) {
-    //                if (state.equals(SpotinstCloudCommunicationState.SPOTINST_CLOUD_COMMUNICATION_READY)) {
-    //                    retVal = true;
-    //                }
-    //            }
-    //        }
-    //
-    //        return retVal;
-    //    }
-
     public boolean isCloudReadyForGroupCommunication(String groupId) {
         boolean retVal = false;
 
         if (StringUtils.isNotEmpty(groupId)) {
-            GroupStateTracker stateDetails = SpotinstContext.getInstance().getConnectionStateByGroupId().get(groupId);
-
-            if (stateDetails != null) {
-                retVal = stateDetails.getState().equals(SPOTINST_CLOUD_COMMUNICATION_READY);
+            if (groupAcquiringDetails != null) {
+                retVal = groupAcquiringDetails.getState().equals(SPOTINST_CLOUD_COMMUNICATION_READY);
             }
         }
 
@@ -484,41 +471,30 @@ public abstract class BaseSpotinstCloud extends Cloud {
         Boolean   retVal   = null;
         ILockRepo lockRepo = RepoManager.getInstance().getLockRepo();
         ApiResponse<String> lockGroupControllerResponse =
-                lockRepo.Lock(groupId, accountId, controllerIdentifier, Constants.LOCK_TIME_TO_LIVE_IN_SECONDS);
+                lockRepo.lockGroupController(groupId, accountId, controllerIdentifier,
+                                             Constants.LOCK_TIME_TO_LIVE_IN_SECONDS);
 
         if (lockGroupControllerResponse.isRequestSucceed()) {
             String responseValue = lockGroupControllerResponse.getValue();
 
             if (Constants.LOCK_OK_STATUS.equals(responseValue)) {
-                LOGGER.info(String.format("Successfully locked group %s controller", groupId));
-
+                LOGGER.info("Successfully locked group {} controller", groupId);
                 retVal = true;
             }
             else {
-                LOGGER.error(String.format("Failed locking group %s controller", groupId));
+                LOGGER.error("Failed locking group {} controller", groupId);
                 retVal = false;
             }
         }
         else {
-            LOGGER.error("lock request failed");
+            List<ApiError> errors =
+                    lockGroupControllerResponse.getErrors() != null ? lockGroupControllerResponse.getErrors() :
+                    new LinkedList<>();
+            LOGGER.error("lock request failed. Errors: {}", errors);
         }
 
         return retVal;
     }
-
-    //    private SpotinstCloudCommunicationState getCloudInitializationResultByGroupId(String groupId) {
-    //        SpotinstCloudCommunicationState state = null;
-    //
-    //        for (Map.Entry<BaseSpotinstCloud, SpotinstCloudCommunicationState> cloudsInitializationStateEntry : SpotinstContext.getInstance()
-    //                                                                                                                           .getCloudsInitializationState()
-    //                                                                                                                           .entrySet()) {
-    //            if (cloudsInitializationStateEntry.getKey().getGroupId().equals(groupId)) {
-    //                state = cloudsInitializationStateEntry.getValue();
-    //            }
-    //        }
-    //
-    //        return state;
-    //    }
     //endregion
 
     //region Protected Methods
@@ -729,170 +705,99 @@ public abstract class BaseSpotinstCloud extends Cloud {
         return Constants.SLAVE_OFFLINE_THRESHOLD_IN_MINUTES;
     }
 
-    //    public void handleGroupDosNotManageByThisController(String groupId) {
-    //        boolean isGroupExistInCandidateGroupsForControllerOwnership =
-    //                SpotinstContext.getInstance().getCandidateGroupsForControllerOwnership().containsKey(groupId);
-    //
-    //        if (isGroupExistInCandidateGroupsForControllerOwnership) {
-    //            Boolean hasValidState = SpotinstContext.getInstance().getCloudsInitializationState().containsKey(this);
-    //
-    //            if (hasValidState == false) {
-    //                SpotinstContext.getInstance().getCloudsInitializationState()
-    //                               .put(this, SPOTINST_CLOUD_COMMUNICATION_INITIALIZING);
-    //            }
-    //        }
-    //        else {
-    //            SpotinstContext.getInstance().getCloudsInitializationState()
-    //                           .put(this, SpotinstCloudCommunicationState.SPOTINST_CLOUD_COMMUNICATION_FAILED);
-    //        }
-    //    }
-
     public void handleGroupDoesNotManageByThisController(String accountId, String groupId) {
-        GroupStateTracker groupStateDetails = SpotinstContext.getInstance().getConnectionStateByGroupId().get(groupId);
-
-        if (groupStateDetails == null || groupStateDetails.getState().equals(SPOTINST_CLOUD_COMMUNICATION_READY)) {
-            groupStateDetails = new GroupStateTracker(groupId, accountId);
-            SpotinstContext.getInstance().getConnectionStateByGroupId().put(groupId, groupStateDetails);
+        if (groupAcquiringDetails == null ||
+            groupAcquiringDetails.getState().equals(SPOTINST_CLOUD_COMMUNICATION_READY)) {
+            groupAcquiringDetails = new GroupAcquiringDetails(groupId, accountId);
         }
-        else if (groupStateDetails.getState().equals(SPOTINST_CLOUD_COMMUNICATION_INITIALIZING)) {
-            boolean shouldFail = TimeHelper.isTimePassedInSeconds(groupStateDetails.getTimeStamp());
+        else if (groupAcquiringDetails.getState().equals(SPOTINST_CLOUD_COMMUNICATION_INITIALIZING)) {
+            boolean shouldFail = TimeHelper.isTimePassedInSeconds(groupAcquiringDetails.getTimeStamp());
 
             if (shouldFail) {
-                groupStateDetails.setState(SPOTINST_CLOUD_COMMUNICATION_FAILED);
-                SpotinstContext.getInstance().getConnectionStateByGroupId().put(groupId, groupStateDetails);
+                groupAcquiringDetails.setState(SPOTINST_CLOUD_COMMUNICATION_FAILED);
             }
         }
     }
 
-    //    public void syncGroupsOwner(BaseSpotinstCloud cloud) {
-    //        String groupId   = cloud.getGroupId();
-    //        String accountId = cloud.getAccountId();
-    //        LOGGER.info(String.format("try fetching controller identifier for group %s from redis", groupId));
-    //
-    //        ILockRepo          redisRepo             = RepoManager.getInstance().getRedisRepo();
-    //        ApiResponse<Object> redisGetValueResponse = redisRepo.getValue(groupId, accountId);
-    //        String              controllerIdentifier  = SpotinstContext.getInstance().getControllerIdentifier();
-    //
-    //        if (redisGetValueResponse.isRequestSucceed()) {
-    //            //redis response might return in different types
-    //            if (redisGetValueResponse.getValue() instanceof String) {
-    //                String redisResponseValue = (String) redisGetValueResponse.getValue();
-    //
-    //                if (redisResponseValue != null) {
-    //                    boolean isGroupBelongToController = redisResponseValue.equals(controllerIdentifier);
-    //
-    //                    if (isGroupBelongToController) {
-    //                        handleGroupManagedByThisController(cloud, controllerIdentifier);
-    //                    }
-    //                    else {
-    //                        LOGGER.info(String.format("group %s does not belong to controller with identifier %s", groupId,
-    //                                                  controllerIdentifier));
-    //                        boolean isContainsCandidates =
-    //                                SpotinstContext.getInstance().getCandidateGroupsForControllerOwnership()
-    //                                               .containsKey(groupId);
-    //
-    //                        if (isContainsCandidates == false) {
-    //                            SpotinstCloudCommunicationState cloudState =
-    //                                    SpotinstContext.getInstance().getCloudsInitializationState().get(cloud);
-    //
-    //                            if (cloudState == null) {
-    //                                SpotinstContext.getInstance().getCandidateGroupsForControllerOwnership()
-    //                                               .put(groupId, accountId);
-    //                                SpotinstContext.getInstance().getCloudsInitializationState()
-    //                                               .put(cloud, SPOTINST_CLOUD_COMMUNICATION_INITIALIZING);
-    //                            }
-    //                        }
-    //                    }
-    //                }
-    //                else {
-    //                    LOGGER.warn("redis response value return null");
-    //                }
-    //            }
-    //            //there is no controller for the given group in redis, should take ownership
-    //            else {
-    //                handleGroupManagedByThisController(cloud, controllerIdentifier);
-    //            }
-    //        }
-    //    }
-
-    public void syncGroupsOwner() {
+    public void syncGroupOwner() {
         ILockRepo           lockRepo                    = RepoManager.getInstance().getLockRepo();
-        ApiResponse<String> lockGroupControllerResponse = lockRepo.getLockValueById(groupId, accountId);
-        String              controllerIdentifier        = SpotinstContext.getInstance().getControllerIdentifier();
+        ApiResponse<String> lockGroupControllerResponse = lockRepo.getGroupControllerLock(groupId, accountId);
 
         if (lockGroupControllerResponse.isRequestSucceed()) {
-            String  lockGroupControllerValue = lockGroupControllerResponse.getValue();
-            boolean isGroupBelongToNone      = lockGroupControllerValue == null;
+            String  lockGroupControllerValue      = lockGroupControllerResponse.getValue();
+            String  controllerIdentifier          = SpotinstContext.getInstance().getControllerIdentifier();
+            boolean isGroupAlreadyBelongToControl = lockGroupControllerValue != null;
 
-            if (isGroupBelongToNone) {
-                handleGroupManagedByNone(controllerIdentifier);
-            }
-            else {
+            if (isGroupAlreadyBelongToControl) {
                 boolean isGroupBelongToController = controllerIdentifier.equals(lockGroupControllerValue);
 
                 if (isGroupBelongToController) {
-                    handleGroupManagedByThisController(controllerIdentifier);
+                    KeepGroupControllerLockAlive(controllerIdentifier);
                 }
                 else {
-                    LOGGER.info(String.format("group %s does not belong to controller with identifier %s", groupId,
-                                              controllerIdentifier));
+                    LOGGER.info("group {} does not belong to controller with identifier {}", groupId,
+                                controllerIdentifier);
                     handleGroupDoesNotManageByThisController(accountId, groupId);
                 }
             }
-        }
-        else {
-            LOGGER.error("group locking service failed to get lock for groupId {}, accountId {}.", groupId, accountId);
-        }
-    }
-
-    private void handleGroupManagedByNone(String controllerIdentifier) {
-        LOGGER.info(String.format("group %s belong to controller with identifier %s", groupId, controllerIdentifier));
-        GroupStateTracker cloudDetails = SpotinstContext.getInstance().getConnectionStateByGroupId().get(groupId);
-
-        if (cloudDetails != null) {
-            SpotinstCloudCommunicationState cloudState = cloudDetails.getState();
-
-            if (cloudState.equals(SPOTINST_CLOUD_COMMUNICATION_READY) == false) {
-                SpotinstContext.getInstance().getConnectionStateByGroupId().remove(groupId);
+            else {
+                AcquireLock(controllerIdentifier);
             }
         }
         else {
-            cloudDetails = new GroupStateTracker(groupId, accountId);
+            List<ApiError> errors =
+                    lockGroupControllerResponse.getErrors() != null ? lockGroupControllerResponse.getErrors() :
+                    new LinkedList<>();
+            String currentConnectionStatus =
+                    groupAcquiringDetails != null ? groupAcquiringDetails.getState().getName() : "";
+            LOGGER.error(
+                    "group locking service failed to get lock for groupId {}, accountId {}, staying in current status {}. Errors: {}",
+                    groupId, accountId, currentConnectionStatus, errors);
         }
+    }
+
+    private void AcquireLock(String controllerIdentifier) {
+        LOGGER.info(
+                String.format("group %s belong to no controller. controller with identifier %s is trying to lock it",
+                              groupId, controllerIdentifier));
 
         Boolean hasLock = LockGroupController(controllerIdentifier);
 
         if (hasLock != null) {
-            if (hasLock) {
-                cloudDetails.setState(SPOTINST_CLOUD_COMMUNICATION_READY);
+            if (groupAcquiringDetails == null) {
+                groupAcquiringDetails = new GroupAcquiringDetails(groupId, accountId);
             }
-            else {
-                cloudDetails = new GroupStateTracker(groupId, accountId);
+
+            if (hasLock) {
+                groupAcquiringDetails.setState(SPOTINST_CLOUD_COMMUNICATION_READY);
+            }
+        }
+        else {
+            if (groupAcquiringDetails == null) {
+                groupAcquiringDetails = new GroupAcquiringDetails(groupId, accountId);
+            }
+            else if (groupAcquiringDetails.getState().equals(SPOTINST_CLOUD_COMMUNICATION_INITIALIZING)) {
+                boolean shouldFail = TimeHelper.isTimePassedInSeconds(groupAcquiringDetails.getTimeStamp());
+
+                if (shouldFail) {
+                    groupAcquiringDetails.setState(SPOTINST_CLOUD_COMMUNICATION_FAILED);
+                }
             }
         }
 
-        SpotinstContext.getInstance().getConnectionStateByGroupId().put(groupId, cloudDetails);
     }
 
-    private void handleGroupManagedByThisController(String controllerIdentifier) {
+    private void KeepGroupControllerLockAlive(String controllerIdentifier) {
         LOGGER.info(String.format("group %s belong to controller with identifier %s", groupId, controllerIdentifier));
-        GroupStateTracker cloudDetails = SpotinstContext.getInstance().getConnectionStateByGroupId().get(groupId);
 
-        if (cloudDetails != null) {
-            boolean isCloudNotReady = cloudDetails.getState().equals(SPOTINST_CLOUD_COMMUNICATION_READY) == false;
-
-            if (isCloudNotReady) {
-                SpotinstContext.getInstance().getConnectionStateByGroupId().remove(groupId);
-            }
+        if (groupAcquiringDetails == null) {
+            groupAcquiringDetails = new GroupAcquiringDetails(groupId, accountId);
         }
 
-        cloudDetails = new GroupStateTracker(groupId, accountId);
-        cloudDetails.setState(SPOTINST_CLOUD_COMMUNICATION_READY);
-        SpotinstContext.getInstance().getConnectionStateByGroupId().put(groupId, cloudDetails);
-        //expand TTL of the current controller in redis
-        boolean isLockRevive = LockGroupController(controllerIdentifier);
+        groupAcquiringDetails.setState(SPOTINST_CLOUD_COMMUNICATION_READY);
+        boolean isLockRevived = LockGroupController(controllerIdentifier);
 
-        if (isLockRevive == false) {
+        if (isLockRevived == false) {
             LOGGER.warn("could not expand lock ttl for group {}", groupId);
         }
     }
@@ -1018,6 +923,10 @@ public abstract class BaseSpotinstCloud extends Cloud {
         else {
             return isSingleTaskNodesEnabled;
         }
+    }
+
+    public GroupAcquiringDetails getGroupAcquiringDetails() {
+        return groupAcquiringDetails;
     }
 
     @DataBoundSetter

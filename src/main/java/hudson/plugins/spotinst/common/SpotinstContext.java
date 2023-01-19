@@ -17,10 +17,8 @@ public class SpotinstContext {
     private String accountId;
     private List<AwsInstanceType> awsInstanceTypes;
     private Date awsInstanceTypesLastUpdate;
-    private String controllerIdentifier;
-    private Map<String, GroupStateTracker> connectionStateByGroupId;
-//    private PassiveExpiringMap<String, String> candidateGroupsForControllerOwnership;
-//    private Map<BaseSpotinstCloud, SpotinstCloudCommunicationState> cloudsInitializationState;
+    private String                             controllerIdentifier;
+    private Set<GroupLockKey> cachedProcessedGroupIds;
     //endregion
 
     public static SpotinstContext getInstance() {
@@ -76,28 +74,16 @@ public class SpotinstContext {
         return controllerIdentifier;
     }
 
-//    public  PassiveExpiringMap<String,String> getCandidateGroupsForControllerOwnership() {
-//        if (candidateGroupsForControllerOwnership == null) {
-//            candidateGroupsForControllerOwnership = new PassiveExpiringMap<>(SUSPENDED_GROUP_FETCHING_TIME_TO_LIVE_IN_MILLIS);
-//        }
-//
-//        return candidateGroupsForControllerOwnership;
-//    }
-//
-//    public Map<BaseSpotinstCloud, SpotinstCloudCommunicationState> getCloudsInitializationState() {
-//        if (cloudsInitializationState == null) {
-//            cloudsInitializationState = new HashMap<>();
-//        }
-//
-//        return cloudsInitializationState;
-//    }
-
-    public Map<String, GroupStateTracker> getConnectionStateByGroupId() {
-        if(connectionStateByGroupId == null){
-            connectionStateByGroupId = new HashMap<>();
+    public Set<GroupLockKey> getCachedProcessedGroupIds() {
+        if(cachedProcessedGroupIds == null){
+            cachedProcessedGroupIds = new HashSet<>();
         }
 
-        return connectionStateByGroupId;
+        return cachedProcessedGroupIds;
+    }
+
+    public void setCachedProcessedGroupIds(Set<GroupLockKey> cachedProcessedGroupIds) {
+        this.cachedProcessedGroupIds = cachedProcessedGroupIds;
     }
     //endregion
 

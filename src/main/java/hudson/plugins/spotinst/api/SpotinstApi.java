@@ -12,6 +12,7 @@ import hudson.plugins.spotinst.model.redis.GetGroupControllerLockResponse;
 import hudson.plugins.spotinst.model.redis.LockGroupControllerRequest;
 import hudson.plugins.spotinst.model.redis.LockGroupControllerResponse;
 import jenkins.model.Jenkins;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.httpclient.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
