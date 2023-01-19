@@ -10,4 +10,6 @@ public class Constants {
     public static final Integer REST_CLIENT_CONNECT_TIMEOUT_IN_SECONDS            = 120;
     public static final Integer REST_CLIENT_CONNECTION_REQUEST_TIMEOUT_IN_SECONDS = 120;
     public static final Integer REST_CLIENT_SOCKET_TIMEOUT_IN_SECONDS             = 120;
+    public static final String  LOCK_OK_STATUS                                    = "OK";
+    public static final Integer LOCK_TIME_TO_LIVE_IN_SECONDS                      = 60 * 3;
 }

@@ -1,0 +1,37 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form">
+    <div class="alert alert-danger">
+        <j:if test="${it.isSpotinstCloudsCommunicationFailuresExist()}">
+            <strong>${%Title}</strong>
+            <p/>
+
+            ${%SpotinstCloudsCommunicationFailures(it.spotinstCloudsCommunicationFailures)}
+            <p/>
+
+            ${%Explanation(rootURL)}
+            <p/>
+        </j:if>
+    </div>
+
+    <div class="alert alert-warn">
+        <j:if test="${it.isSpotinstCloudsCommunicationInitializingExist()}">
+            <strong>${%Title}</strong>
+            <p/>
+
+            ${%SpotinstCloudsCommunicationInitializing(it.spotinstCloudsCommunicationInitializing)}
+            <p/>
+        </j:if>
+    </div>
+
+    <div class="alert alert-info">
+        <j:if test="${it.isSpotinstCloudsCommunicationReadyExist()}">
+            <strong>${%Title}</strong>
+            <p/>
+
+            <strong>rootURL</strong>
+
+            ${%SpotinstCloudsCommunicationReady(it.spotinstCloudsCommunicationReady)}
+            <p/>
+        </j:if>
+    </div>
+</j:jelly>

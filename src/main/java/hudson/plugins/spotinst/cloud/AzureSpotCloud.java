@@ -23,6 +23,7 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -107,7 +108,7 @@ public class AzureSpotCloud extends BaseSpotinstCloud {
     }
 
     @Override
-    public void syncGroupInstances() {
+    protected void handleSyncGroupInstances() {
         IAzureVmGroupRepo               azureVmGroupRepo  = RepoManager.getInstance().getAzureVmGroupRepo();
         ApiResponse<List<AzureGroupVm>> instancesResponse = azureVmGroupRepo.getGroupVms(groupId, this.accountId);
 
@@ -135,11 +136,11 @@ public class AzureSpotCloud extends BaseSpotinstCloud {
     }
 
     @Override
-    public Map<String, String> getInstanceIpsById() {
+    public Map<String, String> handleGetInstanceIpsById() {
         Map<String, String> retVal = new HashMap<>();
 
         IAzureVmGroupRepo               awsGroupRepo      = RepoManager.getInstance().getAzureVmGroupRepo();
-        ApiResponse<List<AzureGroupVm>> instancesResponse = awsGroupRepo.getGroupVms(groupId, this.accountId);
+        ApiResponse<List<AzureGroupVm>> instancesResponse = awsGroupRepo.getGroupVms(groupId, accountId);
 
         if (instancesResponse.isRequestSucceed()) {
             List<AzureGroupVm> instances = instancesResponse.getValue();
@@ -193,7 +194,7 @@ public class AzureSpotCloud extends BaseSpotinstCloud {
     }
 
     private SpotinstSlave handleNewVm(String vmName, String vmSize, String label) {
-        Integer         executors  = getNumOfExecutors(vmSize);
+        Integer executors = getNumOfExecutors(vmSize);
         addToPending(vmName, executors, PendingInstance.StatusEnum.PENDING, label);
         SpotinstSlave retVal = buildSpotinstSlave(vmName, vmSize, String.valueOf(executors));
         return retVal;
@@ -260,8 +261,8 @@ public class AzureSpotCloud extends BaseSpotinstCloud {
         SpotinstSlave slave = null;
 
         if (vm.getVmName() != null) {
-            String          vmSize     = vm.getVmSize();
-            Integer         executors  = getNumOfExecutors(vmSize);
+            String  vmSize    = vm.getVmSize();
+            Integer executors = getNumOfExecutors(vmSize);
             slave = buildSpotinstSlave(vm.getVmName(), vmSize, String.valueOf(executors));
         }
 
@@ -292,6 +293,7 @@ public class AzureSpotCloud extends BaseSpotinstCloud {
     @Extension
     public static class DescriptorImpl extends BaseSpotinstCloud.DescriptorImpl {
 
+        @Nonnull
         @Override
         public String getDisplayName() {
             return "Spot Azure Elastigroup";

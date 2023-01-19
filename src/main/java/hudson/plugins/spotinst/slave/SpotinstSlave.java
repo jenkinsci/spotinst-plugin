@@ -10,6 +10,7 @@ import org.kohsuke.stapler.StaplerRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.Date;
 import java.util.List;
@@ -173,42 +174,63 @@ public class SpotinstSlave extends Slave implements EphemeralNode {
 
     //region Public Methods
     public void terminate() {
-        Boolean isTerminated = getSpotinstCloud().detachInstance(instanceId);
+        String groupId = getSpotinstCloud().getGroupId();
+        String accountId = getSpotinstCloud().getAccountId();
+        boolean isGroupManagedByThisController = getSpotinstCloud().isCloudReadyForGroupCommunication(groupId);
 
-        if (isTerminated) {
-            LOGGER.info(String.format("Instance: %s terminated successfully", getInstanceId()));
-            removeIfInPending();
+        if (isGroupManagedByThisController) {
+            Boolean isTerminated = getSpotinstCloud().detachInstance(instanceId);
+
+            if (isTerminated) {
+                LOGGER.info(String.format("Instance: %s terminated successfully", getInstanceId()));
+                removeIfInPending();
+                try {
+                    Jenkins.getInstance().removeNode(this);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            } else {
+                LOGGER.error(String.format("Failed to terminate instance: %s", getInstanceId()));
+            }
+        }
+        else{
             try {
-                Jenkins.getInstance().removeNode(this);
-            }
-            catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        else {
-            LOGGER.error(String.format("Failed to terminate instance: %s", getInstanceId()));
-        }
+                getSpotinstCloud().handleGroupDoesNotManageByThisController(accountId, groupId);
+            }catch (Exception e){
+                LOGGER.warn(e.getMessage());
+            }        }
     }
 
     public Boolean forceTerminate() {
-        Boolean isTerminated = getSpotinstCloud().detachInstance(instanceId);
+        Boolean retVal = false;
 
-        if (isTerminated) {
-            LOGGER.info(String.format("Instance: %s terminated successfully", getInstanceId()));
-            removeIfInPending();
+        String groupId = getSpotinstCloud().getGroupId();
+        String accountId = getSpotinstCloud().getAccountId();
+        boolean isGroupManagedByThisController = getSpotinstCloud().isCloudReadyForGroupCommunication(groupId);
+
+        if (isGroupManagedByThisController) {
+            Boolean isTerminated = getSpotinstCloud().detachInstance(instanceId);
+
+            if (isTerminated) {
+                LOGGER.info(String.format("Instance: %s terminated successfully", getInstanceId()));
+                removeIfInPending();
+            } else {
+                LOGGER.error(String.format("Failed to terminate instance: %s", getInstanceId()));
+            }
+
+            try {
+                Jenkins.get().removeNode(this);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            retVal = isTerminated;
         }
-        else {
-            LOGGER.error(String.format("Failed to terminate instance: %s", getInstanceId()));
+        else{
+            getSpotinstCloud().handleGroupDoesNotManageByThisController(accountId, groupId);
         }
 
-        try {
-            Jenkins.get().removeNode(this);
-        }
-        catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        return isTerminated;
+        return retVal;
     }
 
     private void removeIfInPending() {
@@ -235,6 +257,7 @@ public class SpotinstSlave extends Slave implements EphemeralNode {
     @Extension
     public static class DescriptorImpl extends SlaveDescriptor {
 
+        @Nonnull
         @Override
         public String getDisplayName() {
             return "Spot Node";

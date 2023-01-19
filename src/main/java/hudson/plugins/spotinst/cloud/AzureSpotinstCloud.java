@@ -21,6 +21,7 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.*;
 
@@ -73,7 +74,7 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
         Boolean         retVal         = false;
         IAzureGroupRepo azureGroupRepo = RepoManager.getInstance().getAzureGroupRepo();
         ApiResponse<Boolean> detachInstanceResponse =
-                azureGroupRepo.detachInstance(groupId, instanceId, this.accountId);
+                azureGroupRepo.detachInstance(groupId, instanceId, accountId);
 
         if (detachInstanceResponse.isRequestSucceed()) {
             LOGGER.info(String.format("Instance %s detached", instanceId));
@@ -93,7 +94,12 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
     }
 
     @Override
-    public Map<String, String> getInstanceIpsById() {
+    protected void handleSyncGroupInstances() {
+
+    }
+
+    @Override
+    public Map<String, String> getInstanceIpsById() {//TODO: check if is different
         Map<String, String> retVal = new HashMap<>();
 
         IAzureGroupRepo awsGroupRepo = RepoManager.getInstance().getAzureGroupRepo();
@@ -104,7 +110,7 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
             List<AzureGroupInstance> instances = instancesResponse.getValue();
 
             for (AzureGroupInstance instance : instances) {
-                if (this.getShouldUsePrivateIp()) {
+                if (getShouldUsePrivateIp()) {
                     retVal.put(instance.getInstanceId(), instance.getPrivateIp());
                 }
                 else {
@@ -119,6 +125,11 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
         }
 
         return retVal;
+    }
+
+    @Override
+    protected Map<String, String> handleGetInstanceIpsById() {
+        return null;
     }
 
     @Override
@@ -322,6 +333,7 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
     @Extension
     public static class DescriptorImpl extends BaseSpotinstCloud.DescriptorImpl {
 
+        @Nonnull
         @Override
         public String getDisplayName() {
             return "Spot Azure LPVM (old)";

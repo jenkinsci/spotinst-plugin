@@ -1,11 +1,14 @@
 package hudson.plugins.spotinst.cloud;
 
-import edu.umd.cs.findbugs.annotations.CheckForNull;
 import hudson.DescriptorExtensionList;
 import hudson.model.*;
 import hudson.model.labels.LabelAtom;
+import hudson.plugins.spotinst.api.infra.ApiResponse;
 import hudson.plugins.spotinst.api.infra.JsonMapper;
+import hudson.plugins.spotinst.cloud.helpers.TimeHelper;
 import hudson.plugins.spotinst.common.*;
+import hudson.plugins.spotinst.repos.ILockRepo;
+import hudson.plugins.spotinst.repos.RepoManager;
 import hudson.plugins.spotinst.slave.*;
 import hudson.plugins.sshslaves.SSHConnector;
 import hudson.slaves.*;
@@ -15,6 +18,7 @@ import hudson.tools.ToolInstallation;
 import hudson.tools.ToolLocationNodeProperty;
 import jenkins.model.Jenkins;
 import org.apache.commons.lang.BooleanUtils;
+import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,6 +28,8 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import static hudson.plugins.spotinst.common.SpotinstCloudCommunicationState.*;
+
 /**
  * Created by ohadmuchnik on 25/05/2016.
  */
@@ -32,7 +38,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
     //region Members
     private static final Logger LOGGER = LoggerFactory.getLogger(BaseSpotinstCloud.class);
 
-    protected static final int                               NO_OVERRIDED_NUM_OF_EXECUTORS = -1;
+    protected static final int                               NO_OVERRIDDEN_NUM_OF_EXECUTORS = -1;
     protected              String                            accountId;
     protected              String                            groupId;
     protected              Map<String, PendingInstance>      pendingInstances;
@@ -110,6 +116,10 @@ public abstract class BaseSpotinstCloud extends Cloud {
         else {
             this.globalExecutorOverride = new SpotGlobalExecutorOverride(false, 1);
         }
+
+        if (StringUtils.isNotEmpty(groupId) && StringUtils.isNotEmpty(accountId)) {
+            syncGroupsOwner();
+        }
     }
     //endregion
 
@@ -119,28 +129,33 @@ public abstract class BaseSpotinstCloud extends Cloud {
         ProvisionRequest request = new ProvisionRequest(label, excessWorkload);
 
         LOGGER.info(String.format("Got provision slave request: %s", JsonMapper.toJson(request)));
+        boolean isGroupManagedByThisController = isCloudReadyForGroupCommunication(groupId);
 
-        setNumOfNeededExecutors(request);
+        if (isGroupManagedByThisController) {
+            setNumOfNeededExecutors(request);
 
-        if (request.getExecutors() > 0) {
-            LOGGER.info(String.format("Need to scale up %s units", request.getExecutors()));
+            if (request.getExecutors() > 0) {
+                LOGGER.info(String.format("Need to scale up %s units", request.getExecutors()));
+                List<SpotinstSlave> slaves = provisionSlaves(request);
 
-            List<SpotinstSlave> slaves = provisionSlaves(request);
-
-            if (slaves.size() > 0) {
-                for (final SpotinstSlave slave : slaves) {
-
-                    try {
-                        Jenkins.getInstance().addNode(slave);
-                    }
-                    catch (IOException e) {
-                        LOGGER.error(String.format("Failed to create node for slave: %s", slave.getInstanceId()), e);
+                if (slaves.size() > 0) {
+                    for (final SpotinstSlave slave : slaves) {
+                        try {
+                            Jenkins.getInstance().addNode(slave);
+                        }
+                        catch (IOException e) {
+                            LOGGER.error(String.format("Failed to create node for slave: %s", slave.getInstanceId()),
+                                         e);
+                        }
                     }
                 }
             }
+            else {
+                LOGGER.info("No need to scale up new slaves, there are some that are initiating");
+            }
         }
         else {
-            LOGGER.info("No need to scale up new slaves, there are some that are initiating");
+            handleGroupDoesNotManageByThisController(accountId, groupId);
         }
 
         return Collections.emptyList();
@@ -198,7 +213,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
 
                     Integer pendingThreshold = getPendingThreshold();
                     Boolean isPendingOverThreshold =
-                            TimeUtils.isTimePassed(pendingInstance.getCreatedAt(), pendingThreshold);
+                            TimeUtils.isTimePassedInMinutes(pendingInstance.getCreatedAt(), pendingThreshold);
 
                     if (isPendingOverThreshold) {
                         LOGGER.info(String.format(
@@ -329,7 +344,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
 
 
             Date    slaveCreatedAt         = slave.getCreatedAt();
-            Boolean isOverOfflineThreshold = TimeUtils.isTimePassed(slaveCreatedAt, offlineThreshold);
+            Boolean isOverOfflineThreshold = TimeUtils.isTimePassedInMinutes(slaveCreatedAt, offlineThreshold);
 
             if (isSlaveOffline && isSlaveConnecting == false && isOverOfflineThreshold && temporarilyOffline == false &&
                 isOverIdleThreshold) {
@@ -347,14 +362,44 @@ public abstract class BaseSpotinstCloud extends Cloud {
 
         return retVal;
     }
+
+    //    public boolean isCloudReadyForGroupCommunication(String groupId) {
+    //        boolean retVal = false;
+    //
+    //        if (StringUtils.isNotEmpty(groupId)) {
+    //            SpotinstCloudCommunicationState state = getCloudInitializationResultByGroupId(groupId);
+    //
+    //            if (state != null) {
+    //                if (state.equals(SpotinstCloudCommunicationState.SPOTINST_CLOUD_COMMUNICATION_READY)) {
+    //                    retVal = true;
+    //                }
+    //            }
+    //        }
+    //
+    //        return retVal;
+    //    }
+
+    public boolean isCloudReadyForGroupCommunication(String groupId) {
+        boolean retVal = false;
+
+        if (StringUtils.isNotEmpty(groupId)) {
+            GroupStateTracker stateDetails = SpotinstContext.getInstance().getConnectionStateByGroupId().get(groupId);
+
+            if (stateDetails != null) {
+                retVal = stateDetails.getState().equals(SPOTINST_CLOUD_COMMUNICATION_READY);
+            }
+        }
+
+        return retVal;
+    }
     //endregion
 
     //region Private Methods
     private synchronized List<SpotinstSlave> provisionSlaves(ProvisionRequest request) {
         LOGGER.info(String.format("Scale up group: %s with %s workload units", groupId, request.getExecutors()));
 
-        List<SpotinstSlave> slaves = scaleUp(request);
-        return slaves;
+        List<SpotinstSlave> retVal = scaleUp(request);
+        return retVal;
     }
 
     private void setNumOfNeededExecutors(ProvisionRequest request) {
@@ -434,6 +479,46 @@ public abstract class BaseSpotinstCloud extends Cloud {
 
         return retVal;
     }
+
+    private Boolean LockGroupController(String controllerIdentifier) {
+        Boolean   retVal   = null;
+        ILockRepo lockRepo = RepoManager.getInstance().getLockRepo();
+        ApiResponse<String> lockGroupControllerResponse =
+                lockRepo.Lock(groupId, accountId, controllerIdentifier, Constants.LOCK_TIME_TO_LIVE_IN_SECONDS);
+
+        if (lockGroupControllerResponse.isRequestSucceed()) {
+            String responseValue = lockGroupControllerResponse.getValue();
+
+            if (Constants.LOCK_OK_STATUS.equals(responseValue)) {
+                LOGGER.info(String.format("Successfully locked group %s controller", groupId));
+
+                retVal = true;
+            }
+            else {
+                LOGGER.error(String.format("Failed locking group %s controller", groupId));
+                retVal = false;
+            }
+        }
+        else {
+            LOGGER.error("lock request failed");
+        }
+
+        return retVal;
+    }
+
+    //    private SpotinstCloudCommunicationState getCloudInitializationResultByGroupId(String groupId) {
+    //        SpotinstCloudCommunicationState state = null;
+    //
+    //        for (Map.Entry<BaseSpotinstCloud, SpotinstCloudCommunicationState> cloudsInitializationStateEntry : SpotinstContext.getInstance()
+    //                                                                                                                           .getCloudsInitializationState()
+    //                                                                                                                           .entrySet()) {
+    //            if (cloudsInitializationStateEntry.getKey().getGroupId().equals(groupId)) {
+    //                state = cloudsInitializationStateEntry.getValue();
+    //            }
+    //        }
+    //
+    //        return state;
+    //    }
     //endregion
 
     //region Protected Methods
@@ -594,10 +679,10 @@ public abstract class BaseSpotinstCloud extends Cloud {
             retVal = 1;
         }
         else {
-            int overridedNumOfExecutors = getOverridedNumberOfExecutors(instanceType);
-            boolean isNumOfExecutorsOverrided = overridedNumOfExecutors != NO_OVERRIDED_NUM_OF_EXECUTORS;
+            int     overridedNumOfExecutors   = getOverridedNumberOfExecutors(instanceType);
+            boolean isNumOfExecutorsOverrided = overridedNumOfExecutors != NO_OVERRIDDEN_NUM_OF_EXECUTORS;
 
-            if(isNumOfExecutorsOverrided){
+            if (isNumOfExecutorsOverrided) {
                 retVal = overridedNumOfExecutors;
             }
             else {
@@ -633,7 +718,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
     }
 
     protected int getOverridedNumberOfExecutors(String instanceType) {
-        return NO_OVERRIDED_NUM_OF_EXECUTORS;
+        return NO_OVERRIDDEN_NUM_OF_EXECUTORS;
     }
 
     protected Integer getPendingThreshold() {
@@ -642,6 +727,174 @@ public abstract class BaseSpotinstCloud extends Cloud {
 
     protected Integer getSlaveOfflineThreshold() {
         return Constants.SLAVE_OFFLINE_THRESHOLD_IN_MINUTES;
+    }
+
+    //    public void handleGroupDosNotManageByThisController(String groupId) {
+    //        boolean isGroupExistInCandidateGroupsForControllerOwnership =
+    //                SpotinstContext.getInstance().getCandidateGroupsForControllerOwnership().containsKey(groupId);
+    //
+    //        if (isGroupExistInCandidateGroupsForControllerOwnership) {
+    //            Boolean hasValidState = SpotinstContext.getInstance().getCloudsInitializationState().containsKey(this);
+    //
+    //            if (hasValidState == false) {
+    //                SpotinstContext.getInstance().getCloudsInitializationState()
+    //                               .put(this, SPOTINST_CLOUD_COMMUNICATION_INITIALIZING);
+    //            }
+    //        }
+    //        else {
+    //            SpotinstContext.getInstance().getCloudsInitializationState()
+    //                           .put(this, SpotinstCloudCommunicationState.SPOTINST_CLOUD_COMMUNICATION_FAILED);
+    //        }
+    //    }
+
+    public void handleGroupDoesNotManageByThisController(String accountId, String groupId) {
+        GroupStateTracker groupStateDetails = SpotinstContext.getInstance().getConnectionStateByGroupId().get(groupId);
+
+        if (groupStateDetails == null || groupStateDetails.getState().equals(SPOTINST_CLOUD_COMMUNICATION_READY)) {
+            groupStateDetails = new GroupStateTracker(groupId, accountId);
+            SpotinstContext.getInstance().getConnectionStateByGroupId().put(groupId, groupStateDetails);
+        }
+        else if (groupStateDetails.getState().equals(SPOTINST_CLOUD_COMMUNICATION_INITIALIZING)) {
+            boolean shouldFail = TimeHelper.isTimePassedInSeconds(groupStateDetails.getTimeStamp());
+
+            if (shouldFail) {
+                groupStateDetails.setState(SPOTINST_CLOUD_COMMUNICATION_FAILED);
+                SpotinstContext.getInstance().getConnectionStateByGroupId().put(groupId, groupStateDetails);
+            }
+        }
+    }
+
+    //    public void syncGroupsOwner(BaseSpotinstCloud cloud) {
+    //        String groupId   = cloud.getGroupId();
+    //        String accountId = cloud.getAccountId();
+    //        LOGGER.info(String.format("try fetching controller identifier for group %s from redis", groupId));
+    //
+    //        ILockRepo          redisRepo             = RepoManager.getInstance().getRedisRepo();
+    //        ApiResponse<Object> redisGetValueResponse = redisRepo.getValue(groupId, accountId);
+    //        String              controllerIdentifier  = SpotinstContext.getInstance().getControllerIdentifier();
+    //
+    //        if (redisGetValueResponse.isRequestSucceed()) {
+    //            //redis response might return in different types
+    //            if (redisGetValueResponse.getValue() instanceof String) {
+    //                String redisResponseValue = (String) redisGetValueResponse.getValue();
+    //
+    //                if (redisResponseValue != null) {
+    //                    boolean isGroupBelongToController = redisResponseValue.equals(controllerIdentifier);
+    //
+    //                    if (isGroupBelongToController) {
+    //                        handleGroupManagedByThisController(cloud, controllerIdentifier);
+    //                    }
+    //                    else {
+    //                        LOGGER.info(String.format("group %s does not belong to controller with identifier %s", groupId,
+    //                                                  controllerIdentifier));
+    //                        boolean isContainsCandidates =
+    //                                SpotinstContext.getInstance().getCandidateGroupsForControllerOwnership()
+    //                                               .containsKey(groupId);
+    //
+    //                        if (isContainsCandidates == false) {
+    //                            SpotinstCloudCommunicationState cloudState =
+    //                                    SpotinstContext.getInstance().getCloudsInitializationState().get(cloud);
+    //
+    //                            if (cloudState == null) {
+    //                                SpotinstContext.getInstance().getCandidateGroupsForControllerOwnership()
+    //                                               .put(groupId, accountId);
+    //                                SpotinstContext.getInstance().getCloudsInitializationState()
+    //                                               .put(cloud, SPOTINST_CLOUD_COMMUNICATION_INITIALIZING);
+    //                            }
+    //                        }
+    //                    }
+    //                }
+    //                else {
+    //                    LOGGER.warn("redis response value return null");
+    //                }
+    //            }
+    //            //there is no controller for the given group in redis, should take ownership
+    //            else {
+    //                handleGroupManagedByThisController(cloud, controllerIdentifier);
+    //            }
+    //        }
+    //    }
+
+    public void syncGroupsOwner() {
+        ILockRepo           lockRepo                    = RepoManager.getInstance().getLockRepo();
+        ApiResponse<String> lockGroupControllerResponse = lockRepo.getLockValueById(groupId, accountId);
+        String              controllerIdentifier        = SpotinstContext.getInstance().getControllerIdentifier();
+
+        if (lockGroupControllerResponse.isRequestSucceed()) {
+            String  lockGroupControllerValue = lockGroupControllerResponse.getValue();
+            boolean isGroupBelongToNone      = lockGroupControllerValue == null;
+
+            if (isGroupBelongToNone) {
+                handleGroupManagedByNone(controllerIdentifier);
+            }
+            else {
+                boolean isGroupBelongToController = controllerIdentifier.equals(lockGroupControllerValue);
+
+                if (isGroupBelongToController) {
+                    handleGroupManagedByThisController(controllerIdentifier);
+                }
+                else {
+                    LOGGER.info(String.format("group %s does not belong to controller with identifier %s", groupId,
+                                              controllerIdentifier));
+                    handleGroupDoesNotManageByThisController(accountId, groupId);
+                }
+            }
+        }
+        else {
+            LOGGER.error("group locking service failed to get lock for groupId {}, accountId {}.", groupId, accountId);
+        }
+    }
+
+    private void handleGroupManagedByNone(String controllerIdentifier) {
+        LOGGER.info(String.format("group %s belong to controller with identifier %s", groupId, controllerIdentifier));
+        GroupStateTracker cloudDetails = SpotinstContext.getInstance().getConnectionStateByGroupId().get(groupId);
+
+        if (cloudDetails != null) {
+            SpotinstCloudCommunicationState cloudState = cloudDetails.getState();
+
+            if (cloudState.equals(SPOTINST_CLOUD_COMMUNICATION_READY) == false) {
+                SpotinstContext.getInstance().getConnectionStateByGroupId().remove(groupId);
+            }
+        }
+        else {
+            cloudDetails = new GroupStateTracker(groupId, accountId);
+        }
+
+        Boolean hasLock = LockGroupController(controllerIdentifier);
+
+        if (hasLock != null) {
+            if (hasLock) {
+                cloudDetails.setState(SPOTINST_CLOUD_COMMUNICATION_READY);
+            }
+            else {
+                cloudDetails = new GroupStateTracker(groupId, accountId);
+            }
+        }
+
+        SpotinstContext.getInstance().getConnectionStateByGroupId().put(groupId, cloudDetails);
+    }
+
+    private void handleGroupManagedByThisController(String controllerIdentifier) {
+        LOGGER.info(String.format("group %s belong to controller with identifier %s", groupId, controllerIdentifier));
+        GroupStateTracker cloudDetails = SpotinstContext.getInstance().getConnectionStateByGroupId().get(groupId);
+
+        if (cloudDetails != null) {
+            boolean isCloudNotReady = cloudDetails.getState().equals(SPOTINST_CLOUD_COMMUNICATION_READY) == false;
+
+            if (isCloudNotReady) {
+                SpotinstContext.getInstance().getConnectionStateByGroupId().remove(groupId);
+            }
+        }
+
+        cloudDetails = new GroupStateTracker(groupId, accountId);
+        cloudDetails.setState(SPOTINST_CLOUD_COMMUNICATION_READY);
+        SpotinstContext.getInstance().getConnectionStateByGroupId().put(groupId, cloudDetails);
+        //expand TTL of the current controller in redis
+        boolean isLockRevive = LockGroupController(controllerIdentifier);
+
+        if (isLockRevive == false) {
+            LOGGER.warn("could not expand lock ttl for group {}", groupId);
+        }
     }
     //endregion
 
@@ -773,12 +1026,12 @@ public abstract class BaseSpotinstCloud extends Cloud {
 
         // if enabled, enable and override GlobalExecutorOverride to 1
         // better clarity to user, avoid race conditions
-        boolean shouldDisableGlobalExecutors = isSingleTaskNodesEnabled != null && isSingleTaskNodesEnabled && this.globalExecutorOverride != null;
+        boolean shouldDisableGlobalExecutors =
+                isSingleTaskNodesEnabled != null && isSingleTaskNodesEnabled && this.globalExecutorOverride != null;
         if (shouldDisableGlobalExecutors) {
             this.globalExecutorOverride.setIsEnabled(false);
         }
     }
-
 
     //endregion
 
@@ -789,9 +1042,35 @@ public abstract class BaseSpotinstCloud extends Cloud {
 
     public abstract String getCloudUrl();
 
-    public abstract void syncGroupInstances();
+    public void syncGroupInstances() {
+        boolean isGroupManagedByThisController = isCloudReadyForGroupCommunication(groupId);
 
-    public abstract Map<String, String> getInstanceIpsById();
+        if (isGroupManagedByThisController) {
+            handleSyncGroupInstances();
+        }
+        else {
+            handleGroupDoesNotManageByThisController(accountId, groupId);
+        }
+    }
+
+    protected abstract void handleSyncGroupInstances();
+
+    public Map<String, String> getInstanceIpsById() {
+        Map<String, String> retVal;
+        boolean             isGroupManagedByThisController = isCloudReadyForGroupCommunication(groupId);
+
+        if (isGroupManagedByThisController) {
+            retVal = handleGetInstanceIpsById();
+        }
+        else {
+            handleGroupDoesNotManageByThisController(accountId, groupId);
+            retVal = new HashMap<>();
+        }
+
+        return retVal;
+    }
+
+    protected abstract Map<String, String> handleGetInstanceIpsById();
 
     protected abstract Integer getDefaultExecutorsNumber(String instanceType);
     //endregion

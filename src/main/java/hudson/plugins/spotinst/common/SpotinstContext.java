@@ -2,9 +2,9 @@ package hudson.plugins.spotinst.common;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.plugins.spotinst.model.aws.AwsInstanceType;
+import org.apache.commons.lang.RandomStringUtils;
 
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 /**
  * Created by ohadmuchnik on 24/05/2016.
@@ -12,11 +12,15 @@ import java.util.List;
 public class SpotinstContext {
 
     //region Members
-    private static SpotinstContext       instance;
-    private        String                spotinstToken;
-    private        String                accountId;
-    private        List<AwsInstanceType> awsInstanceTypes;
-    private        Date                  awsInstanceTypesLastUpdate;
+    private static SpotinstContext instance;
+    private String spotinstToken;
+    private String accountId;
+    private List<AwsInstanceType> awsInstanceTypes;
+    private Date awsInstanceTypesLastUpdate;
+    private String controllerIdentifier;
+    private Map<String, GroupStateTracker> connectionStateByGroupId;
+//    private PassiveExpiringMap<String, String> candidateGroupsForControllerOwnership;
+//    private Map<BaseSpotinstCloud, SpotinstCloudCommunicationState> cloudsInitializationState;
     //endregion
 
     public static SpotinstContext getInstance() {
@@ -62,6 +66,38 @@ public class SpotinstContext {
     @SuppressFBWarnings(value = {"EI_EXPOSE_REP"})
     public void setAwsInstanceTypesLastUpdate(Date awsInstanceTypesLastUpdate) {
         this.awsInstanceTypesLastUpdate = awsInstanceTypesLastUpdate;
+    }
+
+    public String getControllerIdentifier() {//TODO: verify with Ziv
+        if(controllerIdentifier == null){
+            controllerIdentifier = RandomStringUtils.randomAlphanumeric(10);
+        }
+
+        return controllerIdentifier;
+    }
+
+//    public  PassiveExpiringMap<String,String> getCandidateGroupsForControllerOwnership() {
+//        if (candidateGroupsForControllerOwnership == null) {
+//            candidateGroupsForControllerOwnership = new PassiveExpiringMap<>(SUSPENDED_GROUP_FETCHING_TIME_TO_LIVE_IN_MILLIS);
+//        }
+//
+//        return candidateGroupsForControllerOwnership;
+//    }
+//
+//    public Map<BaseSpotinstCloud, SpotinstCloudCommunicationState> getCloudsInitializationState() {
+//        if (cloudsInitializationState == null) {
+//            cloudsInitializationState = new HashMap<>();
+//        }
+//
+//        return cloudsInitializationState;
+//    }
+
+    public Map<String, GroupStateTracker> getConnectionStateByGroupId() {
+        if(connectionStateByGroupId == null){
+            connectionStateByGroupId = new HashMap<>();
+        }
+
+        return connectionStateByGroupId;
     }
     //endregion
 
