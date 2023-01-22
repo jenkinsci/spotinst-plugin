@@ -335,7 +335,7 @@ public class SpotinstApi {
         GetGroupControllerLockResponse lockResponse = getCastedResponse(response, GetGroupControllerLockResponse.class);
 
         if (CollectionUtils.isEmpty(lockResponse.getResponse().getItems()) == false) {
-            retVal = lockResponse.getResponse().getItems().get(0);
+            retVal = lockResponse.getResponse().getItems().get(0).toString();
         }
 
         return retVal;

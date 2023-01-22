@@ -174,9 +174,7 @@ public class SpotinstSlave extends Slave implements EphemeralNode {
 
     //region Public Methods
     public void terminate() {
-        String groupId = getSpotinstCloud().getGroupId();
-        String accountId = getSpotinstCloud().getAccountId();
-        boolean isGroupManagedByThisController = getSpotinstCloud().isCloudReadyForGroupCommunication(groupId);
+        boolean isGroupManagedByThisController = getSpotinstCloud().isCloudReadyForGroupCommunication();
 
         if (isGroupManagedByThisController) {
             Boolean isTerminated = getSpotinstCloud().detachInstance(instanceId);
@@ -195,7 +193,7 @@ public class SpotinstSlave extends Slave implements EphemeralNode {
         }
         else{
             try {
-                getSpotinstCloud().handleGroupDoesNotManageByThisController(accountId, groupId);
+                getSpotinstCloud().handleGroupDoesNotManageByThisController();
             }catch (Exception e){
                 LOGGER.warn(e.getMessage());
             }        }
@@ -203,10 +201,7 @@ public class SpotinstSlave extends Slave implements EphemeralNode {
 
     public Boolean forceTerminate() {
         Boolean retVal = false;
-
-        String groupId = getSpotinstCloud().getGroupId();
-        String accountId = getSpotinstCloud().getAccountId();
-        boolean isGroupManagedByThisController = getSpotinstCloud().isCloudReadyForGroupCommunication(groupId);
+        boolean isGroupManagedByThisController = getSpotinstCloud().isCloudReadyForGroupCommunication();
 
         if (isGroupManagedByThisController) {
             Boolean isTerminated = getSpotinstCloud().detachInstance(instanceId);
@@ -227,7 +222,7 @@ public class SpotinstSlave extends Slave implements EphemeralNode {
             retVal = isTerminated;
         }
         else{
-            getSpotinstCloud().handleGroupDoesNotManageByThisController(accountId, groupId);
+            getSpotinstCloud().handleGroupDoesNotManageByThisController();
         }
 
         return retVal;

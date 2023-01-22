@@ -105,11 +105,8 @@ public class SpotinstSyncGroupsOwner extends AsyncPeriodicWork {
                     }
                 }
                 else {
-                    List<ApiError> errors =
-                            lockGroupControllerResponse.getErrors() != null ? lockGroupControllerResponse.getErrors() :
-                            new LinkedList<>();
                     LOGGER.error("group unlocking service failed to get lock for groupId {}, accountId {}. Errors: {}",
-                                 groupId, accountId, errors);
+                                 groupId, accountId, lockGroupControllerResponse.getErrors());
                 }
             }
         }
