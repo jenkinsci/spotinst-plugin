@@ -14,6 +14,7 @@ import hudson.plugins.spotinst.model.redis.LockGroupControllerResponse;
 import jenkins.model.Jenkins;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,7 +48,7 @@ public class SpotinstApi {
 
         Map<String, String> queryParams = new HashMap<>();
 
-        if (accountId != null && accountId.isEmpty() == false) {
+        if (StringUtils.isNotEmpty(accountId)) {
             queryParams.put(QUERY_PARAM_ACCOUNT_ID, accountId);
         }
 
@@ -182,9 +183,7 @@ public class SpotinstApi {
                                    queryParams);
 
         getCastedResponse(response, ApiEmptyResponse.class);
-        Boolean retVal = true;
-
-        return retVal;
+        return true;
     }
 
     public static List<GcpGroupInstance> getGcpGroupInstances(String groupId, String accountId) throws ApiException {
@@ -334,8 +333,8 @@ public class SpotinstApi {
 
         GetGroupControllerLockResponse lockResponse = getCastedResponse(response, GetGroupControllerLockResponse.class);
 
-        if (CollectionUtils.isEmpty(lockResponse.getResponse().getItems()) == false) {
-            retVal = lockResponse.getResponse().getItems().get(0).toString();
+        if (CollectionUtils.isNotEmpty(lockResponse.getResponse().getItems())) {
+            retVal = lockResponse.getResponse().getItems().get(0);
         }
 
         return retVal;
@@ -414,11 +413,11 @@ public class SpotinstApi {
         Map<String, String> queryParams    = new HashMap<>();
         String              accountIdParam = accountId;
 
-        if (accountIdParam == null || accountIdParam.isEmpty()) {
+        if (StringUtils.isEmpty(accountIdParam)) {
             accountIdParam = SpotinstContext.getInstance().getAccountId();
         }
 
-        if (accountIdParam != null && accountIdParam.isEmpty() == false) {
+        if (StringUtils.isNotEmpty(accountIdParam)) {
             queryParams.put(QUERY_PARAM_ACCOUNT_ID, accountIdParam);
         }
 

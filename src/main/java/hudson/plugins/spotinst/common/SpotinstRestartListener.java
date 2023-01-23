@@ -1,17 +1,12 @@
 package hudson.plugins.spotinst.common;
 
 import hudson.model.RestartListener;
-import hudson.plugins.spotinst.cloud.BaseSpotinstCloud;
 import hudson.plugins.spotinst.jobs.SpotinstSyncGroupsOwner;
-import hudson.slaves.Cloud;
 import jenkins.model.Jenkins;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 
 //TODO Liron - this part not working yet
 public class SpotinstRestartListener extends RestartListener {
@@ -33,24 +28,7 @@ public class SpotinstRestartListener extends RestartListener {
 
     @Override
     public void onRestart() {
-        SpotinstSyncGroupsOwner groupsOwnerJob        = new SpotinstSyncGroupsOwner();
-        List<Cloud>             cloudList             = Jenkins.getInstance().clouds;
-        Set<BaseSpotinstCloud>  cloudSet              = new HashSet<>();
-        Set<GroupLockKey>       groupLockAcquiringSet = new HashSet<>();
-
-        if (cloudList != null && cloudList.size() > 0) {
-            for (Cloud cloud : cloudList) {
-                if (cloud instanceof BaseSpotinstCloud) {
-                    BaseSpotinstCloud spotinstCloud = (BaseSpotinstCloud) cloud;
-                    cloudSet.add(spotinstCloud);
-                    GroupLockKey groupLockKey =
-                            new GroupLockKey(spotinstCloud.getGroupId(), spotinstCloud.getAccountId());
-                    groupLockAcquiringSet.add(groupLockKey);
-                }
-            }
-        }
-
-        LOGGER.info(String.format("deallocating %s Spotinst clouds", cloudSet.size()));
-        groupsOwnerJob.deallocateGroupsNoLongerInUse(groupLockAcquiringSet);
+        SpotinstSyncGroupsOwner groupsOwnerJob = new SpotinstSyncGroupsOwner();
+        groupsOwnerJob.deallocateAll();
     }
 }

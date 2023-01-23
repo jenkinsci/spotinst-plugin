@@ -119,7 +119,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
             this.globalExecutorOverride = new SpotGlobalExecutorOverride(false, 1);
         }
 
-        boolean isActiveCloud = StringUtils.isNotEmpty(groupId) && StringUtils.isNotEmpty(accountId);
+        boolean isActiveCloud = isActive();
 
         if (isActiveCloud) {
             groupAcquiringDetails = new GroupAcquiringDetails(groupId, accountId);
@@ -376,6 +376,11 @@ public abstract class BaseSpotinstCloud extends Cloud {
             retVal = groupAcquiringDetails.getState().equals(SPOTINST_CLOUD_COMMUNICATION_READY);
         }
 
+        return retVal;
+    }
+
+    public Boolean isActive(){
+        Boolean retVal = StringUtils.isNotEmpty(groupId) && StringUtils.isNotEmpty(accountId);
         return retVal;
     }
     //endregion
