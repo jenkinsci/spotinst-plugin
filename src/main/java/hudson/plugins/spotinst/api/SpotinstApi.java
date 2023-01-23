@@ -319,7 +319,7 @@ public class SpotinstApi {
     }
     //endregion
 
-    //Redis
+    //region LockGroupController
     public static String getGroupLockValueById(String groupId, String accountId) throws ApiException {
         String retVal = null;
 

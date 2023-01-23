@@ -4,9 +4,8 @@ import java.util.Calendar;
 import java.util.Date;
 
 public class TimeHelper {
-    //region members
-    private static final Integer redisTimeToLeaveInSeconds                       = 60 * 3;
-    private static final Integer miliToSeconds                                   = 1000;
+    //region constants
+    private static final Integer REDIS_TTL_IN_SECONDS                            = 60 * 3;
     private static final Integer MILI_TO_SECONDS                                 = 1000;
     public static final  Integer SUSPENDED_GROUP_FETCHING_TIME_TO_LIVE_IN_MILLIS = generateSuspendedGroupFetchingTime();
     //endregion
@@ -28,13 +27,13 @@ public class TimeHelper {
     }
 
     public static Integer getRedisTimeToLeaveInSeconds() {
-        return redisTimeToLeaveInSeconds;
+        return REDIS_TTL_IN_SECONDS;
     }
     //endregion
 
     //region private methods
     private static Integer generateSuspendedGroupFetchingTime() {
-        Integer retVal = miliToSeconds * redisTimeToLeaveInSeconds + 10;
+        Integer retVal = MILI_TO_SECONDS * REDIS_TTL_IN_SECONDS + 10;
 
         return retVal;
     }

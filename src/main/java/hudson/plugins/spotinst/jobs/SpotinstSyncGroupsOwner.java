@@ -3,7 +3,6 @@ package hudson.plugins.spotinst.jobs;
 import hudson.Extension;
 import hudson.model.AsyncPeriodicWork;
 import hudson.model.TaskListener;
-import hudson.plugins.spotinst.api.infra.ApiError;
 import hudson.plugins.spotinst.api.infra.ApiResponse;
 import hudson.plugins.spotinst.cloud.BaseSpotinstCloud;
 import hudson.plugins.spotinst.cloud.helpers.TimeHelper;
@@ -27,15 +26,16 @@ import java.util.stream.Collectors;
  */
 @Extension
 public class SpotinstSyncGroupsOwner extends AsyncPeriodicWork {
+    //region constants
+    private static final Integer LOCK_TTL_TO_SYNC_GROUP_RATIO = 3;
+    public static final  Integer JOB_INTERVAL_IN_SECONDS      =
+            TimeHelper.getRedisTimeToLeaveInSeconds() / LOCK_TTL_TO_SYNC_GROUP_RATIO;
+    final static         long    RECURRENCE_PERIOD            = TimeUnit.SECONDS.toMillis(JOB_INTERVAL_IN_SECONDS);
+    //endregion
 
     //region Members
-    private static final Logger            LOGGER                  =
-            LoggerFactory.getLogger(SpotinstSyncGroupsOwner.class);
-    private static       Set<GroupLockKey> groupsFromLastRun;
-    private static final Integer           lockTTLToSyncGroupRatio = 3;
-    public static final  Integer           JOB_INTERVAL_IN_SECONDS =
-            TimeHelper.getRedisTimeToLeaveInSeconds() / lockTTLToSyncGroupRatio;
-    final static         long              recurrencePeriod        = TimeUnit.SECONDS.toMillis(JOB_INTERVAL_IN_SECONDS);
+    private static final Logger            LOGGER            = LoggerFactory.getLogger(SpotinstSyncGroupsOwner.class);
+    private static       Set<GroupLockKey> groupsFromLastRun = new HashSet<>();
     //endregion
 
     //region Constructor
@@ -71,7 +71,7 @@ public class SpotinstSyncGroupsOwner extends AsyncPeriodicWork {
         }
 
         LOGGER.info(String.format("deallocating %s Spotinst clouds", groupLockAcquiringSet.size()));
-        deallocateGroups(groupLockAcquiringSet);
+        unlockGroups(groupLockAcquiringSet);
         groupsFromLastRun = null;
     }
     //endregion
@@ -94,26 +94,27 @@ public class SpotinstSyncGroupsOwner extends AsyncPeriodicWork {
     }
 
     private void HandleCloudsChangeFromLastRun(List<BaseSpotinstCloud> activeClouds) {
-        Set<GroupLockKey> previousActiveGroups = getGroupsFromLastRun();
-        Set<GroupLockKey> currentActiveGroups  = getGroups(activeClouds);
+        Set<GroupLockKey> currentActiveGroups = getGroupLockKeys(activeClouds);
+        Set<GroupLockKey> groupsToUnlock =
+                groupsFromLastRun.stream().filter(groupLockKey -> currentActiveGroups.contains(groupLockKey) == false)
+                                 .collect(Collectors.toSet());
 
-        previousActiveGroups.removeAll(currentActiveGroups);
-
-        deallocateGroups(previousActiveGroups);
+        LOGGER.info("the groups {} are not in use anymoe by any active cloud, unlocking them.", groupsToUnlock);
+        unlockGroups(groupsToUnlock);
         groupsFromLastRun = currentActiveGroups;
     }
 
-    private static Set<GroupLockKey> getGroups(List<BaseSpotinstCloud> clouds) {
+    private static Set<GroupLockKey> getGroupLockKeys(List<BaseSpotinstCloud> clouds) {
         Set<GroupLockKey> retVal =
                 clouds.stream().map(baseCloud -> new GroupLockKey(baseCloud.getGroupId(), baseCloud.getAccountId()))
                       .collect(Collectors.toSet());
         return retVal;
     }
 
-    private void deallocateGroups(Set<GroupLockKey> groupsNoLongerExist) {
-        for (GroupLockKey groupKeyNoLongerExists : groupsNoLongerExist) {
-            String  groupId       = groupKeyNoLongerExists.getGroupId(), accountId =
-                    groupKeyNoLongerExists.getAccountId();
+    private void unlockGroups(Set<GroupLockKey> groupLockKeys) {
+        for (GroupLockKey groupLockKey : groupLockKeys) {
+            String  groupId       = groupLockKey.getGroupId();
+            String  accountId     = groupLockKey.getAccountId();
             boolean isActiveCloud = StringUtils.isNotEmpty(groupId) && StringUtils.isNotEmpty(accountId);
 
             if (isActiveCloud) {
@@ -127,7 +128,7 @@ public class SpotinstSyncGroupsOwner extends AsyncPeriodicWork {
                     boolean isGroupBelongToController = controllerIdentifier.equals(lockGroupControllerValue);
 
                     if (isGroupBelongToController) {
-                        deallocateGroup(groupKeyNoLongerExists, groupControllerLockRepo);
+                        unlockGroup(groupLockKey);
                     }
                     else {
                         LOGGER.warn("Controller {} could not unlock group {} - already locked by Controller {}",
@@ -142,8 +143,10 @@ public class SpotinstSyncGroupsOwner extends AsyncPeriodicWork {
         }
     }
 
-    private void deallocateGroup(GroupLockKey groupNoLongerExists, ILockRepo groupControllerLockRepo) {
-        String groupId = groupNoLongerExists.getGroupId(), accountId = groupNoLongerExists.getAccountId();
+    private void unlockGroup(GroupLockKey groupNoLongerExists) {
+        ILockRepo groupControllerLockRepo = RepoManager.getInstance().getLockRepo();
+        String    groupId                 = groupNoLongerExists.getGroupId(), accountId =
+                groupNoLongerExists.getAccountId();
         ApiResponse<Integer> groupControllerValueResponse =
                 groupControllerLockRepo.unlockGroupController(groupId, accountId);
 
@@ -151,26 +154,15 @@ public class SpotinstSyncGroupsOwner extends AsyncPeriodicWork {
             LOGGER.info("Successfully unlocked group {}", groupId);
         }
         else {
-            List<ApiError> errors =
-                    groupControllerValueResponse.getErrors() != null ? groupControllerValueResponse.getErrors() :
-                    new LinkedList<>();
-            LOGGER.error("Failed to unlock group {}. Errors: {}", groupId, errors);
+            LOGGER.error("Failed to unlock group {}. Errors: {}", groupId, groupControllerValueResponse.getErrors());
         }
     }
     //endregion
 
     //region getters & setters
-    public static Set<GroupLockKey> getGroupsFromLastRun() {
-        if (groupsFromLastRun == null) {
-            groupsFromLastRun = new HashSet<>();
-        }
-
-        return groupsFromLastRun;
-    }
-
     @Override
     public long getRecurrencePeriod() {
-        return recurrencePeriod;
+        return RECURRENCE_PERIOD;
     }
     //endregion
 }

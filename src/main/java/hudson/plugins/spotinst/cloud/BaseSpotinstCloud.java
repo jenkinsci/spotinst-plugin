@@ -536,7 +536,6 @@ public abstract class BaseSpotinstCloud extends Cloud {
         }
 
         retVal.setSucceed(lockGroupControllerResponse.isRequestSucceed());
-
         return retVal;
     }
 
