@@ -160,7 +160,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
             }
         }
         else {
-            handleGroupDoesNotManageByThisController();
+            handleGroupManagedByOtherController();
         }
 
         return Collections.emptyList();
@@ -466,6 +466,47 @@ public abstract class BaseSpotinstCloud extends Cloud {
         return retVal;
     }
 
+    private void AcquireLock(String controllerIdentifier) {
+        LOGGER.info(
+                String.format("group %s belongs to no controller. controller with identifier %s is trying to lock it",
+                              groupId, controllerIdentifier));
+
+        BlResponse<Boolean> hasLockResponse = LockGroupController(controllerIdentifier);
+
+        if (hasLockResponse.isSucceed()) {
+            Boolean hasLock = hasLockResponse.getResult();
+
+            if (hasLock) {
+                groupAcquiringDetails.setState(SPOTINST_CLOUD_COMMUNICATION_READY);
+            }
+            else {
+                handleGroupManagedByOtherController();
+            }
+        }
+        else {
+            handleInitializingExpired();
+        }
+
+    }
+
+    private void ExpandGroupLock(String controllerIdentifier) {
+        LOGGER.info("group {} already belongs the controller {} , expanding the lock duration.", groupId, controllerIdentifier);
+
+        BlResponse<Boolean> lockResponse  = LockGroupController(controllerIdentifier);
+
+        if (lockResponse.isSucceed()) {
+            if(lockResponse.getResult()) {
+                groupAcquiringDetails.setState(SPOTINST_CLOUD_COMMUNICATION_READY);
+            }
+            else{
+                handleGroupManagedByOtherController();
+            }
+        }
+        else{
+            LOGGER.warn("could not expand lock ttl for group {}", groupId);
+        }
+    }
+
     private BlResponse<Boolean> LockGroupController(String controllerIdentifier) {
         BlResponse<Boolean> retVal   = new BlResponse<>();
         ILockRepo           lockRepo = RepoManager.getInstance().getLockRepo();
@@ -492,6 +533,16 @@ public abstract class BaseSpotinstCloud extends Cloud {
         retVal.setSucceed(lockGroupControllerResponse.isRequestSucceed());
 
         return retVal;
+    }
+
+    private void handleInitializingExpired(){
+        if (groupAcquiringDetails.getState().equals(SPOTINST_CLOUD_COMMUNICATION_INITIALIZING)) {
+            boolean shouldFail = TimeHelper.isTimePassedInSeconds(groupAcquiringDetails.getTimeStamp());
+
+            if (shouldFail) {
+                groupAcquiringDetails.setState(SPOTINST_CLOUD_COMMUNICATION_FAILED);
+            }
+        }
     }
     //endregion
 
@@ -703,16 +754,11 @@ public abstract class BaseSpotinstCloud extends Cloud {
         return Constants.SLAVE_OFFLINE_THRESHOLD_IN_MINUTES;
     }
 
-    public void handleGroupDoesNotManageByThisController() {
+    public void handleGroupManagedByOtherController() {
+        handleInitializingExpired();
+
         if (groupAcquiringDetails.getState().equals(SPOTINST_CLOUD_COMMUNICATION_READY)) {
             groupAcquiringDetails = new GroupAcquiringDetails(groupId, accountId);
-        }
-        else if (groupAcquiringDetails.getState().equals(SPOTINST_CLOUD_COMMUNICATION_INITIALIZING)) {
-            boolean shouldFail = TimeHelper.isTimePassedInSeconds(groupAcquiringDetails.getTimeStamp());
-
-            if (shouldFail) {
-                groupAcquiringDetails.setState(SPOTINST_CLOUD_COMMUNICATION_FAILED);
-            }
         }
     }
 
@@ -721,20 +767,21 @@ public abstract class BaseSpotinstCloud extends Cloud {
         ApiResponse<String> lockGroupControllerResponse = lockRepo.getGroupControllerLock(groupId, accountId);
 
         if (lockGroupControllerResponse.isRequestSucceed()) {
-            String  lockGroupControllerValue    = lockGroupControllerResponse.getValue();
-            String  currentControllerIdentifier = SpotinstContext.getInstance().getControllerIdentifier();
-            boolean isGroupAlreadyHasController = lockGroupControllerValue != null;
+            String  lockGroupControllerValue       = lockGroupControllerResponse.getValue();
+            String  currentControllerIdentifier    = SpotinstContext.getInstance().getControllerIdentifier();
+            boolean isGroupAlreadyHasAnyController = lockGroupControllerValue != null;
 
-            if (isGroupAlreadyHasController) {
+            if (isGroupAlreadyHasAnyController) {
                 boolean isGroupBelongToCurrentController = currentControllerIdentifier.equals(lockGroupControllerValue);
 
                 if (isGroupBelongToCurrentController) {
-                    KeepGroupControllerLockAlive(currentControllerIdentifier);
+                    ExpandGroupLock(currentControllerIdentifier);
                 }
                 else {
-                    LOGGER.info("group {} does not belong to controller with identifier {}", groupId,
-                                currentControllerIdentifier);
-                    handleGroupDoesNotManageByThisController();
+                    LOGGER.warn(
+                            "group {} does not belong to controller with identifier {}, make sure that there is no duplicated Jenkins controllers configured to the same group",
+                            groupId, currentControllerIdentifier);
+                    handleGroupManagedByOtherController();
                 }
             }
             else {
@@ -746,47 +793,6 @@ public abstract class BaseSpotinstCloud extends Cloud {
                     "group locking service failed to get lock for groupId {}, accountId {}. staying in current status {}. Errors: {}",
                     groupId, accountId, groupAcquiringDetails.getState().getName(),
                     lockGroupControllerResponse.getErrors());
-        }
-    }
-
-    private void AcquireLock(String controllerIdentifier) {
-        LOGGER.info(
-                String.format("group %s belong to no controller. controller with identifier %s is trying to lock it",
-                              groupId, controllerIdentifier));
-
-        BlResponse<Boolean> hasLockResponse = LockGroupController(controllerIdentifier);
-
-        if (hasLockResponse.isSucceed()) {
-            Boolean hasLock = hasLockResponse.getResult();
-
-            if (hasLock) {
-                groupAcquiringDetails.setState(SPOTINST_CLOUD_COMMUNICATION_READY);
-            }
-            else {
-                handleGroupDoesNotManageByThisController();
-            }
-        }
-        else {
-            if (groupAcquiringDetails.getState().equals(SPOTINST_CLOUD_COMMUNICATION_INITIALIZING)) {
-                boolean shouldFail = TimeHelper.isTimePassedInSeconds(groupAcquiringDetails.getTimeStamp());
-
-                if (shouldFail) {
-                    groupAcquiringDetails.setState(SPOTINST_CLOUD_COMMUNICATION_FAILED);
-                }
-            }
-        }
-
-    }
-
-    private void KeepGroupControllerLockAlive(String controllerIdentifier) {
-        LOGGER.info(String.format("group %s belong to controller with identifier %s", groupId, controllerIdentifier));
-
-        groupAcquiringDetails.setState(SPOTINST_CLOUD_COMMUNICATION_READY);
-        BlResponse<Boolean> lockResponse  = LockGroupController(controllerIdentifier);
-        boolean             isLockRevived = lockResponse.isSucceed() && lockResponse.getResult();
-
-        if (isLockRevived == false) {
-            LOGGER.warn("could not expand lock ttl for group {}", groupId);
         }
     }
     //endregion
@@ -946,7 +952,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
             handleSyncGroupInstances();
         }
         else {
-            handleGroupDoesNotManageByThisController();
+            handleGroupManagedByOtherController();
         }
     }
 
@@ -960,7 +966,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
             retVal = handleGetInstanceIpsById();
         }
         else {
-            handleGroupDoesNotManageByThisController();
+            handleGroupManagedByOtherController();
             retVal = new HashMap<>();
         }
 

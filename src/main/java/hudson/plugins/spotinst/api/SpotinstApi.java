@@ -355,7 +355,6 @@ public class SpotinstApi {
 
         LockGroupControllerResponse lockControllerValue =
                 getCastedResponse(response, LockGroupControllerResponse.class);
-        //TODO: check optimizer and service response
         if (lockControllerValue.getResponse().getItems().size() > 0) {
             retVal = lockControllerValue.getResponse().getItems().get(0);
         }

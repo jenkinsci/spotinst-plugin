@@ -21,24 +21,24 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Created by ohadmuchnik on 25/05/2016.
+ * Created by itayshklar on 25/01/2023.
  */
 @Extension
 public class SpotinstSyncGroupsOwner extends AsyncPeriodicWork {
 
     //region Members
-    private static final Logger  LOGGER          = LoggerFactory.getLogger(SpotinstSyncGroupsOwner.class);
-    private static final Integer redisToJobRatio = 3;
-    public final         Integer JOB_INTERVAL_IN_SECONDS;
-
-    final long recurrencePeriod;
+    private static final Logger            LOGGER                  =
+            LoggerFactory.getLogger(SpotinstSyncGroupsOwner.class);
+    private static       Set<GroupLockKey> groupsFromPreviousRun;
+    private static final Integer           lockTTLToSyncGroupRatio = 3;
+    public static final  Integer           JOB_INTERVAL_IN_SECONDS =
+            TimeHelper.getRedisTimeToLeaveInSeconds() / lockTTLToSyncGroupRatio;
+    final static         long              recurrencePeriod        = TimeUnit.SECONDS.toMillis(JOB_INTERVAL_IN_SECONDS);
     //endregion
 
     //region Constructor
     public SpotinstSyncGroupsOwner() {
         super("Sync Groups Owner");
-        JOB_INTERVAL_IN_SECONDS = TimeHelper.getRedisTimeToLeaveInSeconds() / redisToJobRatio;
-        recurrencePeriod = TimeUnit.SECONDS.toMillis(JOB_INTERVAL_IN_SECONDS);
     }
     //endregion
 
@@ -46,11 +46,11 @@ public class SpotinstSyncGroupsOwner extends AsyncPeriodicWork {
     @Override
     protected void execute(TaskListener taskListener) {
         synchronized (this) {
-            List<Cloud> cloudList = Jenkins.getInstance().clouds;
-            Set<GroupLockKey>       currentGroupKeys    = new HashSet<>();
-            Set<GroupLockKey>       groupsFromContext   = SpotinstContext.getInstance().getCachedProcessedGroupIds();
-            Set<GroupLockKey>       groupsNoLongerExist = new HashSet<>(groupsFromContext);
-            List<BaseSpotinstCloud> activeClouds        = new ArrayList<>();
+            List<Cloud>             cloudList             = Jenkins.getInstance().clouds;
+            Set<GroupLockKey>       currentGroupKeys      = new HashSet<>();
+            Set<GroupLockKey>       groupsFromPreviousRun = getGroupsFromPreviousRun();
+            Set<GroupLockKey>       groupsNoLongerExist   = new HashSet<>(groupsFromPreviousRun);
+            List<BaseSpotinstCloud> activeClouds          = new ArrayList<>();
 
             if (cloudList != null && cloudList.size() > 0) {
                 for (Cloud cloud : cloudList) {
@@ -75,15 +75,14 @@ public class SpotinstSyncGroupsOwner extends AsyncPeriodicWork {
 
             deallocateGroupsNoLongerInUse(groupsNoLongerExist);
 
-            SpotinstContext.getInstance().setCachedProcessedGroupIds(currentGroupKeys);
+            setGroupsFromPreviousRun(currentGroupKeys);
             activeClouds.forEach(BaseSpotinstCloud::syncGroupOwner);
         }
     }
-    
+
     public void deallocateGroupsNoLongerInUse(Set<GroupLockKey> groupsNoLongerExist) {
         for (GroupLockKey groupKeyNoLongerExists : groupsNoLongerExist) {
-            String  groupId       = groupKeyNoLongerExists.getGroupId(), accountId =
-                    groupKeyNoLongerExists.getAccountId();
+            String groupId = groupKeyNoLongerExists.getGroupId(), accountId = groupKeyNoLongerExists.getAccountId();
             boolean isActiveCloud = StringUtils.isNotEmpty(groupId) && StringUtils.isNotEmpty(accountId);
 
             if (isActiveCloud) {
@@ -111,7 +110,9 @@ public class SpotinstSyncGroupsOwner extends AsyncPeriodicWork {
             }
         }
     }
+    //endregion
 
+    //region private methods
     private void deallocateGroupNoLongerInUse(GroupLockKey groupNoLongerExists, ILockRepo groupControllerLockRepo) {
         String groupId = groupNoLongerExists.getGroupId(), accountId = groupNoLongerExists.getAccountId();
         ApiResponse<Integer> groupControllerValueResponse =
@@ -126,6 +127,20 @@ public class SpotinstSyncGroupsOwner extends AsyncPeriodicWork {
                     new LinkedList<>();
             LOGGER.error("Failed to unlock group {}. Errors: {}", groupId, errors);
         }
+    }
+    //endregion
+
+    //region getters & setters
+    public static Set<GroupLockKey> getGroupsFromPreviousRun() {
+        if (groupsFromPreviousRun == null) {
+            groupsFromPreviousRun = new HashSet<>();
+        }
+
+        return groupsFromPreviousRun;
+    }
+
+    public static void setGroupsFromPreviousRun(Set<GroupLockKey> groupsFromPreviousRun) {
+        SpotinstSyncGroupsOwner.groupsFromPreviousRun = groupsFromPreviousRun;
     }
 
     @Override

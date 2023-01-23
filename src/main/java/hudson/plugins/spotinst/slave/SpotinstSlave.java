@@ -193,7 +193,7 @@ public class SpotinstSlave extends Slave implements EphemeralNode {
         }
         else{
             try {
-                getSpotinstCloud().handleGroupDoesNotManageByThisController();
+                getSpotinstCloud().handleGroupManagedByOtherController();
             }catch (Exception e){
                 LOGGER.warn(e.getMessage());
             }        }
@@ -222,7 +222,7 @@ public class SpotinstSlave extends Slave implements EphemeralNode {
             retVal = isTerminated;
         }
         else{
-            getSpotinstCloud().handleGroupDoesNotManageByThisController();
+            getSpotinstCloud().handleGroupManagedByOtherController();
         }
 
         return retVal;
