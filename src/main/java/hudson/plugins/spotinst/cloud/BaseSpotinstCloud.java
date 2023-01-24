@@ -5,6 +5,7 @@ import hudson.model.*;
 import hudson.model.labels.LabelAtom;
 import hudson.plugins.spotinst.api.infra.ApiResponse;
 import hudson.plugins.spotinst.api.infra.JsonMapper;
+import hudson.plugins.spotinst.cloud.helpers.GroupLockHelper;
 import hudson.plugins.spotinst.cloud.helpers.TimeHelper;
 import hudson.plugins.spotinst.common.*;
 import hudson.plugins.spotinst.model.common.BlResponse;
@@ -379,7 +380,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
         return retVal;
     }
 
-    public Boolean isActive(){
+    public Boolean isActive() {
         Boolean retVal = StringUtils.isNotEmpty(groupId) && StringUtils.isNotEmpty(accountId);
         return retVal;
     }
@@ -471,12 +472,13 @@ public abstract class BaseSpotinstCloud extends Cloud {
         return retVal;
     }
 
-    private void AcquireLock(String controllerIdentifier) {
+    private void AcquireGroupLock(String controllerIdentifier) {
         LOGGER.info(
                 String.format("group %s belongs to no controller. controller with identifier %s is trying to lock it",
                               groupId, controllerIdentifier));
 
-        BlResponse<Boolean> hasLockResponse = LockGroupController(controllerIdentifier);
+        BlResponse<Boolean> hasLockResponse =
+                GroupLockHelper.AcquireLockGroupController(groupId, accountId, controllerIdentifier);
 
         if (hasLockResponse.isSucceed()) {
             Boolean hasLock = hasLockResponse.getResult();
@@ -491,55 +493,29 @@ public abstract class BaseSpotinstCloud extends Cloud {
         else {
             handleInitializingExpired();
         }
-
     }
 
     private void ExpandGroupLock(String controllerIdentifier) {
-        LOGGER.info("group {} already belongs the controller {} , expanding the lock duration.", groupId, controllerIdentifier);
+        LOGGER.info("group {} already belongs the controller {} , expanding the lock duration.", groupId,
+                    controllerIdentifier);
 
-        BlResponse<Boolean> lockResponse  = LockGroupController(controllerIdentifier);
+        BlResponse<Boolean> lockResponse =
+                GroupLockHelper.ExpandGroupControllerLock(groupId, accountId, controllerIdentifier);
 
         if (lockResponse.isSucceed()) {
-            if(lockResponse.getResult()) {
+            if (lockResponse.getResult()) {
                 groupAcquiringDetails.setState(SPOTINST_CLOUD_COMMUNICATION_READY);
             }
-            else{
+            else {
                 handleGroupManagedByOtherController();
             }
         }
-        else{
+        else {
             LOGGER.warn("could not expand lock ttl for group {}", groupId);
         }
     }
 
-    private BlResponse<Boolean> LockGroupController(String controllerIdentifier) {
-        BlResponse<Boolean> retVal   = new BlResponse<>();
-        ILockRepo           lockRepo = RepoManager.getInstance().getLockRepo();
-        ApiResponse<String> lockGroupControllerResponse =
-                lockRepo.lockGroupController(groupId, accountId, controllerIdentifier,
-                                             Constants.LOCK_TIME_TO_LIVE_IN_SECONDS);
-
-        if (lockGroupControllerResponse.isRequestSucceed()) {
-            String responseValue = lockGroupControllerResponse.getValue();
-
-            if (Constants.LOCK_OK_STATUS.equals(responseValue)) {
-                LOGGER.info("Successfully locked group {} controller", groupId);
-                retVal.setResult(true);
-            }
-            else {
-                LOGGER.error("Failed locking group {} controller, got response {}", groupId, responseValue);
-                retVal.setResult(false);
-            }
-        }
-        else {
-            LOGGER.error("lock request failed. Errors: {}", lockGroupControllerResponse.getErrors());
-        }
-
-        retVal.setSucceed(lockGroupControllerResponse.isRequestSucceed());
-        return retVal;
-    }
-
-    private void handleInitializingExpired(){
+    private void handleInitializingExpired() {
         if (groupAcquiringDetails.getState().equals(SPOTINST_CLOUD_COMMUNICATION_INITIALIZING)) {
             boolean shouldFail = TimeHelper.isTimePassedInSeconds(groupAcquiringDetails.getTimeStamp());
 
@@ -789,7 +765,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
                 }
             }
             else {
-                AcquireLock(currentControllerIdentifier);
+                AcquireGroupLock(currentControllerIdentifier);
             }
         }
         else {

@@ -8,11 +8,29 @@ import hudson.plugins.spotinst.api.infra.ExceptionHelper;
 public class LockRepo implements ILockRepo {
 
     @Override
-    public ApiResponse<String> lockGroupController(String groupId, String accountId, String controllerIdentifier, Integer ttl) {
+    public ApiResponse<String> acquireLockGroupController(String groupId, String accountId, String controllerIdentifier,
+                                                          Integer ttl) {
         ApiResponse<String> retVal;
 
         try {
-            String lockResult = SpotinstApi.LockGroupController(groupId, accountId, controllerIdentifier, ttl);
+            String lockResult = SpotinstApi.AcquireLockGroupController(groupId, accountId, controllerIdentifier, ttl);
+
+            retVal = new ApiResponse<>(lockResult);
+        }
+        catch (ApiException e) {
+            retVal = ExceptionHelper.handleDalException(e);
+        }
+
+        return retVal;
+    }
+
+    @Override
+    public ApiResponse<String> expandGroupControllerLock(String groupId, String accountId, String controllerIdentifier,
+                                                         Integer ttl) {
+        ApiResponse<String> retVal;
+
+        try {
+            String lockResult = SpotinstApi.ExpandGroupControllerLock(groupId, accountId, controllerIdentifier, ttl);
 
             retVal = new ApiResponse<>(lockResult);
         }
