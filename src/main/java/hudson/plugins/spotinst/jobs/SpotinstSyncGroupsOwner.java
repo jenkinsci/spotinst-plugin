@@ -99,7 +99,7 @@ public class SpotinstSyncGroupsOwner extends AsyncPeriodicWork {
                 groupsFromLastRun.stream().filter(groupLockKey -> currentActiveGroups.contains(groupLockKey) == false)
                                  .collect(Collectors.toSet());
 
-        LOGGER.info("the groups {} are not in use anymoe by any active cloud, unlocking them.", groupsToUnlock);
+        LOGGER.info("the groups {} are not in use anymore by any active cloud, unlocking them.", groupsToUnlock);
         unlockGroups(groupsToUnlock);
         groupsFromLastRun = currentActiveGroups;
     }
@@ -120,7 +120,7 @@ public class SpotinstSyncGroupsOwner extends AsyncPeriodicWork {
             if (isActiveCloud) {
                 ILockRepo groupControllerLockRepo = RepoManager.getInstance().getLockRepo();
                 ApiResponse<String> lockGroupControllerResponse =
-                        groupControllerLockRepo.getGroupControllerLock(groupId, accountId);
+                        groupControllerLockRepo.getGroupControllerLockValue(groupId, accountId);
 
                 if (lockGroupControllerResponse.isRequestSucceed()) {
                     String  lockGroupControllerValue  = lockGroupControllerResponse.getValue();
@@ -148,7 +148,7 @@ public class SpotinstSyncGroupsOwner extends AsyncPeriodicWork {
         String    groupId                 = groupNoLongerExists.getGroupId(), accountId =
                 groupNoLongerExists.getAccountId();
         ApiResponse<Integer> groupControllerValueResponse =
-                groupControllerLockRepo.unlockGroupController(groupId, accountId);
+                groupControllerLockRepo.deleteGroupControllerLock(groupId, accountId);
 
         if (groupControllerValueResponse.isRequestSucceed()) {
             LOGGER.info("Successfully unlocked group {}", groupId);

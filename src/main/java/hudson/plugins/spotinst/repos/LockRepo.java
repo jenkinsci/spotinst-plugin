@@ -8,7 +8,7 @@ import hudson.plugins.spotinst.api.infra.ExceptionHelper;
 public class LockRepo implements ILockRepo {
 
     @Override
-    public ApiResponse<String> acquireLockGroupController(String groupId, String accountId, String controllerIdentifier,
+    public ApiResponse<String> acquireGroupControllerLock(String groupId, String accountId, String controllerIdentifier,
                                                           Integer ttl) {
         ApiResponse<String> retVal;
 
@@ -25,8 +25,7 @@ public class LockRepo implements ILockRepo {
     }
 
     @Override
-    public ApiResponse<String> expandGroupControllerLock(String groupId, String accountId, String controllerIdentifier,
-                                                         Integer ttl) {
+    public ApiResponse<String> setExpiry(String groupId, String accountId, String controllerIdentifier, Integer ttl) {
         ApiResponse<String> retVal;
 
         try {
@@ -42,7 +41,7 @@ public class LockRepo implements ILockRepo {
     }
 
     @Override
-    public ApiResponse<String> getGroupControllerLock(String groupId, String accountId) {
+    public ApiResponse<String> getGroupControllerLockValue(String groupId, String accountId) {
         ApiResponse<String> retVal;
 
         try {
@@ -57,7 +56,7 @@ public class LockRepo implements ILockRepo {
     }
 
     @Override
-    public ApiResponse<Integer> unlockGroupController(String groupId, String accountId) {
+    public ApiResponse<Integer> deleteGroupControllerLock(String groupId, String accountId) {
         ApiResponse<Integer> retVal;
 
         try {

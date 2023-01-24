@@ -345,11 +345,11 @@ public class SpotinstApi {
         String                     retVal      = null;
         Map<String, String>        headers     = buildHeaders();
         Map<String, String>        queryParams = buildQueryParams(accountId);
-        LockGroupControllerRequest request     = new LockGroupControllerRequest(lockKey, lockValue, ttl);
+        LockGroupControllerRequest request     = new LockGroupControllerRequest(lockValue, ttl);
         String                     body        = JsonMapper.toJson(request);
 
         RestResponse response =
-                RestClient.sendPost(SPOTINST_API_HOST + "/aws/ec2/group/jenkinsPlugin/lock", body, headers,
+                RestClient.sendPost(SPOTINST_API_HOST + "/aws/ec2/group/" + lockKey + "/jenkinsPlugin/lock", body, headers,
                                     queryParams);
 
         LockGroupControllerResponse lockControllerValue =
@@ -366,11 +366,11 @@ public class SpotinstApi {
         String                     retVal      = null;
         Map<String, String>        headers     = buildHeaders();
         Map<String, String>        queryParams = buildQueryParams(accountId);
-        LockGroupControllerRequest request     = new LockGroupControllerRequest(lockKey, lockValue, ttl);
+        LockGroupControllerRequest request     = new LockGroupControllerRequest(lockValue, ttl);
         String                     body        = JsonMapper.toJson(request);
-        //TODO: debug and check response
+
         RestResponse response =
-                RestClient.sendPut(SPOTINST_API_HOST + "/aws/ec2/group/jenkinsPlugin/lock", body, headers, queryParams);
+                RestClient.sendPut(SPOTINST_API_HOST + "/aws/ec2/group/" + lockKey +"/jenkinsPlugin/lock", body, headers, queryParams);
 
         LockGroupControllerResponse lockControllerValue =
                 getCastedResponse(response, LockGroupControllerResponse.class);

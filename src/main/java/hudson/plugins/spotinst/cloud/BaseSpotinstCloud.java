@@ -744,7 +744,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
 
     public void syncGroupOwner() {
         ILockRepo           lockRepo                    = RepoManager.getInstance().getLockRepo();
-        ApiResponse<String> lockGroupControllerResponse = lockRepo.getGroupControllerLock(groupId, accountId);
+        ApiResponse<String> lockGroupControllerResponse = lockRepo.getGroupControllerLockValue(groupId, accountId);
 
         if (lockGroupControllerResponse.isRequestSucceed()) {
             String  lockGroupControllerValue       = lockGroupControllerResponse.getValue();
