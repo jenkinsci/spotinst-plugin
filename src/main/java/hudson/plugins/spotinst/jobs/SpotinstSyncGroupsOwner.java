@@ -3,17 +3,13 @@ package hudson.plugins.spotinst.jobs;
 import hudson.Extension;
 import hudson.model.AsyncPeriodicWork;
 import hudson.model.TaskListener;
-import hudson.plugins.spotinst.api.infra.ApiResponse;
 import hudson.plugins.spotinst.cloud.BaseSpotinstCloud;
+import hudson.plugins.spotinst.cloud.helpers.GroupLockHelper;
 import hudson.plugins.spotinst.cloud.helpers.TimeHelper;
 import hudson.plugins.spotinst.common.GroupLockKey;
-import hudson.plugins.spotinst.common.SpotinstContext;
-import hudson.plugins.spotinst.repos.ILockRepo;
-import hudson.plugins.spotinst.repos.RepoManager;
 import hudson.slaves.Cloud;
 import jenkins.model.Jenkins;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,8 +66,8 @@ public class SpotinstSyncGroupsOwner extends AsyncPeriodicWork {
             groupLockAcquiringSet = new HashSet<>();
         }
 
-        LOGGER.info(String.format("deallocating %s Spotinst clouds", groupLockAcquiringSet.size()));
-        unlockGroups(groupLockAcquiringSet);
+        LOGGER.info(String.format("unlocking %s Spotinst clouds", groupLockAcquiringSet.size()));
+        GroupLockHelper.UnlockGroups(groupLockAcquiringSet);
         groupsFromLastRun = null;
     }
     //endregion
@@ -100,7 +96,7 @@ public class SpotinstSyncGroupsOwner extends AsyncPeriodicWork {
                                  .collect(Collectors.toSet());
 
         LOGGER.info("the groups {} are not in use anymore by any active cloud, unlocking them.", groupsToUnlock);
-        unlockGroups(groupsToUnlock);
+        GroupLockHelper.UnlockGroups(groupsToUnlock);
         groupsFromLastRun = currentActiveGroups;
     }
 
@@ -109,53 +105,6 @@ public class SpotinstSyncGroupsOwner extends AsyncPeriodicWork {
                 clouds.stream().map(baseCloud -> new GroupLockKey(baseCloud.getGroupId(), baseCloud.getAccountId()))
                       .collect(Collectors.toSet());
         return retVal;
-    }
-
-    private void unlockGroups(Set<GroupLockKey> groupLockKeys) {
-        for (GroupLockKey groupLockKey : groupLockKeys) {
-            String  groupId       = groupLockKey.getGroupId();
-            String  accountId     = groupLockKey.getAccountId();
-            boolean isActiveCloud = StringUtils.isNotEmpty(groupId) && StringUtils.isNotEmpty(accountId);
-
-            if (isActiveCloud) {
-                ILockRepo groupControllerLockRepo = RepoManager.getInstance().getLockRepo();
-                ApiResponse<String> lockGroupControllerResponse =
-                        groupControllerLockRepo.getGroupControllerLockValue(groupId, accountId);
-
-                if (lockGroupControllerResponse.isRequestSucceed()) {
-                    String  lockGroupControllerValue  = lockGroupControllerResponse.getValue();
-                    String  controllerIdentifier      = SpotinstContext.getInstance().getControllerIdentifier();
-                    boolean isGroupBelongToController = controllerIdentifier.equals(lockGroupControllerValue);
-
-                    if (isGroupBelongToController) {
-                        unlockGroup(groupLockKey);
-                    }
-                    else {
-                        LOGGER.warn("Controller {} could not unlock group {} - already locked by Controller {}",
-                                    controllerIdentifier, groupId, lockGroupControllerValue);
-                    }
-                }
-                else {
-                    LOGGER.error("group unlocking service failed to get lock for groupId {}, accountId {}. Errors: {}",
-                                 groupId, accountId, lockGroupControllerResponse.getErrors());
-                }
-            }
-        }
-    }
-
-    private void unlockGroup(GroupLockKey groupNoLongerExists) {
-        ILockRepo groupControllerLockRepo = RepoManager.getInstance().getLockRepo();
-        String    groupId                 = groupNoLongerExists.getGroupId(), accountId =
-                groupNoLongerExists.getAccountId();
-        ApiResponse<Integer> groupControllerValueResponse =
-                groupControllerLockRepo.deleteGroupControllerLock(groupId, accountId);
-
-        if (groupControllerValueResponse.isRequestSucceed()) {
-            LOGGER.info("Successfully unlocked group {}", groupId);
-        }
-        else {
-            LOGGER.error("Failed to unlock group {}. Errors: {}", groupId, groupControllerValueResponse.getErrors());
-        }
     }
     //endregion
 

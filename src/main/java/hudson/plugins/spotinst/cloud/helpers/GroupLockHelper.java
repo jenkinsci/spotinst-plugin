@@ -2,68 +2,145 @@ package hudson.plugins.spotinst.cloud.helpers;
 
 import hudson.plugins.spotinst.api.infra.ApiResponse;
 import hudson.plugins.spotinst.common.Constants;
+import hudson.plugins.spotinst.common.GroupLockKey;
+import hudson.plugins.spotinst.common.SpotinstContext;
 import hudson.plugins.spotinst.model.common.BlResponse;
 import hudson.plugins.spotinst.repos.ILockRepo;
 import hudson.plugins.spotinst.repos.RepoManager;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class GroupLockHelper {
-    private static final Logger LOGGER = LoggerFactory.getLogger(GroupLockHelper.class);
+import java.util.Set;
 
+public class GroupLockHelper {
+    //region members
+    private static final Logger    LOGGER   = LoggerFactory.getLogger(GroupLockHelper.class);
+    private static final ILockRepo lockRepo = RepoManager.getInstance().getLockRepo();
+    //endregion
+
+    //region Methods
     public static BlResponse<Boolean> AcquireLockGroupController(String groupId, String accountId,
                                                                  String controllerIdentifier) {
-        BlResponse<Boolean> retVal   = new BlResponse<>();
-        ILockRepo           lockRepo = RepoManager.getInstance().getLockRepo();
+        BlResponse<Boolean> retVal = new BlResponse<>();
         ApiResponse<String> lockGroupControllerResponse =
                 lockRepo.acquireGroupControllerLock(groupId, accountId, controllerIdentifier,
                                                     Constants.LOCK_TIME_TO_LIVE_IN_SECONDS);
 
         if (lockGroupControllerResponse.isRequestSucceed()) {
-            String responseValue = lockGroupControllerResponse.getValue();
+            String  responseValue                = lockGroupControllerResponse.getValue();
+            boolean isLockedAcquiredSuccessfully = Constants.LOCK_OK_STATUS.equals(responseValue);
+            retVal.setResult(isLockedAcquiredSuccessfully);
 
-            if (Constants.LOCK_OK_STATUS.equals(responseValue)) {
+            if (isLockedAcquiredSuccessfully) {
                 LOGGER.info("Successfully locked group {} controller", groupId);
-                retVal.setResult(true);
             }
             else {
-                LOGGER.error("Failed locking group {} controller, got response {}", groupId, responseValue);
-                retVal.setResult(false);
+                String errorMessage =
+                        String.format("Failed locking group %s controller, already locked by another controller",
+                                      groupId);
+                LOGGER.error(errorMessage);
+                retVal.setErrorMessage(errorMessage);
             }
         }
         else {
-            LOGGER.error("lock request failed. Errors: {}", lockGroupControllerResponse.getErrors());
+            retVal.setSucceed(false);
+            String errorMessage =
+                    String.format("lock request failed. Errors: %s", lockGroupControllerResponse.getErrors());
+            LOGGER.error(errorMessage);
+            retVal.setErrorMessage(errorMessage);
         }
 
-        retVal.setSucceed(lockGroupControllerResponse.isRequestSucceed());
+
         return retVal;
     }
 
-    public static BlResponse<Boolean> ExpandGroupControllerLock(String groupId, String accountId,
-                                                                String controllerIdentifier) {
-        BlResponse<Boolean> retVal   = new BlResponse<>();
-        ILockRepo           lockRepo = RepoManager.getInstance().getLockRepo();
+    public static BlResponse<Boolean> SetGroupControllerLockExpiry(String groupId, String accountId,
+                                                                   String controllerIdentifier) {
+        BlResponse<Boolean> retVal = new BlResponse<>();
         ApiResponse<String> lockGroupControllerResponse =
                 lockRepo.setExpiry(groupId, accountId, controllerIdentifier, Constants.LOCK_TIME_TO_LIVE_IN_SECONDS);
 
         if (lockGroupControllerResponse.isRequestSucceed()) {
-            String responseValue = lockGroupControllerResponse.getValue();
+            String  responseValue                = lockGroupControllerResponse.getValue();
+            boolean isLockedAcquiredSuccessfully = Constants.LOCK_OK_STATUS.equals(responseValue);
+            retVal.setResult(isLockedAcquiredSuccessfully);
 
-            if (Constants.LOCK_OK_STATUS.equals(responseValue)) {
+            if (isLockedAcquiredSuccessfully) {
                 LOGGER.info("Successfully locked group {} controller", groupId);
-                retVal.setResult(true);
             }
             else {
-                LOGGER.error("Failed locking group {} controller, got response {}", groupId, responseValue);
-                retVal.setResult(false);
+                String errorMessage =
+                        String.format("Failed locking group %s controller, already locked by another controller",
+                                      groupId);
+                LOGGER.error(errorMessage);
+                retVal.setErrorMessage(errorMessage);
             }
         }
         else {
-            LOGGER.error("lock request failed. Errors: {}", lockGroupControllerResponse.getErrors());
+            retVal.setSucceed(false);
+            String errorMessage = String.format("could not set lock expiry for group %s. Errors: %s", groupId,
+                                                lockGroupControllerResponse.getErrors());
+            LOGGER.error(errorMessage);
+            retVal.setErrorMessage(errorMessage);
         }
 
-        retVal.setSucceed(lockGroupControllerResponse.isRequestSucceed());
         return retVal;
     }
 
+    public static void UnlockGroups(Set<GroupLockKey> groupLockKeys) {
+        for (GroupLockKey groupLockKey : groupLockKeys) {
+            String  groupId       = groupLockKey.getGroupId();
+            String  accountId     = groupLockKey.getAccountId();
+            boolean isActiveCloud = StringUtils.isNotEmpty(groupId) && StringUtils.isNotEmpty(accountId);
+
+            if (isActiveCloud) {
+                LOGGER.info("unlocking group {}.", groupId);
+                ApiResponse<String> lockGroupControllerResponse =
+                        lockRepo.getGroupControllerLockValue(groupId, accountId);
+
+                if (lockGroupControllerResponse.isRequestSucceed()) {
+                    String  lockGroupControllerValue       = lockGroupControllerResponse.getValue();
+                    boolean isGroupAlreadyHasAnyController = lockGroupControllerValue != null;
+
+                    if (isGroupAlreadyHasAnyController) {
+                        String  controllerIdentifier      = SpotinstContext.getInstance().getControllerIdentifier();
+                        boolean isGroupBelongToController = controllerIdentifier.equals(lockGroupControllerValue);
+
+                        if (isGroupBelongToController) {
+                            unlockGroup(groupLockKey);
+                        }
+                        else {
+                            LOGGER.error(
+                                    "Controller {} could not unlock group {} - already locked by another Controller {}",
+                                    controllerIdentifier, groupId, lockGroupControllerValue);
+                        }
+                    }
+                    else {
+                        LOGGER.error("Failed to unlock group {}. group is not locked.", groupId);
+                    }
+                }
+                else {
+                    LOGGER.error("group unlocking service failed to get lock for groupId {}, accountId {}. Errors: {}",
+                                 groupId, accountId, lockGroupControllerResponse.getErrors());
+                }
+            }
+        }
+    }
+    //endregion
+
+    //region private methods
+    private static void unlockGroup(GroupLockKey groupNoLongerExists) {
+        String               groupId                      = groupNoLongerExists.getGroupId();
+        String               accountId                    = groupNoLongerExists.getAccountId();
+        ApiResponse<Integer> groupControllerValueResponse = lockRepo.deleteGroupControllerLock(groupId, accountId);
+
+        if (groupControllerValueResponse.isRequestSucceed()) {
+            LOGGER.info("Successfully unlocked group {}", groupId);
+        }
+        else {
+            LOGGER.error("Failed to unlock group {}. Errors: {}", groupId, groupControllerValueResponse.getErrors());
+        }
+    }
+    //endregion
 }

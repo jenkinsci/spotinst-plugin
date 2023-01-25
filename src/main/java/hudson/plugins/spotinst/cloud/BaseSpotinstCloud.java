@@ -474,7 +474,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
 
     private void AcquireGroupLock(String controllerIdentifier) {
         LOGGER.info(
-                String.format("group %s belongs to no controller. controller with identifier %s is trying to lock it",
+                String.format("group %s doesn't belong to any controller. controller with identifier %s is trying to lock it",
                               groupId, controllerIdentifier));
 
         BlResponse<Boolean> hasLockResponse =
@@ -496,11 +496,11 @@ public abstract class BaseSpotinstCloud extends Cloud {
     }
 
     private void ExpandGroupLock(String controllerIdentifier) {
-        LOGGER.info("group {} already belongs the controller {} , expanding the lock duration.", groupId,
+        LOGGER.info("group {} already belongs the controller {}, reviving the lock duration.", groupId,
                     controllerIdentifier);
 
         BlResponse<Boolean> lockResponse =
-                GroupLockHelper.ExpandGroupControllerLock(groupId, accountId, controllerIdentifier);
+                GroupLockHelper.SetGroupControllerLockExpiry(groupId, accountId, controllerIdentifier);
 
         if (lockResponse.isSucceed()) {
             if (lockResponse.getResult()) {
@@ -509,9 +509,6 @@ public abstract class BaseSpotinstCloud extends Cloud {
             else {
                 handleGroupManagedByOtherController();
             }
-        }
-        else {
-            LOGGER.warn("could not expand lock ttl for group {}", groupId);
         }
     }
 

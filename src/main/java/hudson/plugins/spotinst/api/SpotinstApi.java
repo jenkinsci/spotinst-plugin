@@ -353,7 +353,7 @@ public class SpotinstApi {
                                     queryParams);
 
         LockGroupControllerResponse lockControllerValue =
-                getCastedResponse(response, LockGroupControllerResponse.class);//TODO: debug and see redis response
+                getCastedResponse(response, LockGroupControllerResponse.class);
         if (lockControllerValue.getResponse().getItems().size() > 0) {
             retVal = lockControllerValue.getResponse().getItems().get(0);
         }
