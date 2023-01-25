@@ -25,7 +25,7 @@ public class GroupLockHelper {
         BlResponse<Boolean> retVal = new BlResponse<>();
         ApiResponse<String> lockGroupControllerResponse =
                 lockRepo.acquireGroupControllerLock(groupId, accountId, controllerIdentifier,
-                                                    Constants.LOCK_TIME_TO_LIVE_IN_SECONDS);
+                                                    TimeHelper.getRedisTimeToLeaveInSeconds());
 
         if (lockGroupControllerResponse.isRequestSucceed()) {
             String  responseValue                = lockGroupControllerResponse.getValue();
@@ -59,7 +59,7 @@ public class GroupLockHelper {
                                                                    String controllerIdentifier) {
         BlResponse<Boolean> retVal = new BlResponse<>();
         ApiResponse<String> lockGroupControllerResponse =
-                lockRepo.setExpiry(groupId, accountId, controllerIdentifier, Constants.LOCK_TIME_TO_LIVE_IN_SECONDS);
+                lockRepo.setExpiry(groupId, accountId, controllerIdentifier, TimeHelper.getRedisTimeToLeaveInSeconds());
 
         if (lockGroupControllerResponse.isRequestSucceed()) {
             String  responseValue                = lockGroupControllerResponse.getValue();

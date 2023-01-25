@@ -1,11 +1,12 @@
 package hudson.plugins.spotinst.cloud.helpers;
 
+import hudson.plugins.spotinst.common.Constants;
+
 import java.util.Calendar;
 import java.util.Date;
 
 public class TimeHelper {
     //region constants
-    private static final Integer REDIS_TTL_IN_SECONDS                            = 60 * 3;
     private static final Integer MILI_TO_SECONDS                                 = 1000;
     public static final  Integer SUSPENDED_GROUP_FETCHING_TIME_TO_LIVE_IN_MILLIS = generateSuspendedGroupFetchingTime();
     //endregion
@@ -27,13 +28,13 @@ public class TimeHelper {
     }
 
     public static Integer getRedisTimeToLeaveInSeconds() {
-        return REDIS_TTL_IN_SECONDS;
+        return Constants.LOCK_TIME_TO_LIVE_IN_SECONDS;
     }
     //endregion
 
     //region private methods
     private static Integer generateSuspendedGroupFetchingTime() {
-        Integer retVal = MILI_TO_SECONDS * REDIS_TTL_IN_SECONDS + 10;
+        Integer retVal = MILI_TO_SECONDS * getRedisTimeToLeaveInSeconds() + 10;
 
         return retVal;
     }
