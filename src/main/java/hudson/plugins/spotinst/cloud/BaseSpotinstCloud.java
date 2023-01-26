@@ -478,7 +478,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
                               groupId, controllerIdentifier));
 
         BlResponse<Boolean> hasLockResponse =
-                GroupLockHelper.AcquireLockGroupController(groupId, accountId, controllerIdentifier);
+                GroupLockHelper.AcquireLockGroupController(accountId, groupId, controllerIdentifier);
 
         if (hasLockResponse.isSucceed()) {
             Boolean hasLock = hasLockResponse.getResult();
@@ -500,7 +500,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
                     controllerIdentifier);
 
         BlResponse<Boolean> lockResponse =
-                GroupLockHelper.SetGroupControllerLockExpiry(groupId, accountId, controllerIdentifier);
+                GroupLockHelper.SetGroupControllerLockExpiry(accountId, groupId, controllerIdentifier);
 
         if (lockResponse.isSucceed()) {
             if (lockResponse.getResult()) {
@@ -741,7 +741,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
 
     public void syncGroupOwner() {
         ILockRepo           lockRepo                    = RepoManager.getInstance().getLockRepo();
-        ApiResponse<String> lockGroupControllerResponse = lockRepo.getGroupControllerLockValue(groupId, accountId);
+        ApiResponse<String> lockGroupControllerResponse = lockRepo.getGroupControllerLockValue(accountId, groupId);
 
         if (lockGroupControllerResponse.isRequestSucceed()) {
             String  lockGroupControllerValue       = lockGroupControllerResponse.getValue();

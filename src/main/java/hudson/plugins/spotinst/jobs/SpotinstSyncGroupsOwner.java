@@ -25,7 +25,7 @@ public class SpotinstSyncGroupsOwner extends AsyncPeriodicWork {
     //region constants
     private static final Integer LOCK_TTL_TO_SYNC_GROUP_RATIO = 3;
     public static final  Integer JOB_INTERVAL_IN_SECONDS      =
-            TimeHelper.getRedisTimeToLeaveInSeconds() / LOCK_TTL_TO_SYNC_GROUP_RATIO;
+            TimeHelper.getLockTimeToLeaveInSeconds() / LOCK_TTL_TO_SYNC_GROUP_RATIO;
     final static         long    RECURRENCE_PERIOD            = TimeUnit.SECONDS.toMillis(JOB_INTERVAL_IN_SECONDS);
     //endregion
 

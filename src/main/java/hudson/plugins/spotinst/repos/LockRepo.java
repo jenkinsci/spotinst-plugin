@@ -8,12 +8,12 @@ import hudson.plugins.spotinst.api.infra.ExceptionHelper;
 public class LockRepo implements ILockRepo {
 
     @Override
-    public ApiResponse<String> acquireGroupControllerLock(String groupId, String accountId, String controllerIdentifier,
+    public ApiResponse<String> acquireGroupControllerLock(String accountId, String groupId, String controllerIdentifier,
                                                           Integer ttl) {
         ApiResponse<String> retVal;
 
         try {
-            String lockResult = SpotinstApi.AcquireLockGroupController(groupId, accountId, controllerIdentifier, ttl);
+            String lockResult = SpotinstApi.acquireGroupControllerLock(accountId, groupId, controllerIdentifier, ttl);
 
             retVal = new ApiResponse<>(lockResult);
         }
@@ -25,11 +25,12 @@ public class LockRepo implements ILockRepo {
     }
 
     @Override
-    public ApiResponse<String> setExpiry(String groupId, String accountId, String controllerIdentifier, Integer ttl) {
+    public ApiResponse<String> setGroupControllerLockExpiry(String accountId, String groupId,
+                                                            String controllerIdentifier, Integer ttl) {
         ApiResponse<String> retVal;
 
         try {
-            String lockResult = SpotinstApi.ExpandGroupControllerLock(groupId, accountId, controllerIdentifier, ttl);
+            String lockResult = SpotinstApi.setGroupControllerLockExpiry(accountId, groupId, controllerIdentifier, ttl);
 
             retVal = new ApiResponse<>(lockResult);
         }
@@ -41,11 +42,11 @@ public class LockRepo implements ILockRepo {
     }
 
     @Override
-    public ApiResponse<String> getGroupControllerLockValue(String groupId, String accountId) {
+    public ApiResponse<String> getGroupControllerLockValue(String accountId, String groupId) {
         ApiResponse<String> retVal;
 
         try {
-            String controllerIdentifier = SpotinstApi.getGroupLockValueById(groupId, accountId);
+            String controllerIdentifier = SpotinstApi.getGroupLockValueById(accountId, groupId);
             retVal = new ApiResponse<>(controllerIdentifier);
         }
         catch (ApiException e) {
@@ -56,11 +57,11 @@ public class LockRepo implements ILockRepo {
     }
 
     @Override
-    public ApiResponse<Integer> deleteGroupControllerLock(String groupId, String accountId) {
+    public ApiResponse<Integer> deleteGroupControllerLock(String accountId, String groupId) {
         ApiResponse<Integer> retVal;
 
         try {
-            Integer isKeyDeleted = SpotinstApi.UnlockGroupController(groupId, accountId);
+            Integer isKeyDeleted = SpotinstApi.deleteGroupControllerLock(accountId, groupId);
             retVal = new ApiResponse<>(isKeyDeleted);
         }
         catch (ApiException e) {

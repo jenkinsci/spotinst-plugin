@@ -20,12 +20,12 @@ public class GroupLockHelper {
     //endregion
 
     //region Methods
-    public static BlResponse<Boolean> AcquireLockGroupController(String groupId, String accountId,
+    public static BlResponse<Boolean> AcquireLockGroupController(String accountId, String groupId,
                                                                  String controllerIdentifier) {
         BlResponse<Boolean> retVal = new BlResponse<>();
+        Integer             ttl    = TimeHelper.getLockTimeToLeaveInSeconds();
         ApiResponse<String> lockGroupControllerResponse =
-                lockRepo.acquireGroupControllerLock(groupId, accountId, controllerIdentifier,
-                                                    TimeHelper.getRedisTimeToLeaveInSeconds());
+                lockRepo.acquireGroupControllerLock(accountId, groupId, controllerIdentifier, ttl);
 
         if (lockGroupControllerResponse.isRequestSucceed()) {
             String  responseValue                = lockGroupControllerResponse.getValue();
@@ -55,11 +55,12 @@ public class GroupLockHelper {
         return retVal;
     }
 
-    public static BlResponse<Boolean> SetGroupControllerLockExpiry(String groupId, String accountId,
+    public static BlResponse<Boolean> SetGroupControllerLockExpiry(String accountId, String groupId,
                                                                    String controllerIdentifier) {
         BlResponse<Boolean> retVal = new BlResponse<>();
+        Integer             ttl    = TimeHelper.getLockTimeToLeaveInSeconds();
         ApiResponse<String> lockGroupControllerResponse =
-                lockRepo.setExpiry(groupId, accountId, controllerIdentifier, TimeHelper.getRedisTimeToLeaveInSeconds());
+                lockRepo.setGroupControllerLockExpiry(accountId, groupId, controllerIdentifier, ttl);
 
         if (lockGroupControllerResponse.isRequestSucceed()) {
             String  responseValue                = lockGroupControllerResponse.getValue();
@@ -97,7 +98,7 @@ public class GroupLockHelper {
             if (isActiveCloud) {
                 LOGGER.info("unlocking group {}.", groupId);
                 ApiResponse<String> lockGroupControllerResponse =
-                        lockRepo.getGroupControllerLockValue(groupId, accountId);
+                        lockRepo.getGroupControllerLockValue(accountId, groupId);
 
                 if (lockGroupControllerResponse.isRequestSucceed()) {
                     String  lockGroupControllerValue       = lockGroupControllerResponse.getValue();
@@ -133,7 +134,7 @@ public class GroupLockHelper {
     private static void unlockGroup(GroupLockKey groupNoLongerExists) {
         String               groupId                      = groupNoLongerExists.getGroupId();
         String               accountId                    = groupNoLongerExists.getAccountId();
-        ApiResponse<Integer> groupControllerValueResponse = lockRepo.deleteGroupControllerLock(groupId, accountId);
+        ApiResponse<Integer> groupControllerValueResponse = lockRepo.deleteGroupControllerLock(accountId, groupId);
 
         if (groupControllerValueResponse.isRequestSucceed()) {
             LOGGER.info("Successfully unlocked group {}", groupId);
