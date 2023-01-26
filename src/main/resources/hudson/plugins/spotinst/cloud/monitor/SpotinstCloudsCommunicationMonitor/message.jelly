@@ -1,25 +1,25 @@
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form">
-    <div class="alert alert-danger">
-        <j:if test="${it.isSpotinstCloudsCommunicationFailuresExist()}">
-            <strong>${%Title}</strong>
-            <p/>
+    <j:if test="${it.isSpotinstCloudsCommunicationFailuresExist()}">
+        <div class="alert alert-danger">
+                <strong>${%Title}</strong>
+                <p/>
 
-            ${%SpotinstCloudsCommunicationFailures(it.spotinstCloudsCommunicationFailures)}
-            <p/>
+                ${%SpotinstCloudsCommunicationFailures(it.spotinstCloudsCommunicationFailures)}
+                <p/>
 
-            ${%Explanation(rootURL)}
-            <p/>
-        </j:if>
-    </div>
+                ${%Explanation(rootURL)}
+                <p/>
+        </div>
+    </j:if>
 
-    <div class="alert alert-warn">
-        <j:if test="${it.isSpotinstCloudsCommunicationInitializingExist()}">
-            <strong>${%Title}</strong>
-            <p/>
+    <j:if test="${it.isSpotinstCloudsCommunicationInitializingExist()}">
+        <div class="alert alert-warn">
+                <strong>${%Title}</strong>
+                <p/>
 
-            ${%SpotinstCloudsCommunicationInitializing(it.spotinstCloudsCommunicationInitializing)}
-            <p/>
-        </j:if>
-    </div>
+                ${%SpotinstCloudsCommunicationInitializing(it.spotinstCloudsCommunicationInitializing)}
+                <p/>
+        </div>
+    </j:if>
 </j:jelly>
