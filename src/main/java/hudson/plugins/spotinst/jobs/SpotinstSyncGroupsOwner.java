@@ -53,21 +53,20 @@ public class SpotinstSyncGroupsOwner extends AsyncPeriodicWork {
 
     public void deallocateAll() {
         List<Cloud>       cloudList = Jenkins.getInstance().clouds;
-        Set<GroupLockKey> groupLockAcquiringSet;
 
         if (CollectionUtils.isNotEmpty(cloudList)) {
-            groupLockAcquiringSet = cloudList.stream().filter(cloud -> cloud instanceof BaseSpotinstCloud)
+            Set<GroupLockKey> groupsLockAcquiringSet = cloudList.stream().filter(cloud -> cloud instanceof BaseSpotinstCloud)
                                              .map(cloud -> (BaseSpotinstCloud) cloud)
                                              .map(spotinstCloud -> new GroupLockKey(spotinstCloud.getGroupId(),
                                                                                     spotinstCloud.getAccountId()))
                                              .collect(Collectors.toSet());
-        }
-        else {
-            groupLockAcquiringSet = new HashSet<>();
+
+            if(groupsLockAcquiringSet.isEmpty() == false) {
+                LOGGER.info(String.format("unlocking %s Spotinst clouds", groupsLockAcquiringSet.size()));
+                GroupLockHelper.UnlockGroups(groupsLockAcquiringSet);
+            }
         }
 
-        LOGGER.info(String.format("unlocking %s Spotinst clouds", groupLockAcquiringSet.size()));
-        GroupLockHelper.UnlockGroups(groupLockAcquiringSet);
         groupsFromLastRun = null;
     }
     //endregion
@@ -94,9 +93,13 @@ public class SpotinstSyncGroupsOwner extends AsyncPeriodicWork {
         Set<GroupLockKey> groupsToUnlock =
                 groupsFromLastRun.stream().filter(groupLockKey -> currentActiveGroups.contains(groupLockKey) == false)
                                  .collect(Collectors.toSet());
+        boolean hasGroupsToUnlock = groupsToUnlock.isEmpty() == false;
 
-        LOGGER.info("the groups {} are not in use anymore by any active cloud, unlocking them.", groupsToUnlock);
-        GroupLockHelper.UnlockGroups(groupsToUnlock);
+        if(hasGroupsToUnlock) {
+            LOGGER.info("the groups {} are not in use anymore by any active cloud, unlocking them.", groupsToUnlock);
+            GroupLockHelper.UnlockGroups(groupsToUnlock);
+        }
+
         groupsFromLastRun = currentActiveGroups;
     }
 
