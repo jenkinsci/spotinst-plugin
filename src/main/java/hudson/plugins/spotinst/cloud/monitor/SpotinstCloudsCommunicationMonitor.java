@@ -19,6 +19,7 @@ import static hudson.plugins.spotinst.common.SpotinstCloudCommunicationState.*;
 public class SpotinstCloudsCommunicationMonitor extends AdministrativeMonitor {
 
     //region Members
+    List<String> spotinstCloudsCommunicationInvalids;
     List<String> spotinstCloudsCommunicationFailures;
     List<String> spotinstCloudsCommunicationInitializing;
     //endregion
@@ -26,7 +27,8 @@ public class SpotinstCloudsCommunicationMonitor extends AdministrativeMonitor {
     //region Overridden Public Methods
     @Override
     public boolean isActivated() {
-        return isSpotinstCloudsCommunicationFailuresExist() || isSpotinstCloudsCommunicationInitializingExist();
+        return isSpotinstCloudsCommunicationInvalidsExist() || isSpotinstCloudsCommunicationFailuresExist() ||
+               isSpotinstCloudsCommunicationInitializingExist();
     }
 
     @Override
@@ -36,6 +38,10 @@ public class SpotinstCloudsCommunicationMonitor extends AdministrativeMonitor {
     //endregion
 
     //region getters & setters
+    public boolean isSpotinstCloudsCommunicationInvalidsExist() {
+        return isSpotinstCloudsCommunicationStateExist(SPOTINST_CLOUD_COMMUNICATION_INVALID);
+    }
+
     public boolean isSpotinstCloudsCommunicationFailuresExist() {
         return isSpotinstCloudsCommunicationStateExist(SPOTINST_CLOUD_COMMUNICATION_FAILED);
     }
@@ -54,6 +60,16 @@ public class SpotinstCloudsCommunicationMonitor extends AdministrativeMonitor {
                 groupsDetails.anyMatch(groupDetails -> state.equals(groupDetails.getState()));
 
         return isCloudsWithReadyStateExist;
+    }
+
+    public String getSpotinstCloudsCommunicationInvalids() {
+        String retVal;
+
+        spotinstCloudsCommunicationInvalids =
+                getGroupsIdByCloudInitializationState(SPOTINST_CLOUD_COMMUNICATION_INVALID);
+        retVal = String.join(", ", spotinstCloudsCommunicationInvalids);
+
+        return retVal;
     }
 
     public String getSpotinstCloudsCommunicationFailures() {

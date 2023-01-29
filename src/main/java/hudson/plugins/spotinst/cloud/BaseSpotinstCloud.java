@@ -61,7 +61,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
     private                ConnectionMethodEnum              connectionMethod;
     private                Boolean                           shouldUsePrivateIp;
     private                SpotGlobalExecutorOverride        globalExecutorOverride;
-    private                GroupAcquiringDetails             groupAcquiringDetails          = null;
+    private                GroupAcquiringDetails             groupAcquiringDetails;
     //endregion
 
     //region Constructor
@@ -120,11 +120,14 @@ public abstract class BaseSpotinstCloud extends Cloud {
             this.globalExecutorOverride = new SpotGlobalExecutorOverride(false, 1);
         }
 
+        groupAcquiringDetails = new GroupAcquiringDetails(groupId, accountId);
         boolean isActiveCloud = isActive();
 
         if (isActiveCloud) {
-            groupAcquiringDetails = new GroupAcquiringDetails(groupId, accountId);
             syncGroupOwner();
+        }
+        else {
+            groupAcquiringDetails.setState(SPOTINST_CLOUD_COMMUNICATION_INVALID);
         }
     }
     //endregion
@@ -473,9 +476,9 @@ public abstract class BaseSpotinstCloud extends Cloud {
     }
 
     private void AcquireGroupLock(String controllerIdentifier) {
-        LOGGER.info(
-                String.format("group %s doesn't belong to any controller. controller with identifier %s is trying to lock it",
-                              groupId, controllerIdentifier));
+        LOGGER.info(String.format(
+                "group %s doesn't belong to any controller. controller with identifier %s is trying to lock it",
+                groupId, controllerIdentifier));
 
         BlResponse<Boolean> hasLockResponse =
                 GroupLockHelper.AcquireLockGroupController(accountId, groupId, controllerIdentifier);
@@ -491,7 +494,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
             }
         }
         else {
-            handleInitializingExpired();
+            groupAcquiringDetails.setState(SPOTINST_CLOUD_COMMUNICATION_INVALID);
         }
     }
 
@@ -509,6 +512,9 @@ public abstract class BaseSpotinstCloud extends Cloud {
             else {
                 handleGroupManagedByOtherController();
             }
+        }
+        else {
+            groupAcquiringDetails.setState(SPOTINST_CLOUD_COMMUNICATION_INVALID);
         }
     }
 
@@ -734,7 +740,8 @@ public abstract class BaseSpotinstCloud extends Cloud {
     public void handleGroupManagedByOtherController() {
         handleInitializingExpired();
 
-        if (groupAcquiringDetails.getState().equals(SPOTINST_CLOUD_COMMUNICATION_READY)) {
+        if (groupAcquiringDetails.getState().equals(SPOTINST_CLOUD_COMMUNICATION_READY) ||
+            groupAcquiringDetails.getState().equals(SPOTINST_CLOUD_COMMUNICATION_INVALID)) {
             groupAcquiringDetails = new GroupAcquiringDetails(groupId, accountId);
         }
     }
@@ -766,6 +773,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
             }
         }
         else {
+            groupAcquiringDetails.setState(SPOTINST_CLOUD_COMMUNICATION_INVALID);
             LOGGER.error(
                     "group locking service failed to get lock for groupId {}, accountId {}. staying in current status {}. Errors: {}",
                     groupId, accountId, groupAcquiringDetails.getState().getName(),
