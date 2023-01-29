@@ -89,7 +89,7 @@ public class GroupLockHelper {
         return retVal;
     }
 
-    public static void UnlockGroups(Set<GroupLockKey> groupLockKeys) {
+    public static void deleteGroupControllerLocks(Set<GroupLockKey> groupLockKeys) {
         for (GroupLockKey groupLockKey : groupLockKeys) {
             String  groupId       = groupLockKey.getGroupId();
             String  accountId     = groupLockKey.getAccountId();
@@ -109,7 +109,7 @@ public class GroupLockHelper {
                         boolean isGroupBelongToController = controllerIdentifier.equals(lockGroupControllerValue);
 
                         if (isGroupBelongToController) {
-                            unlockGroup(groupLockKey);
+                            deleteGroupControllerLock(groupLockKey);
                         }
                         else {
                             LOGGER.error(
@@ -131,7 +131,7 @@ public class GroupLockHelper {
     //endregion
 
     //region private methods
-    private static void unlockGroup(GroupLockKey groupNoLongerExists) {
+    private static void deleteGroupControllerLock(GroupLockKey groupNoLongerExists) {
         String               groupId                      = groupNoLongerExists.getGroupId();
         String               accountId                    = groupNoLongerExists.getAccountId();
         ApiResponse<Integer> groupControllerValueResponse = lockRepo.deleteGroupControllerLock(accountId, groupId);

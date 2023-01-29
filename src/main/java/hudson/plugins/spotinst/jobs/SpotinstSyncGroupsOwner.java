@@ -52,18 +52,19 @@ public class SpotinstSyncGroupsOwner extends AsyncPeriodicWork {
     }
 
     public void deallocateAll() {
-        List<Cloud>       cloudList = Jenkins.getInstance().clouds;
+        List<Cloud> cloudList = Jenkins.getInstance().clouds;
 
         if (CollectionUtils.isNotEmpty(cloudList)) {
-            Set<GroupLockKey> groupsLockAcquiringSet = cloudList.stream().filter(cloud -> cloud instanceof BaseSpotinstCloud)
-                                             .map(cloud -> (BaseSpotinstCloud) cloud)
-                                             .map(spotinstCloud -> new GroupLockKey(spotinstCloud.getGroupId(),
-                                                                                    spotinstCloud.getAccountId()))
-                                             .collect(Collectors.toSet());
+            Set<GroupLockKey> groupsLockAcquiringSet =
+                    cloudList.stream().filter(cloud -> cloud instanceof BaseSpotinstCloud)
+                             .map(cloud -> (BaseSpotinstCloud) cloud)
+                             .map(spotinstCloud -> new GroupLockKey(spotinstCloud.getGroupId(),
+                                                                    spotinstCloud.getAccountId()))
+                             .collect(Collectors.toSet());
 
-            if(groupsLockAcquiringSet.isEmpty() == false) {
+            if (groupsLockAcquiringSet.isEmpty() == false) {
                 LOGGER.info(String.format("unlocking %s Spotinst clouds", groupsLockAcquiringSet.size()));
-                GroupLockHelper.UnlockGroups(groupsLockAcquiringSet);
+                GroupLockHelper.deleteGroupControllerLocks(groupsLockAcquiringSet);
             }
         }
 
@@ -95,9 +96,9 @@ public class SpotinstSyncGroupsOwner extends AsyncPeriodicWork {
                                  .collect(Collectors.toSet());
         boolean hasGroupsToUnlock = groupsToUnlock.isEmpty() == false;
 
-        if(hasGroupsToUnlock) {
+        if (hasGroupsToUnlock) {
             LOGGER.info("the groups {} are not in use anymore by any active cloud, unlocking them.", groupsToUnlock);
-            GroupLockHelper.UnlockGroups(groupsToUnlock);
+            GroupLockHelper.deleteGroupControllerLocks(groupsToUnlock);
         }
 
         groupsFromLastRun = currentActiveGroups;

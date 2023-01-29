@@ -7,7 +7,7 @@ import hudson.plugins.spotinst.common.SpotinstContext;
 import hudson.plugins.spotinst.model.aws.*;
 import hudson.plugins.spotinst.model.azure.*;
 import hudson.plugins.spotinst.model.gcp.*;
-import hudson.plugins.spotinst.model.redis.UnlockGroupControllerResponse;
+import hudson.plugins.spotinst.model.redis.DeleteGroupControllerResponse;
 import hudson.plugins.spotinst.model.redis.GetGroupControllerLockResponse;
 import hudson.plugins.spotinst.model.redis.LockGroupControllerRequest;
 import hudson.plugins.spotinst.model.redis.LockGroupControllerResponse;
@@ -390,7 +390,7 @@ public class SpotinstApi {
         RestResponse response =
                 RestClient.sendDelete(SPOTINST_API_HOST + "/aws/ec2/group/" + groupId + "/jenkinsPlugin/lock", headers,
                                       queryParams);
-        UnlockGroupControllerResponse redisValue = getCastedResponse(response, UnlockGroupControllerResponse.class);
+        DeleteGroupControllerResponse redisValue = getCastedResponse(response, DeleteGroupControllerResponse.class);
 
         if (redisValue.getResponse().getItems().size() > 0) {
             retVal = redisValue.getResponse().getItems().get(0);
