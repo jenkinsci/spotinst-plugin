@@ -5,7 +5,7 @@ import hudson.model.AsyncPeriodicWork;
 import hudson.model.TaskListener;
 import hudson.plugins.spotinst.cloud.BaseSpotinstCloud;
 import hudson.plugins.spotinst.cloud.helpers.GroupLockHelper;
-import hudson.plugins.spotinst.cloud.helpers.TimeHelper;
+import hudson.plugins.spotinst.common.Constants;
 import hudson.plugins.spotinst.common.GroupLockKey;
 import hudson.slaves.Cloud;
 import jenkins.model.Jenkins;
@@ -25,7 +25,7 @@ public class SpotinstSyncGroupsOwner extends AsyncPeriodicWork {
     //region constants
     private static final Integer LOCK_TTL_TO_SYNC_GROUP_RATIO = 3;
     public static final  Integer JOB_INTERVAL_IN_SECONDS      =
-            TimeHelper.getLockTimeToLeaveInSeconds() / LOCK_TTL_TO_SYNC_GROUP_RATIO;
+            Constants.LOCK_TIME_TO_LIVE_IN_SECONDS / LOCK_TTL_TO_SYNC_GROUP_RATIO;
     final static         long    RECURRENCE_PERIOD            = TimeUnit.SECONDS.toMillis(JOB_INTERVAL_IN_SECONDS);
     //endregion
 

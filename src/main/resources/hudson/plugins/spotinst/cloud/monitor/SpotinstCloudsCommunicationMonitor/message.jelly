@@ -1,27 +1,11 @@
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form">
-    <j:if test="${it.isSpotinstCloudsCommunicationInvalidsExist()}">
-        <div class="alert alert-danger">
-            <strong>${%Title}</strong>
-            <p/>
-
-            ${%SpotinstCloudsCommunicationInvalids(it.spotinstCloudsCommunicationInvalids)}
-            <p/>
-
-            ${%InvalidExplanation(rootURL)}
-            <p/>
-        </div>
-    </j:if>
-
     <j:if test="${it.isSpotinstCloudsCommunicationFailuresExist()}">
         <div class="alert alert-danger">
                 <strong>${%Title}</strong>
                 <p/>
 
                 ${%SpotinstCloudsCommunicationFailures(it.spotinstCloudsCommunicationFailures)}
-                <p/>
-
-                ${%FailureExplanation(rootURL)}
                 <p/>
         </div>
     </j:if>

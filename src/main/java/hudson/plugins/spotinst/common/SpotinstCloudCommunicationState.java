@@ -6,13 +6,12 @@ import org.slf4j.LoggerFactory;
 public enum SpotinstCloudCommunicationState {
     SPOTINST_CLOUD_COMMUNICATION_INITIALIZING("SPOTINST CLOUD COMMUNICATION INITIALIZING"),
     SPOTINST_CLOUD_COMMUNICATION_FAILED("SPOTINST CLOUD COMMUNICATION FAILED"),
-    SPOTINST_CLOUD_COMMUNICATION_READY("SPOTINST CLOUD COMMUNICATION READY"),
-    SPOTINST_CLOUD_COMMUNICATION_INVALID("SPOTINST_CLOUD_COMMUNICATION_INVALID");
+    SPOTINST_CLOUD_COMMUNICATION_READY("SPOTINST CLOUD COMMUNICATION READY");
 
     // region members
     private static final Logger LOGGER = LoggerFactory.getLogger(CredentialsMethodEnum.class);
 
-    private String name;
+    private final String name;
     // endregion
 
     SpotinstCloudCommunicationState(String name) {

@@ -6,7 +6,6 @@ import hudson.model.labels.LabelAtom;
 import hudson.plugins.spotinst.api.infra.ApiResponse;
 import hudson.plugins.spotinst.api.infra.JsonMapper;
 import hudson.plugins.spotinst.cloud.helpers.GroupLockHelper;
-import hudson.plugins.spotinst.cloud.helpers.TimeHelper;
 import hudson.plugins.spotinst.common.*;
 import hudson.plugins.spotinst.model.common.BlResponse;
 import hudson.plugins.spotinst.repos.ILockRepo;
@@ -40,7 +39,11 @@ public abstract class BaseSpotinstCloud extends Cloud {
     //region Members
     private static final Logger LOGGER = LoggerFactory.getLogger(BaseSpotinstCloud.class);
 
-    protected static final int                               NO_OVERRIDDEN_NUM_OF_EXECUTORS = -1;
+    private static final   String                            LOCKED_BY_OTHER_CONTROLLER_DESCRIPTION =
+            "is already connected to a different Jenkins controller";
+    private static final   String                            GROUP_CANNOT_BE_CONNECTED_DESCRIPTION  =
+            "cannot be connected, check cloud's configuration";
+    protected static final int                               NO_OVERRIDDEN_NUM_OF_EXECUTORS         = -1;
     protected              String                            accountId;
     protected              String                            groupId;
     protected              Map<String, PendingInstance>      pendingInstances;
@@ -127,7 +130,8 @@ public abstract class BaseSpotinstCloud extends Cloud {
             syncGroupOwner();
         }
         else {
-            groupAcquiringDetails.setState(SPOTINST_CLOUD_COMMUNICATION_INVALID);
+            groupAcquiringDetails.setState(SPOTINST_CLOUD_COMMUNICATION_FAILED);
+            groupAcquiringDetails.setDescription("Account & Group ID must be initialized for all clouds");
         }
     }
     //endregion
@@ -222,7 +226,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
 
                     Integer pendingThreshold = getPendingThreshold();
                     Boolean isPendingOverThreshold =
-                            TimeUtils.isTimePassedInMinutes(pendingInstance.getCreatedAt(), pendingThreshold);
+                            TimeUtils.isTimePassed(pendingInstance.getCreatedAt(), pendingThreshold, Calendar.MINUTE);
 
                     if (isPendingOverThreshold) {
                         LOGGER.info(String.format(
@@ -353,7 +357,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
 
 
             Date    slaveCreatedAt         = slave.getCreatedAt();
-            Boolean isOverOfflineThreshold = TimeUtils.isTimePassedInMinutes(slaveCreatedAt, offlineThreshold);
+            Boolean isOverOfflineThreshold = TimeUtils.isTimePassed(slaveCreatedAt, offlineThreshold, Calendar.MINUTE);
 
             if (isSlaveOffline && isSlaveConnecting == false && isOverOfflineThreshold && temporarilyOffline == false &&
                 isOverIdleThreshold) {
@@ -491,10 +495,14 @@ public abstract class BaseSpotinstCloud extends Cloud {
             }
             else {
                 handleGroupManagedByOtherController();
+                groupAcquiringDetails.setDescription(String.format("%s %s", groupAcquiringDetails.getGroupId(),
+                                                                   LOCKED_BY_OTHER_CONTROLLER_DESCRIPTION));
             }
         }
         else {
-            groupAcquiringDetails.setState(SPOTINST_CLOUD_COMMUNICATION_INVALID);
+            handleInitializingExpired();
+            groupAcquiringDetails.setDescription(
+                    String.format("%s %s", groupAcquiringDetails.getGroupId(), GROUP_CANNOT_BE_CONNECTED_DESCRIPTION));
         }
     }
 
@@ -511,16 +519,23 @@ public abstract class BaseSpotinstCloud extends Cloud {
             }
             else {
                 handleGroupManagedByOtherController();
+                groupAcquiringDetails.setDescription(String.format("%s %s", groupAcquiringDetails.getGroupId(),
+                                                                   LOCKED_BY_OTHER_CONTROLLER_DESCRIPTION));
             }
         }
         else {
-            groupAcquiringDetails.setState(SPOTINST_CLOUD_COMMUNICATION_INVALID);
+            handleInitializingExpired();
+            groupAcquiringDetails.setDescription(
+                    String.format("%s %s", groupAcquiringDetails.getGroupId(), GROUP_CANNOT_BE_CONNECTED_DESCRIPTION));
         }
     }
 
     private void handleInitializingExpired() {
         if (groupAcquiringDetails.getState().equals(SPOTINST_CLOUD_COMMUNICATION_INITIALIZING)) {
-            boolean shouldFail = TimeHelper.isTimePassedInSeconds(groupAcquiringDetails.getTimeStamp());
+            int initializingPeriod =
+                    Constants.SUSPENDED_GROUP_FETCHING_TIME_TO_LIVE_IN_MILLIS / Constants.MILI_TO_SECONDS;
+            boolean shouldFail =
+                    TimeUtils.isTimePassed(groupAcquiringDetails.getTimeStamp(), initializingPeriod, Calendar.SECOND);
 
             if (shouldFail) {
                 groupAcquiringDetails.setState(SPOTINST_CLOUD_COMMUNICATION_FAILED);
@@ -750,10 +765,6 @@ public abstract class BaseSpotinstCloud extends Cloud {
         ApiResponse<String> lockGroupControllerResponse = lockRepo.getGroupControllerLockValue(accountId, groupId);
 
         if (lockGroupControllerResponse.isRequestSucceed()) {
-            if(groupAcquiringDetails.getState().equals(SPOTINST_CLOUD_COMMUNICATION_INVALID)){
-                groupAcquiringDetails = new GroupAcquiringDetails(groupId, accountId);
-            }
-
             String  lockGroupControllerValue       = lockGroupControllerResponse.getValue();
             String  currentControllerIdentifier    = SpotinstContext.getInstance().getControllerIdentifier();
             boolean isGroupAlreadyHasAnyController = lockGroupControllerValue != null;
@@ -768,7 +779,10 @@ public abstract class BaseSpotinstCloud extends Cloud {
                     LOGGER.warn(
                             "group {} does not belong to controller with identifier {}, make sure that there is no duplicated Jenkins controllers configured to the same group",
                             groupId, currentControllerIdentifier);
+
                     handleGroupManagedByOtherController();
+                    groupAcquiringDetails.setDescription(String.format("%s %s", groupAcquiringDetails.getGroupId(),
+                                                                       LOCKED_BY_OTHER_CONTROLLER_DESCRIPTION));
                 }
             }
             else {
@@ -776,11 +790,12 @@ public abstract class BaseSpotinstCloud extends Cloud {
             }
         }
         else {
-            groupAcquiringDetails.setState(SPOTINST_CLOUD_COMMUNICATION_INVALID);
-            LOGGER.error(
-                    "group locking service failed to get lock for groupId {}, accountId {}. staying in current status {}. Errors: {}",
-                    groupId, accountId, groupAcquiringDetails.getState().getName(),
-                    lockGroupControllerResponse.getErrors());
+            LOGGER.error("group locking service failed to get lock for groupId {}, accountId {}. Errors: {}", groupId,
+                         accountId, lockGroupControllerResponse.getErrors());
+
+            handleInitializingExpired();
+            groupAcquiringDetails.setDescription(
+                    String.format("%s %s", groupAcquiringDetails.getGroupId(), GROUP_CANNOT_BE_CONNECTED_DESCRIPTION));
         }
     }
     //endregion

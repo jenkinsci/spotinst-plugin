@@ -8,6 +8,7 @@ public class GroupAcquiringDetails {
     //region members
     private final GroupLockKey                    key;
     private       SpotinstCloudCommunicationState state;
+    private       String                          description;
     private final Date                            timeStamp;
     //endregion
 
@@ -34,6 +35,14 @@ public class GroupAcquiringDetails {
 
     public void setState(SpotinstCloudCommunicationState state) {
         this.state = state;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public Date getTimeStamp() {

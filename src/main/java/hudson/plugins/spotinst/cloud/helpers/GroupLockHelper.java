@@ -23,7 +23,7 @@ public class GroupLockHelper {
     public static BlResponse<Boolean> AcquireLockGroupController(String accountId, String groupId,
                                                                  String controllerIdentifier) {
         BlResponse<Boolean> retVal = new BlResponse<>();
-        Integer             ttl    = TimeHelper.getLockTimeToLeaveInSeconds();
+        Integer             ttl    = Constants.LOCK_TIME_TO_LIVE_IN_SECONDS;
         ApiResponse<String> lockGroupControllerResponse =
                 lockRepo.acquireGroupControllerLock(accountId, groupId, controllerIdentifier, ttl);
 
@@ -58,7 +58,7 @@ public class GroupLockHelper {
     public static BlResponse<Boolean> SetGroupControllerLockExpiry(String accountId, String groupId,
                                                                    String controllerIdentifier) {
         BlResponse<Boolean> retVal = new BlResponse<>();
-        Integer             ttl    = TimeHelper.getLockTimeToLeaveInSeconds();
+        Integer             ttl    = Constants.LOCK_TIME_TO_LIVE_IN_SECONDS;
         ApiResponse<String> lockGroupControllerResponse =
                 lockRepo.setGroupControllerLockExpiry(accountId, groupId, controllerIdentifier, ttl);
 

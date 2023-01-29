@@ -27,7 +27,7 @@ public class SpotinstCloudsCommunicationMonitor extends AdministrativeMonitor {
     //region Overridden Public Methods
     @Override
     public boolean isActivated() {
-        return isSpotinstCloudsCommunicationInvalidsExist() || isSpotinstCloudsCommunicationFailuresExist() ||
+        return isSpotinstCloudsCommunicationFailuresExist() ||
                isSpotinstCloudsCommunicationInitializingExist();
     }
 
@@ -37,11 +37,7 @@ public class SpotinstCloudsCommunicationMonitor extends AdministrativeMonitor {
     }
     //endregion
 
-    //region getters & setters
-    public boolean isSpotinstCloudsCommunicationInvalidsExist() {
-        return isSpotinstCloudsCommunicationStateExist(SPOTINST_CLOUD_COMMUNICATION_INVALID);
-    }
-
+    //region methods
     public boolean isSpotinstCloudsCommunicationFailuresExist() {
         return isSpotinstCloudsCommunicationStateExist(SPOTINST_CLOUD_COMMUNICATION_FAILED);
     }
@@ -61,22 +57,23 @@ public class SpotinstCloudsCommunicationMonitor extends AdministrativeMonitor {
 
         return isCloudsWithReadyStateExist;
     }
+    //endregion
 
-    public String getSpotinstCloudsCommunicationInvalids() {
-        String retVal;
-
-        spotinstCloudsCommunicationInvalids =
-                getGroupsIdByCloudInitializationState(SPOTINST_CLOUD_COMMUNICATION_INVALID);
-        retVal = String.join(", ", spotinstCloudsCommunicationInvalids);
-
-        return retVal;
-    }
-
+    //region getters & setters
     public String getSpotinstCloudsCommunicationFailures() {
         String retVal;
+        spotinstCloudsCommunicationFailures = new ArrayList<>();
 
-        spotinstCloudsCommunicationFailures =
-                getGroupsIdByCloudInitializationState(SPOTINST_CLOUD_COMMUNICATION_FAILED);
+        Stream<GroupAcquiringDetails> groupsDetails =
+                Jenkins.getInstance().clouds.stream().filter(cloud -> cloud instanceof BaseSpotinstCloud)
+                                            .map(baseCloud -> ((BaseSpotinstCloud) baseCloud).getGroupAcquiringDetails())
+                                            .filter(Objects::nonNull);
+        groupsDetails.forEach(group -> {
+            if (group.getState().equals(SPOTINST_CLOUD_COMMUNICATION_FAILED) && StringUtils.isNotEmpty(group.getGroupId())) {
+                spotinstCloudsCommunicationFailures.add(group.getDescription());
+            }
+        });
+
         retVal = String.join(", ", spotinstCloudsCommunicationFailures);
 
         return retVal;
@@ -85,15 +82,7 @@ public class SpotinstCloudsCommunicationMonitor extends AdministrativeMonitor {
     public String getSpotinstCloudsCommunicationInitializing() {
         String retVal;
 
-        spotinstCloudsCommunicationInitializing =
-                getGroupsIdByCloudInitializationState(SPOTINST_CLOUD_COMMUNICATION_INITIALIZING);
-        retVal = String.join(", ", spotinstCloudsCommunicationInitializing);
-
-        return retVal;
-    }
-
-    private List<String> getGroupsIdByCloudInitializationState(SpotinstCloudCommunicationState state) {
-        List<String> retVal = new ArrayList<>();
+        spotinstCloudsCommunicationInitializing = new ArrayList<>();
 
         Stream<GroupAcquiringDetails> groupsDetails =
                 Jenkins.getInstance().clouds.stream().filter(cloud -> cloud instanceof BaseSpotinstCloud)
@@ -101,10 +90,12 @@ public class SpotinstCloudsCommunicationMonitor extends AdministrativeMonitor {
                                             .filter(Objects::nonNull);
 
         groupsDetails.forEach(group -> {
-            if (state.equals(group.getState()) && StringUtils.isNotEmpty(group.getGroupId())) {
-                retVal.add(group.getGroupId());
+            if (group.getState().equals(SPOTINST_CLOUD_COMMUNICATION_INITIALIZING) && StringUtils.isNotEmpty(group.getGroupId())) {
+                spotinstCloudsCommunicationInitializing.add(group.getGroupId());
             }
         });
+
+        retVal = String.join(", ", spotinstCloudsCommunicationInitializing);
 
         return retVal;
     }
