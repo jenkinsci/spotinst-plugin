@@ -740,8 +740,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
     public void handleGroupManagedByOtherController() {
         handleInitializingExpired();
 
-        if (groupAcquiringDetails.getState().equals(SPOTINST_CLOUD_COMMUNICATION_READY) ||
-            groupAcquiringDetails.getState().equals(SPOTINST_CLOUD_COMMUNICATION_INVALID)) {
+        if (groupAcquiringDetails.getState().equals(SPOTINST_CLOUD_COMMUNICATION_READY)) {
             groupAcquiringDetails = new GroupAcquiringDetails(groupId, accountId);
         }
     }
@@ -751,6 +750,10 @@ public abstract class BaseSpotinstCloud extends Cloud {
         ApiResponse<String> lockGroupControllerResponse = lockRepo.getGroupControllerLockValue(accountId, groupId);
 
         if (lockGroupControllerResponse.isRequestSucceed()) {
+            if(groupAcquiringDetails.getState().equals(SPOTINST_CLOUD_COMMUNICATION_INVALID)){
+                groupAcquiringDetails = new GroupAcquiringDetails(groupId, accountId);
+            }
+
             String  lockGroupControllerValue       = lockGroupControllerResponse.getValue();
             String  currentControllerIdentifier    = SpotinstContext.getInstance().getControllerIdentifier();
             boolean isGroupAlreadyHasAnyController = lockGroupControllerValue != null;
