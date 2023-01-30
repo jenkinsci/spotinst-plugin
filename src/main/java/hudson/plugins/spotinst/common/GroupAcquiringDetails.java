@@ -88,6 +88,12 @@ public class GroupAcquiringDetails {
 
         return retVal;
     }
+
+    public boolean isActive() {
+        boolean retVal = StringUtils.isNotEmpty(getAccountId()) && StringUtils.isNotEmpty(getGroupId());
+
+        return retVal;
+    }
     //endregion
 
     //region private mehtods
@@ -158,12 +164,6 @@ public class GroupAcquiringDetails {
         setState(FAILED);
         setDescription(description);
     }
-
-    public boolean isActive() {
-        boolean retVal = StringUtils.isNotEmpty(getAccountId()) && StringUtils.isNotEmpty(getGroupId());
-
-        return retVal;
-    }
     //endregion
 
     //region getters & setters
@@ -179,12 +179,12 @@ public class GroupAcquiringDetails {
         return state;
     }
 
-    private void setState(SpotinstCloudCommunicationState state) {
-        this.state = state;
-    }
-
     public String getDescription() {
         return description;
+    }
+
+    private void setState(SpotinstCloudCommunicationState state) {
+        this.state = state;
     }
 
     private void setDescription(String description){
