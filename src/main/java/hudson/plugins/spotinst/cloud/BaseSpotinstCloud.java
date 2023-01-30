@@ -39,11 +39,11 @@ public abstract class BaseSpotinstCloud extends Cloud {
     //region Members
     private static final Logger LOGGER = LoggerFactory.getLogger(BaseSpotinstCloud.class);
 
-    private static final   String                            LOCKED_BY_OTHER_CONTROLLER_DESCRIPTION =
-            "is already connected to a different Jenkins controller";
-    private static final   String                            GROUP_CANNOT_BE_CONNECTED_DESCRIPTION  =
-            "cannot be connected, check cloud's configuration";
-    protected static final int                               NO_OVERRIDDEN_NUM_OF_EXECUTORS         = -1;
+    private static final   String                            GROUP_LOCKED_BY_OTHER_CONTROLLER_DESCRIPTION =
+            "%s is already connected to a different Jenkins controller";
+    private static final   String                            GROUP_CANNOT_BE_CONNECTED_DESCRIPTION        =
+            "%s cannot be connected - check cloud's configuration";
+    protected static final int                               NO_OVERRIDDEN_NUM_OF_EXECUTORS               = -1;
     protected              String                            accountId;
     protected              String                            groupId;
     protected              Map<String, PendingInstance>      pendingInstances;
@@ -483,50 +483,36 @@ public abstract class BaseSpotinstCloud extends Cloud {
         LOGGER.info(String.format(
                 "group %s doesn't belong to any controller. controller with identifier %s is trying to lock it",
                 groupId, controllerIdentifier));
-
-        BlResponse<Boolean> hasLockResponse =
+        BlResponse<Boolean> lockResponse =
                 GroupLockHelper.AcquireLockGroupController(accountId, groupId, controllerIdentifier);
+        handleLockResponse(lockResponse);
+    }
 
-        if (hasLockResponse.isSucceed()) {
-            Boolean hasLock = hasLockResponse.getResult();
+    private void ExpandGroupLock(String controllerIdentifier) {
+        LOGGER.info("group {} already belongs the controller {}, reviving the lock duration.", groupId,
+                    controllerIdentifier);
+        BlResponse<Boolean> lockResponse =
+                GroupLockHelper.SetGroupControllerLockExpiry(accountId, groupId, controllerIdentifier);
+        handleLockResponse(lockResponse);
+    }
+
+    private void handleLockResponse(BlResponse<Boolean> response) {
+        if (response.isSucceed()) {
+            Boolean hasLock = response.getResult();
 
             if (hasLock) {
                 groupAcquiringDetails.setState(SPOTINST_CLOUD_COMMUNICATION_READY);
             }
             else {
                 handleGroupManagedByOtherController();
-                groupAcquiringDetails.setDescription(String.format("%s %s", groupAcquiringDetails.getGroupId(),
-                                                                   LOCKED_BY_OTHER_CONTROLLER_DESCRIPTION));
+                groupAcquiringDetails.setDescription(String.format(GROUP_LOCKED_BY_OTHER_CONTROLLER_DESCRIPTION,
+                                                                   groupAcquiringDetails.getGroupId()));
             }
         }
         else {
             handleInitializingExpired();
             groupAcquiringDetails.setDescription(
-                    String.format("%s %s", groupAcquiringDetails.getGroupId(), GROUP_CANNOT_BE_CONNECTED_DESCRIPTION));
-        }
-    }
-
-    private void ExpandGroupLock(String controllerIdentifier) {
-        LOGGER.info("group {} already belongs the controller {}, reviving the lock duration.", groupId,
-                    controllerIdentifier);
-
-        BlResponse<Boolean> lockResponse =
-                GroupLockHelper.SetGroupControllerLockExpiry(accountId, groupId, controllerIdentifier);
-
-        if (lockResponse.isSucceed()) {
-            if (lockResponse.getResult()) {
-                groupAcquiringDetails.setState(SPOTINST_CLOUD_COMMUNICATION_READY);
-            }
-            else {
-                handleGroupManagedByOtherController();
-                groupAcquiringDetails.setDescription(String.format("%s %s", groupAcquiringDetails.getGroupId(),
-                                                                   LOCKED_BY_OTHER_CONTROLLER_DESCRIPTION));
-            }
-        }
-        else {
-            handleInitializingExpired();
-            groupAcquiringDetails.setDescription(
-                    String.format("%s %s", groupAcquiringDetails.getGroupId(), GROUP_CANNOT_BE_CONNECTED_DESCRIPTION));
+                    String.format(GROUP_CANNOT_BE_CONNECTED_DESCRIPTION, groupAcquiringDetails.getGroupId()));
         }
     }
 
@@ -781,8 +767,8 @@ public abstract class BaseSpotinstCloud extends Cloud {
                             groupId, currentControllerIdentifier);
 
                     handleGroupManagedByOtherController();
-                    groupAcquiringDetails.setDescription(String.format("%s %s", groupAcquiringDetails.getGroupId(),
-                                                                       LOCKED_BY_OTHER_CONTROLLER_DESCRIPTION));
+                    groupAcquiringDetails.setDescription(String.format(GROUP_LOCKED_BY_OTHER_CONTROLLER_DESCRIPTION,
+                                                                       groupAcquiringDetails.getGroupId()));
                 }
             }
             else {
@@ -795,7 +781,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
 
             handleInitializingExpired();
             groupAcquiringDetails.setDescription(
-                    String.format("%s %s", groupAcquiringDetails.getGroupId(), GROUP_CANNOT_BE_CONNECTED_DESCRIPTION));
+                    String.format(GROUP_CANNOT_BE_CONNECTED_DESCRIPTION, groupAcquiringDetails.getGroupId()));
         }
     }
     //endregion
