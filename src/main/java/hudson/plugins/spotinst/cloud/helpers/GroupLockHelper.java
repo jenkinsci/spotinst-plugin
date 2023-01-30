@@ -20,6 +20,27 @@ public class GroupLockHelper {
     //endregion
 
     //region Methods
+    public static BlResponse<String> GetGroupControllerLock(String accountId, String groupId) {
+        ILockRepo lockRepo = RepoManager.getInstance().getLockRepo();
+        ApiResponse<String> lockGroupControllerResponse = lockRepo.getGroupControllerLockValue(accountId, groupId);
+
+        BlResponse<String> retVal;
+
+        if (lockGroupControllerResponse.isRequestSucceed()) {
+            retVal = new BlResponse<>(lockGroupControllerResponse.getValue());
+        }
+        else {
+            String errorMessage =
+                    String.format("group locking service failed to get lock for groupId %s, accountId %s. Errors: %s",
+                                  groupId, accountId, lockGroupControllerResponse.getErrors());
+            LOGGER.error(errorMessage);
+            retVal = new BlResponse<>(false);
+            retVal.setErrorMessage(errorMessage);
+        }
+
+        return retVal;
+    }
+
     public static BlResponse<Boolean> AcquireLockGroupController(String accountId, String groupId,
                                                                  String controllerIdentifier) {
         BlResponse<Boolean> retVal = new BlResponse<>();

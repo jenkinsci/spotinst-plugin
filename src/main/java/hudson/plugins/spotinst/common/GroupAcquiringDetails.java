@@ -1,10 +1,7 @@
 package hudson.plugins.spotinst.common;
 
-import hudson.plugins.spotinst.api.infra.ApiResponse;
 import hudson.plugins.spotinst.cloud.helpers.GroupLockHelper;
 import hudson.plugins.spotinst.model.common.BlResponse;
-import hudson.plugins.spotinst.repos.ILockRepo;
-import hudson.plugins.spotinst.repos.RepoManager;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,12 +44,11 @@ public class GroupAcquiringDetails {
 
     //region mehtods
     public void syncGroupOwner() {
-        ILockRepo           lockRepo                    = RepoManager.getInstance().getLockRepo();
-        ApiResponse<String> lockGroupControllerResponse =
-                lockRepo.getGroupControllerLockValue(getAccountId(), getGroupId());
+        BlResponse<String> lockGroupControllerResponse =
+                GroupLockHelper.GetGroupControllerLock(getAccountId(), getGroupId());
 
-        if (lockGroupControllerResponse.isRequestSucceed()) {
-            String  lockGroupControllerValue       = lockGroupControllerResponse.getValue();
+        if (lockGroupControllerResponse.isSucceed()) {
+            String  lockGroupControllerValue       = lockGroupControllerResponse.getResult();
             String  currentControllerIdentifier    = SpotinstContext.getInstance().getControllerIdentifier();
             boolean isGroupAlreadyHasAnyController = lockGroupControllerValue != null;
 
@@ -76,8 +72,6 @@ public class GroupAcquiringDetails {
             }
         }
         else {
-            LOGGER.error("group locking service failed to get lock for groupId {}, accountId {}. Errors: {}",
-                         getGroupId(), getAccountId(), lockGroupControllerResponse.getErrors());
             handleInitializingExpired(
                     String.format(GroupAcquiringDetails.GROUP_CANNOT_BE_CONNECTED_DESCRIPTION_FORMAT, getGroupId()));
         }
@@ -187,7 +181,7 @@ public class GroupAcquiringDetails {
         this.state = state;
     }
 
-    private void setDescription(String description){
+    private void setDescription(String description) {
         this.description = description;
     }
     //endregion
