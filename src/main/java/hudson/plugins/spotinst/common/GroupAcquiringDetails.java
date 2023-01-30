@@ -56,7 +56,7 @@ public class GroupAcquiringDetails {
                 boolean isGroupBelongToCurrentController = currentControllerIdentifier.equals(lockGroupControllerValue);
 
                 if (isGroupBelongToCurrentController) {
-                    ExpandGroupLock(currentControllerIdentifier);
+                    SetGroupLockExpiry(currentControllerIdentifier);
                 }
                 else {
                     LOGGER.warn(
@@ -96,11 +96,11 @@ public class GroupAcquiringDetails {
                 "group %s doesn't belong to any controller. controller with identifier %s is trying to lock it",
                 getGroupId(), controllerIdentifier));
         BlResponse<Boolean> lockResponse =
-                GroupLockHelper.AcquireLockGroupController(getAccountId(), getGroupId(), controllerIdentifier);
+                GroupLockHelper.AcquireGroupControllerLock(getAccountId(), getGroupId(), controllerIdentifier);
         handleLockResponse(lockResponse);
     }
 
-    private void ExpandGroupLock(String controllerIdentifier) {
+    private void SetGroupLockExpiry(String controllerIdentifier) {
         LOGGER.info("group {} already belongs the controller {}, reviving the lock duration.", getGroupId(),
                     controllerIdentifier);
         BlResponse<Boolean> lockResponse =

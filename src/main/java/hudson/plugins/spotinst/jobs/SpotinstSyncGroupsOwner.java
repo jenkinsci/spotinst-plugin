@@ -64,7 +64,7 @@ public class SpotinstSyncGroupsOwner extends AsyncPeriodicWork {
 
             if (groupsLockAcquiringSet.isEmpty() == false) {
                 LOGGER.info(String.format("unlocking %s Spotinst clouds", groupsLockAcquiringSet.size()));
-                GroupLockHelper.deleteGroupControllerLocks(groupsLockAcquiringSet);
+                GroupLockHelper.DeleteGroupControllerLocks(groupsLockAcquiringSet);
             }
         }
 
@@ -98,7 +98,7 @@ public class SpotinstSyncGroupsOwner extends AsyncPeriodicWork {
 
         if (hasGroupsToUnlock) {
             LOGGER.info("the groups {} are not in use anymore by any active cloud, unlocking them.", groupsToUnlock);
-            GroupLockHelper.deleteGroupControllerLocks(groupsToUnlock);
+            GroupLockHelper.DeleteGroupControllerLocks(groupsToUnlock);
         }
 
         groupsFromLastRun = currentActiveGroups;

@@ -21,7 +21,7 @@ public class GroupLockHelper {
 
     //region Methods
     public static BlResponse<String> GetGroupControllerLock(String accountId, String groupId) {
-        ILockRepo lockRepo = RepoManager.getInstance().getLockRepo();
+        ILockRepo           lockRepo                    = RepoManager.getInstance().getLockRepo();
         ApiResponse<String> lockGroupControllerResponse = lockRepo.getGroupControllerLockValue(accountId, groupId);
 
         BlResponse<String> retVal;
@@ -41,76 +41,29 @@ public class GroupLockHelper {
         return retVal;
     }
 
-    public static BlResponse<Boolean> AcquireLockGroupController(String accountId, String groupId,
+    public static BlResponse<Boolean> AcquireGroupControllerLock(String accountId, String groupId,
                                                                  String controllerIdentifier) {
-        BlResponse<Boolean> retVal = new BlResponse<>();
-        Integer             ttl    = Constants.LOCK_TIME_TO_LIVE_IN_SECONDS;
+        Integer ttl = Constants.LOCK_TIME_TO_LIVE_IN_SECONDS;
         ApiResponse<String> lockGroupControllerResponse =
                 lockRepo.acquireGroupControllerLock(accountId, groupId, controllerIdentifier, ttl);
 
-        if (lockGroupControllerResponse.isRequestSucceed()) {
-            String  responseValue                = lockGroupControllerResponse.getValue();
-            boolean isLockedAcquiredSuccessfully = Constants.LOCK_OK_STATUS.equals(responseValue);
-            retVal.setResult(isLockedAcquiredSuccessfully);
-
-            if (isLockedAcquiredSuccessfully) {
-                LOGGER.info("Successfully locked group {} controller", groupId);
-            }
-            else {
-                String errorMessage =
-                        String.format("Failed locking group %s controller, already locked by another controller",
-                                      groupId);
-                LOGGER.error(errorMessage);
-                retVal.setErrorMessage(errorMessage);
-            }
-        }
-        else {
-            retVal.setSucceed(false);
-            String errorMessage =
-                    String.format("lock request failed. Errors: %s", lockGroupControllerResponse.getErrors());
-            LOGGER.error(errorMessage);
-            retVal.setErrorMessage(errorMessage);
-        }
-
+        BlResponse<Boolean> retVal = handleApiLockResponse(lockGroupControllerResponse, groupId);
 
         return retVal;
     }
 
     public static BlResponse<Boolean> SetGroupControllerLockExpiry(String accountId, String groupId,
                                                                    String controllerIdentifier) {
-        BlResponse<Boolean> retVal = new BlResponse<>();
-        Integer             ttl    = Constants.LOCK_TIME_TO_LIVE_IN_SECONDS;
+        Integer ttl = Constants.LOCK_TIME_TO_LIVE_IN_SECONDS;
         ApiResponse<String> lockGroupControllerResponse =
                 lockRepo.setGroupControllerLockExpiry(accountId, groupId, controllerIdentifier, ttl);
 
-        if (lockGroupControllerResponse.isRequestSucceed()) {
-            String  responseValue                = lockGroupControllerResponse.getValue();
-            boolean isLockedAcquiredSuccessfully = Constants.LOCK_OK_STATUS.equals(responseValue);
-            retVal.setResult(isLockedAcquiredSuccessfully);
-
-            if (isLockedAcquiredSuccessfully) {
-                LOGGER.info("Successfully locked group {} controller", groupId);
-            }
-            else {
-                String errorMessage =
-                        String.format("Failed locking group %s controller, already locked by another controller",
-                                      groupId);
-                LOGGER.error(errorMessage);
-                retVal.setErrorMessage(errorMessage);
-            }
-        }
-        else {
-            retVal.setSucceed(false);
-            String errorMessage = String.format("could not set lock expiry for group %s. Errors: %s", groupId,
-                                                lockGroupControllerResponse.getErrors());
-            LOGGER.error(errorMessage);
-            retVal.setErrorMessage(errorMessage);
-        }
+        BlResponse<Boolean> retVal = handleApiLockResponse(lockGroupControllerResponse, groupId);
 
         return retVal;
     }
 
-    public static void deleteGroupControllerLocks(Set<GroupLockKey> groupLockKeys) {
+    public static void DeleteGroupControllerLocks(Set<GroupLockKey> groupLockKeys) {
         for (GroupLockKey groupLockKey : groupLockKeys) {
             String  groupId       = groupLockKey.getGroupId();
             String  accountId     = groupLockKey.getAccountId();
@@ -149,12 +102,10 @@ public class GroupLockHelper {
             }
         }
     }
-    //endregion
 
-    //region private methods
-    private static void deleteGroupControllerLock(GroupLockKey groupNoLongerExists) {
-        String               groupId                      = groupNoLongerExists.getGroupId();
-        String               accountId                    = groupNoLongerExists.getAccountId();
+    public static void deleteGroupControllerLock(GroupLockKey lockKey) {
+        String               groupId                      = lockKey.getGroupId();
+        String               accountId                    = lockKey.getAccountId();
         ApiResponse<Integer> groupControllerValueResponse = lockRepo.deleteGroupControllerLock(accountId, groupId);
 
         if (groupControllerValueResponse.isRequestSucceed()) {
@@ -163,6 +114,37 @@ public class GroupLockHelper {
         else {
             LOGGER.error("Failed to unlock group {}. Errors: {}", groupId, groupControllerValueResponse.getErrors());
         }
+    }
+    //endregion
+
+    //region private methods
+    private static BlResponse<Boolean> handleApiLockResponse(ApiResponse<String> apiResponse, String groupId) {
+        BlResponse<Boolean> retVal = new BlResponse<>();
+
+        if (apiResponse.isRequestSucceed()) {
+            String  responseValue                = apiResponse.getValue();
+            boolean isLockedAcquiredSuccessfully = Constants.LOCK_OK_STATUS.equals(responseValue);
+            retVal.setResult(isLockedAcquiredSuccessfully);
+
+            if (isLockedAcquiredSuccessfully) {
+                LOGGER.info("Successfully locked group {} controller", groupId);
+            }
+            else {
+                String errorMessage =
+                        String.format("Failed locking group %s controller, already locked by another controller",
+                                      groupId);
+                LOGGER.error(errorMessage);
+                retVal.setErrorMessage(errorMessage);
+            }
+        }
+        else {
+            retVal.setSucceed(false);
+            String errorMessage = String.format("lock request failed. Errors: %s", apiResponse.getErrors());
+            LOGGER.error(errorMessage);
+            retVal.setErrorMessage(errorMessage);
+        }
+
+        return retVal;
     }
     //endregion
 }
