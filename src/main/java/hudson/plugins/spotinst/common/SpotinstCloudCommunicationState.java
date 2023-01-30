@@ -4,12 +4,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public enum SpotinstCloudCommunicationState {
-    SPOTINST_CLOUD_COMMUNICATION_INITIALIZING("SPOTINST CLOUD COMMUNICATION INITIALIZING"),
-    SPOTINST_CLOUD_COMMUNICATION_FAILED("SPOTINST CLOUD COMMUNICATION FAILED"),
-    SPOTINST_CLOUD_COMMUNICATION_READY("SPOTINST CLOUD COMMUNICATION READY");
+    INITIALIZING("INITIALIZING"),
+    FAILED("FAILED"),
+    READY("READY");
 
     // region members
-    private static final Logger LOGGER = LoggerFactory.getLogger(CredentialsMethodEnum.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(SpotinstCloudCommunicationState.class);
 
     private final String name;
     // endregion
@@ -22,7 +22,7 @@ public enum SpotinstCloudCommunicationState {
         return name;
     }
 
-    public SpotinstCloudCommunicationState fromName(String name){
+    public SpotinstCloudCommunicationState fromName(String name) {
         SpotinstCloudCommunicationState retVal = null;
 
         for (SpotinstCloudCommunicationState enumValues : SpotinstCloudCommunicationState.values()) {
@@ -34,7 +34,8 @@ public enum SpotinstCloudCommunicationState {
 
         if (retVal == null) {
             LOGGER.warn(String.format(
-                    "Tried to create CredentialsMethodEnum for name: %s, but we don't support such type ", name));
+                    "Tried to create SpotinstCloudCommunicationState for name: %s, but we don't support such type ",
+                    name));
         }
         return retVal;
     }

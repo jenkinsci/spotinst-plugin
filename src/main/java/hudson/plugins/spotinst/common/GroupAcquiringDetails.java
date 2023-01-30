@@ -1,22 +1,168 @@
 package hudson.plugins.spotinst.common;
 
+import hudson.plugins.spotinst.api.infra.ApiResponse;
+import hudson.plugins.spotinst.cloud.helpers.GroupLockHelper;
+import hudson.plugins.spotinst.model.common.BlResponse;
+import hudson.plugins.spotinst.repos.ILockRepo;
+import hudson.plugins.spotinst.repos.RepoManager;
+import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.Calendar;
 import java.util.Date;
 
-import static hudson.plugins.spotinst.common.SpotinstCloudCommunicationState.SPOTINST_CLOUD_COMMUNICATION_INITIALIZING;
+import static hudson.plugins.spotinst.common.SpotinstCloudCommunicationState.*;
 
 public class GroupAcquiringDetails {
+    //region constants
+    private static final Integer INITIALIZING_PERIOD                                 =
+            Constants.SUSPENDED_GROUP_FETCHING_TIME_TO_LIVE_IN_MILLIS / Constants.MILI_TO_SECONDS;
+    public static final  String  GROUP_LOCKED_BY_OTHER_CONTROLLER_DESCRIPTION_FORMAT =
+            "%s is already connected to a different Jenkins controller";
+    public static final  String  GROUP_CANNOT_BE_CONNECTED_DESCRIPTION_FORMAT        =
+            "%s cannot be connected - check cloud's configuration";
+    //endregion
+
     //region members
-    private final GroupLockKey                    key;
-    private       SpotinstCloudCommunicationState state;
-    private       String                          description;
-    private final Date                            timeStamp;
+    private static final Logger                          LOGGER = LoggerFactory.getLogger(GroupAcquiringDetails.class);
+    private final        GroupLockKey                    key;
+    private              SpotinstCloudCommunicationState state;
+    private              String                          description;
+    private              Date                            timeStamp;
     //endregion
 
     //region Constructor
     public GroupAcquiringDetails(String groupId, String accountId) {
         key = new GroupLockKey(groupId, accountId);
-        state = SPOTINST_CLOUD_COMMUNICATION_INITIALIZING;
+
+        if (isActive()) {
+            setInitializingState();
+        }
+        else {
+            setFailedState("Account & Group ID must be initialized for all clouds");
+        }
+    }
+    //endregion
+
+    //region mehtods
+    public void syncGroupOwner() {
+        ILockRepo           lockRepo                    = RepoManager.getInstance().getLockRepo();
+        ApiResponse<String> lockGroupControllerResponse =
+                lockRepo.getGroupControllerLockValue(getAccountId(), getGroupId());
+
+        if (lockGroupControllerResponse.isRequestSucceed()) {
+            String  lockGroupControllerValue       = lockGroupControllerResponse.getValue();
+            String  currentControllerIdentifier    = SpotinstContext.getInstance().getControllerIdentifier();
+            boolean isGroupAlreadyHasAnyController = lockGroupControllerValue != null;
+
+            if (isGroupAlreadyHasAnyController) {
+                boolean isGroupBelongToCurrentController = currentControllerIdentifier.equals(lockGroupControllerValue);
+
+                if (isGroupBelongToCurrentController) {
+                    ExpandGroupLock(currentControllerIdentifier);
+                }
+                else {
+                    LOGGER.warn(
+                            "group {} does not belong to controller with identifier {}, make sure that there is no duplicated Jenkins controllers configured to the same group",
+                            getGroupId(), currentControllerIdentifier);
+                    handleGroupManagedByOtherController(
+                            String.format(GroupAcquiringDetails.GROUP_LOCKED_BY_OTHER_CONTROLLER_DESCRIPTION_FORMAT,
+                                          getGroupId()));
+                }
+            }
+            else {
+                AcquireGroupLock(currentControllerIdentifier);
+            }
+        }
+        else {
+            LOGGER.error("group locking service failed to get lock for groupId {}, accountId {}. Errors: {}",
+                         getGroupId(), getAccountId(), lockGroupControllerResponse.getErrors());
+            handleInitializingExpired(
+                    String.format(GroupAcquiringDetails.GROUP_CANNOT_BE_CONNECTED_DESCRIPTION_FORMAT, getGroupId()));
+        }
+    }
+
+    public boolean isCloudReadyForGroupCommunication() {
+        boolean retVal = state == READY;
+
+        return retVal;
+    }
+    //endregion
+
+    //region private mehtods
+    private void AcquireGroupLock(String controllerIdentifier) {
+        LOGGER.info(String.format(
+                "group %s doesn't belong to any controller. controller with identifier %s is trying to lock it",
+                getGroupId(), controllerIdentifier));
+        BlResponse<Boolean> lockResponse =
+                GroupLockHelper.AcquireLockGroupController(getAccountId(), getGroupId(), controllerIdentifier);
+        handleLockResponse(lockResponse);
+    }
+
+    private void ExpandGroupLock(String controllerIdentifier) {
+        LOGGER.info("group {} already belongs the controller {}, reviving the lock duration.", getGroupId(),
+                    controllerIdentifier);
+        BlResponse<Boolean> lockResponse =
+                GroupLockHelper.SetGroupControllerLockExpiry(getAccountId(), getGroupId(), controllerIdentifier);
+        handleLockResponse(lockResponse);
+    }
+
+    private void handleGroupManagedByOtherController(String description) {
+        handleInitializingExpired(description);
+
+        if (state == READY) {
+            setInitializingState();
+        }
+    }
+
+    private void handleInitializingExpired(String description) {
+        if (state == INITIALIZING) {
+
+            boolean shouldFail = TimeUtils.isTimePassed(timeStamp, INITIALIZING_PERIOD, Calendar.SECOND);
+
+            if (shouldFail) {
+                setFailedState(description);
+            }
+        }
+    }
+
+    private void handleLockResponse(BlResponse<Boolean> response) {
+        if (response.isSucceed()) {
+            Boolean hasLock = response.getResult();
+
+            if (hasLock) {
+                setReadyState();
+            }
+            else {
+                handleGroupManagedByOtherController(
+                        String.format(GROUP_LOCKED_BY_OTHER_CONTROLLER_DESCRIPTION_FORMAT, getGroupId()));
+            }
+        }
+        else {
+            handleInitializingExpired(String.format(GROUP_CANNOT_BE_CONNECTED_DESCRIPTION_FORMAT, getGroupId()));
+        }
+    }
+
+    private void setInitializingState() {
+        setState(INITIALIZING);
+        setDescription(null);
         timeStamp = new Date();
+    }
+
+    private void setReadyState() {
+        setState(READY);
+    }
+
+    private void setFailedState(String description) {
+        setState(FAILED);
+        setDescription(description);
+    }
+
+    public boolean isActive() {
+        boolean retVal = StringUtils.isNotEmpty(getAccountId()) && StringUtils.isNotEmpty(getGroupId());
+
+        return retVal;
     }
     //endregion
 
@@ -33,7 +179,7 @@ public class GroupAcquiringDetails {
         return state;
     }
 
-    public void setState(SpotinstCloudCommunicationState state) {
+    private void setState(SpotinstCloudCommunicationState state) {
         this.state = state;
     }
 
@@ -41,12 +187,8 @@ public class GroupAcquiringDetails {
         return description;
     }
 
-    public void setDescription(String description) {
+    private void setDescription(String description){
         this.description = description;
-    }
-
-    public Date getTimeStamp() {
-        return timeStamp;
     }
     //endregion
 }

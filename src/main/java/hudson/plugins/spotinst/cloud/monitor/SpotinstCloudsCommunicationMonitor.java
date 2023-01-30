@@ -6,7 +6,6 @@ import hudson.plugins.spotinst.cloud.BaseSpotinstCloud;
 import hudson.plugins.spotinst.common.GroupAcquiringDetails;
 import hudson.plugins.spotinst.common.SpotinstCloudCommunicationState;
 import jenkins.model.Jenkins;
-import org.apache.commons.lang.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,11 +37,11 @@ public class SpotinstCloudsCommunicationMonitor extends AdministrativeMonitor {
 
     //region methods
     public boolean isSpotinstCloudsCommunicationFailuresExist() {
-        return isSpotinstCloudsCommunicationStateExist(SPOTINST_CLOUD_COMMUNICATION_FAILED);
+        return isSpotinstCloudsCommunicationStateExist(FAILED);
     }
 
     public boolean isSpotinstCloudsCommunicationInitializingExist() {
-        return isSpotinstCloudsCommunicationStateExist(SPOTINST_CLOUD_COMMUNICATION_INITIALIZING);
+        return isSpotinstCloudsCommunicationStateExist(INITIALIZING);
     }
 
     private boolean isSpotinstCloudsCommunicationStateExist(SpotinstCloudCommunicationState state) {
@@ -51,8 +50,7 @@ public class SpotinstCloudsCommunicationMonitor extends AdministrativeMonitor {
                                             .map(baseCloud -> ((BaseSpotinstCloud) baseCloud).getGroupAcquiringDetails())
                                             .filter(Objects::nonNull);
 
-        boolean isCloudsWithReadyStateExist =
-                groupsDetails.anyMatch(groupDetails -> state.equals(groupDetails.getState()));
+        boolean isCloudsWithReadyStateExist = groupsDetails.anyMatch(groupDetails -> state == groupDetails.getState());
 
         return isCloudsWithReadyStateExist;
     }
@@ -65,10 +63,9 @@ public class SpotinstCloudsCommunicationMonitor extends AdministrativeMonitor {
                 Jenkins.getInstance().clouds.stream().filter(cloud -> cloud instanceof BaseSpotinstCloud)
                                             .map(baseCloud -> ((BaseSpotinstCloud) baseCloud).getGroupAcquiringDetails())
                                             .filter(Objects::nonNull);
-        spotinstCloudsCommunicationFailures = groupsDetails.filter(
-                                                                   group -> group.getState().equals(SPOTINST_CLOUD_COMMUNICATION_FAILED) &&
-                                                                            StringUtils.isNotEmpty(group.getGroupId())).map(GroupAcquiringDetails::getDescription)
-                                                           .collect(Collectors.toList());
+        spotinstCloudsCommunicationFailures =
+                groupsDetails.filter(group -> group.getState() == FAILED)
+                             .map(GroupAcquiringDetails::getDescription).collect(Collectors.toList());
 
         retVal = String.join("; ", spotinstCloudsCommunicationFailures);
 
@@ -86,7 +83,7 @@ public class SpotinstCloudsCommunicationMonitor extends AdministrativeMonitor {
                                             .filter(Objects::nonNull);
 
         groupsDetails.forEach(group -> {
-            if (group.getState().equals(SPOTINST_CLOUD_COMMUNICATION_INITIALIZING)) {
+            if (group.getState() == INITIALIZING) {
                 spotinstCloudsCommunicationInitializing.add(group.getGroupId());
             }
         });
