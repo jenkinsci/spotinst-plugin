@@ -4,9 +4,8 @@ import hudson.Extension;
 import hudson.model.AsyncPeriodicWork;
 import hudson.model.TaskListener;
 import hudson.plugins.spotinst.cloud.BaseSpotinstCloud;
-import hudson.plugins.spotinst.cloud.helpers.GroupLockHelper;
 import hudson.plugins.spotinst.common.Constants;
-import hudson.plugins.spotinst.common.GroupLockKey;
+import hudson.plugins.spotinst.common.GroupLockingManager;
 import hudson.slaves.Cloud;
 import jenkins.model.Jenkins;
 import org.apache.commons.collections.CollectionUtils;
@@ -30,8 +29,9 @@ public class SpotinstSyncGroupsOwner extends AsyncPeriodicWork {
     //endregion
 
     //region Members
-    private static final Logger            LOGGER            = LoggerFactory.getLogger(SpotinstSyncGroupsOwner.class);
-    private static       Set<GroupLockKey> groupsFromLastRun = new HashSet<>();
+    private static final Logger                   LOGGER                    =
+            LoggerFactory.getLogger(SpotinstSyncGroupsOwner.class);
+    private static       Set<GroupLockingManager> groupsManagersFromLastRun = new HashSet<>();
     //endregion
 
     //region Constructor
@@ -44,10 +44,24 @@ public class SpotinstSyncGroupsOwner extends AsyncPeriodicWork {
     @Override
     protected void execute(TaskListener taskListener) {
         synchronized (this) {
-            List<BaseSpotinstCloud> activeClouds = getActiveClouds();
-            HandleCloudsChangeFromLastRun(activeClouds);
+            Set<GroupLockingManager> activeGroupManagers = getActiveGroupLockingManagers();
+            Set<GroupLockingManager> groupManagersToUnlock = groupsManagersFromLastRun.stream()
+                                                                                      .filter(groupManagerFromLastRun -> activeGroupManagers.stream()
+                                                                                                                                            .anyMatch(
+                                                                                                                                                    activeGroupManager -> activeGroupManager.hasSameLock(
+                                                                                                                                                            groupManagerFromLastRun)))
+                                                                                      .collect(Collectors.toSet());
+            boolean hasGroupsToUnlock = groupManagersToUnlock.isEmpty() == false;
 
-            activeClouds.forEach(BaseSpotinstCloud::syncGroupOwner);
+            if (hasGroupsToUnlock) {
+                List<String> groupIds = groupManagersToUnlock.stream().map(GroupLockingManager::getGroupId)
+                                                             .collect(Collectors.toList());
+                LOGGER.info("the groups {} are not in use anymore by any active cloud. unlocking them.", groupIds);
+                groupManagersToUnlock.forEach(GroupLockingManager::deleteGroupControllerLock);
+            }
+
+            groupsManagersFromLastRun = activeGroupManagers;
+            activeGroupManagers.forEach(GroupLockingManager::syncGroupController);
         }
     }
 
@@ -55,59 +69,35 @@ public class SpotinstSyncGroupsOwner extends AsyncPeriodicWork {
         List<Cloud> cloudList = Jenkins.getInstance().clouds;
 
         if (CollectionUtils.isNotEmpty(cloudList)) {
-            Set<GroupLockKey> groupsLockAcquiringSet =
+            Set<GroupLockingManager> groupManagers =
                     cloudList.stream().filter(cloud -> cloud instanceof BaseSpotinstCloud)
-                             .map(cloud -> (BaseSpotinstCloud) cloud)
-                             .map(spotinstCloud -> new GroupLockKey(spotinstCloud.getGroupId(),
-                                                                    spotinstCloud.getAccountId()))
+                             .map(baseCloud -> ((BaseSpotinstCloud) baseCloud).getGroupLockingManager())
                              .collect(Collectors.toSet());
 
-            if (groupsLockAcquiringSet.isEmpty() == false) {
-                LOGGER.info(String.format("unlocking %s Spotinst clouds", groupsLockAcquiringSet.size()));
-                GroupLockHelper.DeleteGroupControllerLocks(groupsLockAcquiringSet);
+            if (groupManagers.isEmpty() == false) {
+                LOGGER.info(String.format("unlocking %s Spotinst clouds", groupManagers.size()));
+                groupManagers.forEach(GroupLockingManager::deleteGroupControllerLock);
             }
         }
 
-        groupsFromLastRun = null;
+        groupsManagersFromLastRun = null;
     }
     //endregion
 
     //region private methods
-    private List<BaseSpotinstCloud> getActiveClouds() {
-        List<Cloud>             clouds = Jenkins.getInstance().clouds;
-        List<BaseSpotinstCloud> retVal;
+    private Set<GroupLockingManager> getActiveGroupLockingManagers() {
+        List<Cloud>              clouds = Jenkins.getInstance().clouds;
+        Set<GroupLockingManager> retVal;
 
         if (clouds != null) {
             retVal = clouds.stream().filter(cloud -> cloud instanceof BaseSpotinstCloud)
-                           .map(cloud -> (BaseSpotinstCloud) cloud).filter(BaseSpotinstCloud::isActive)
-                           .collect(Collectors.toList());
+                           .map(baseCloud -> ((BaseSpotinstCloud) baseCloud).getGroupLockingManager())
+                           .filter(GroupLockingManager::isActive).collect(Collectors.toSet());
         }
         else {
-            retVal = new ArrayList<>();
+            retVal = new HashSet<>();
         }
 
-        return retVal;
-    }
-
-    private void HandleCloudsChangeFromLastRun(List<BaseSpotinstCloud> activeClouds) {
-        Set<GroupLockKey> currentActiveGroups = getGroupLockKeys(activeClouds);
-        Set<GroupLockKey> groupsToUnlock =
-                groupsFromLastRun.stream().filter(groupLockKey -> currentActiveGroups.contains(groupLockKey) == false)
-                                 .collect(Collectors.toSet());
-        boolean hasGroupsToUnlock = groupsToUnlock.isEmpty() == false;
-
-        if (hasGroupsToUnlock) {
-            LOGGER.info("the groups {} are not in use anymore by any active cloud, unlocking them.", groupsToUnlock);
-            GroupLockHelper.DeleteGroupControllerLocks(groupsToUnlock);
-        }
-
-        groupsFromLastRun = currentActiveGroups;
-    }
-
-    private static Set<GroupLockKey> getGroupLockKeys(List<BaseSpotinstCloud> clouds) {
-        Set<GroupLockKey> retVal =
-                clouds.stream().map(baseCloud -> new GroupLockKey(baseCloud.getGroupId(), baseCloud.getAccountId()))
-                      .collect(Collectors.toSet());
         return retVal;
     }
     //endregion

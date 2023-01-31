@@ -52,7 +52,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
     private                ConnectionMethodEnum              connectionMethod;
     private                Boolean                           shouldUsePrivateIp;
     private                SpotGlobalExecutorOverride        globalExecutorOverride;
-    private final          GroupAcquiringDetails             groupAcquiringDetails;
+    private final          GroupLockingManager               groupLockingManager;
     //endregion
 
     //region Constructor
@@ -111,12 +111,8 @@ public abstract class BaseSpotinstCloud extends Cloud {
             this.globalExecutorOverride = new SpotGlobalExecutorOverride(false, 1);
         }
 
-        groupAcquiringDetails = new GroupAcquiringDetails(groupId, accountId);
-        boolean isActiveCloud = isActive();
-
-        if (isActiveCloud) {
-            syncGroupOwner();
-        }
+        groupLockingManager = new GroupLockingManager(groupId, accountId);
+        groupLockingManager.syncGroupController();
     }
     //endregion
 
@@ -358,13 +354,8 @@ public abstract class BaseSpotinstCloud extends Cloud {
     }
 
     public boolean isCloudReadyForGroupCommunication() {
-        boolean retVal = groupAcquiringDetails.isCloudReadyForGroupCommunication();
+        boolean retVal = groupLockingManager.isCloudReadyForGroupCommunication();
 
-        return retVal;
-    }
-
-    public Boolean isActive() {
-        Boolean retVal = groupAcquiringDetails.isActive();
         return retVal;
     }
     //endregion
@@ -664,9 +655,6 @@ public abstract class BaseSpotinstCloud extends Cloud {
         return Constants.SLAVE_OFFLINE_THRESHOLD_IN_MINUTES;
     }
 
-    public void syncGroupOwner() {
-        groupAcquiringDetails.syncGroupOwner();
-    }
     //endregion
 
     //region Getters / Setters
@@ -791,8 +779,8 @@ public abstract class BaseSpotinstCloud extends Cloud {
         }
     }
 
-    public GroupAcquiringDetails getGroupAcquiringDetails() {
-        return groupAcquiringDetails;
+    public GroupLockingManager getGroupLockingManager() {
+        return groupLockingManager;
     }
 
     @DataBoundSetter

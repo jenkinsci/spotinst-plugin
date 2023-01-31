@@ -3,7 +3,7 @@ package hudson.plugins.spotinst.cloud.monitor;
 import hudson.Extension;
 import hudson.model.AdministrativeMonitor;
 import hudson.plugins.spotinst.cloud.BaseSpotinstCloud;
-import hudson.plugins.spotinst.common.GroupAcquiringDetails;
+import hudson.plugins.spotinst.common.GroupLockingManager;
 import hudson.plugins.spotinst.common.SpotinstCloudCommunicationState;
 import jenkins.model.Jenkins;
 
@@ -12,8 +12,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static hudson.plugins.spotinst.common.SpotinstCloudCommunicationState.*;
 
 @Extension
 public class SpotinstCloudsCommunicationMonitor extends AdministrativeMonitor {
@@ -37,20 +35,20 @@ public class SpotinstCloudsCommunicationMonitor extends AdministrativeMonitor {
 
     //region methods
     public boolean isSpotinstCloudsCommunicationFailuresExist() {
-        return isSpotinstCloudsCommunicationStateExist(FAILED);
+        return isSpotinstCloudsCommunicationStateExist(SpotinstCloudCommunicationState.FAILED);
     }
 
     public boolean isSpotinstCloudsCommunicationInitializingExist() {
-        return isSpotinstCloudsCommunicationStateExist(INITIALIZING);
+        return isSpotinstCloudsCommunicationStateExist(SpotinstCloudCommunicationState.INITIALIZING);
     }
 
     private boolean isSpotinstCloudsCommunicationStateExist(SpotinstCloudCommunicationState state) {
-        Stream<GroupAcquiringDetails> groupsDetails =
+        Stream<GroupLockingManager> groupsDetails =
                 Jenkins.getInstance().clouds.stream().filter(cloud -> cloud instanceof BaseSpotinstCloud)
-                                            .map(baseCloud -> ((BaseSpotinstCloud) baseCloud).getGroupAcquiringDetails())
+                                            .map(baseCloud -> ((BaseSpotinstCloud) baseCloud).getGroupLockingManager())
                                             .filter(Objects::nonNull);
 
-        boolean isCloudsWithReadyStateExist = groupsDetails.anyMatch(groupDetails -> state == groupDetails.getState());
+        boolean isCloudsWithReadyStateExist = groupsDetails.anyMatch(groupDetails -> state == groupDetails.getCloudCommunicationState());
 
         return isCloudsWithReadyStateExist;
     }
@@ -59,13 +57,13 @@ public class SpotinstCloudsCommunicationMonitor extends AdministrativeMonitor {
     //region getters & setters
     public String getSpotinstCloudsCommunicationFailures() {
         String retVal;
-        Stream<GroupAcquiringDetails> groupsDetails =
+        Stream<GroupLockingManager> groupsDetails =
                 Jenkins.getInstance().clouds.stream().filter(cloud -> cloud instanceof BaseSpotinstCloud)
-                                            .map(baseCloud -> ((BaseSpotinstCloud) baseCloud).getGroupAcquiringDetails())
+                                            .map(baseCloud -> ((BaseSpotinstCloud) baseCloud).getGroupLockingManager())
                                             .filter(Objects::nonNull);
         spotinstCloudsCommunicationFailures =
-                groupsDetails.filter(group -> group.getState() == FAILED)
-                             .map(GroupAcquiringDetails::getDescription).collect(Collectors.toList());
+                groupsDetails.filter(group -> group.getCloudCommunicationState() == SpotinstCloudCommunicationState.FAILED)
+                             .map(GroupLockingManager::getErrorDescription).collect(Collectors.toList());
 
         retVal = String.join("; ", spotinstCloudsCommunicationFailures);
 
@@ -77,13 +75,13 @@ public class SpotinstCloudsCommunicationMonitor extends AdministrativeMonitor {
 
         spotinstCloudsCommunicationInitializing = new ArrayList<>();
 
-        Stream<GroupAcquiringDetails> groupsDetails =
+        Stream<GroupLockingManager> groupsDetails =
                 Jenkins.getInstance().clouds.stream().filter(cloud -> cloud instanceof BaseSpotinstCloud)
-                                            .map(baseCloud -> ((BaseSpotinstCloud) baseCloud).getGroupAcquiringDetails())
+                                            .map(baseCloud -> ((BaseSpotinstCloud) baseCloud).getGroupLockingManager())
                                             .filter(Objects::nonNull);
 
         groupsDetails.forEach(group -> {
-            if (group.getState() == INITIALIZING) {
+            if (group.getCloudCommunicationState() == SpotinstCloudCommunicationState.INITIALIZING) {
                 spotinstCloudsCommunicationInitializing.add(group.getGroupId());
             }
         });
