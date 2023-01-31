@@ -3,15 +3,18 @@
     <j:if test="${it.isSpotinstCloudsCommunicationFailuresExist()}">
         <div class="alert alert-danger">
                 <strong>${%Title}</strong>
-                <p/>
 
-                ${%SpotinstCloudsCommunicationFailures(it.spotinstCloudsCommunicationFailures)}
-                <p/>
+                <j:forEach var="communicationError" items="${it.spotinstCloudsCommunicationFailures}">
+                    <p/>
+
+                    ${%SpotinstCloudsCommunicationFailures(communicationError)}
+                    <p/>
+                </j:forEach>
         </div>
     </j:if>
 
     <j:if test="${it.isSpotinstCloudsCommunicationInitializingExist()}">
-        <div class="alert alert-warn">
+        <div class="alert alert-warning">
                 <strong>${%Title}</strong>
                 <p/>
 

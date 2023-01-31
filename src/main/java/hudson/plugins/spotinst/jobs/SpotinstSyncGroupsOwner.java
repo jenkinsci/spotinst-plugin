@@ -54,7 +54,7 @@ public class SpotinstSyncGroupsOwner extends AsyncPeriodicWork {
                                                                                   .filter(groupManagerFromLastRun -> activeGroupManagers.stream()
                                                                                                                                         .anyMatch(
                                                                                                                                                 activeGroupManager -> activeGroupManager.hasSameLock(
-                                                                                                                                                        groupManagerFromLastRun)))
+                                                                                                                                                        groupManagerFromLastRun)) == false)
                                                                                   .collect(Collectors.toSet());
         boolean hasGroupsToUnlock = removedGroupsManagers.isEmpty() == false;
 

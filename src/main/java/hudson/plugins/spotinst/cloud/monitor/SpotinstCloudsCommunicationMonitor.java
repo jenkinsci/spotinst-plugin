@@ -24,7 +24,7 @@ public class SpotinstCloudsCommunicationMonitor extends AdministrativeMonitor {
     //region Overridden Public Methods
     @Override
     public boolean isActivated() {
-        return isSpotinstCloudsCommunicationFailuresExist() || isSpotinstCloudsCommunicationInitializingExist();
+        return true;
     }
 
     @Override
@@ -55,8 +55,7 @@ public class SpotinstCloudsCommunicationMonitor extends AdministrativeMonitor {
     //endregion
 
     //region getters & setters
-    public String getSpotinstCloudsCommunicationFailures() {
-        String retVal;
+    public List<String> getSpotinstCloudsCommunicationFailures() {
         Stream<GroupLockingManager> groupsDetails =
                 Jenkins.getInstance().clouds.stream().filter(cloud -> cloud instanceof BaseSpotinstCloud)
                                             .map(baseCloud -> ((BaseSpotinstCloud) baseCloud).getGroupLockingManager())
@@ -65,9 +64,7 @@ public class SpotinstCloudsCommunicationMonitor extends AdministrativeMonitor {
                 groupsDetails.filter(group -> group.getCloudCommunicationState() == SpotinstCloudCommunicationState.FAILED)
                              .map(GroupLockingManager::getErrorDescription).collect(Collectors.toList());
 
-        retVal = String.join("; ", spotinstCloudsCommunicationFailures);
-
-        return retVal;
+        return spotinstCloudsCommunicationFailures;
     }
 
     public String getSpotinstCloudsCommunicationInitializing() {
