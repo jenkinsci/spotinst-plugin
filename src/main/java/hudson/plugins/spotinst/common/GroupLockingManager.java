@@ -13,12 +13,10 @@ import java.util.Date;
 
 public class GroupLockingManager {
     //region constants
-    public static final String  GROUP_LOCKED_BY_OTHER_CONTROLLER_DESCRIPTION_FORMAT =
-            "group '%s' is already connected to a different Jenkins controller";
-    public static final String  GROUP_CANNOT_BE_CONNECTED_DESCRIPTION_FORMAT        =
-            "group '%s' cannot be connected - check cloud's configuration";
-    public static final Integer LOCK_TIME_TO_LIVE_IN_SECONDS                        = 60 * 3;
+    public static final Integer LOCK_TIME_TO_LIVE_IN_SECONDS = 60 * 3;
 
+    private static final String  GROUP_CANNOT_BE_CONNECTED_DESCRIPTION_FORMAT    =
+            "group '%s' cannot be connected - check cloud's configuration";
     private static final String  LOCK_OK_STATUS                                  = "OK";
     private static final Integer MILI_TO_SECONDS                                 = 1000;
     private static final Integer SUSPENDED_GROUP_FETCHING_TIME_TO_LIVE_IN_MILLIS =
@@ -60,7 +58,8 @@ public class GroupLockingManager {
     //region methods
     public void syncGroupController() {
         if (isActive()) {
-            ApiResponse<String> getLockGroupRepoResponse = GetGroupControllerLock(getAccountId(), getGroupId());
+            ApiResponse<String> getLockGroupRepoResponse =
+                    lockRepo.getGroupControllerLockValue(getAccountId(), getGroupId());
 
             if (getLockGroupRepoResponse.isRequestSucceed()) {
                 String  lockGroupControllerValue       = getLockGroupRepoResponse.getValue();
@@ -74,9 +73,7 @@ public class GroupLockingManager {
                         SetGroupLockExpiry();
                     }
                     else {
-                        String failureDescription =
-                                String.format(GROUP_LOCKED_BY_OTHER_CONTROLLER_DESCRIPTION_FORMAT, getGroupId());
-                        handleGroupManagedByOtherController(failureDescription);
+                        handleGroupManagedByOtherController();
                     }
                 }
                 else {
@@ -84,10 +81,12 @@ public class GroupLockingManager {
                 }
             }
             else {
+                LOGGER.error("failed to get lock for groupId {}, accountId {}. Errors: {}", getGroupId(),
+                             getAccountId(), getLockGroupRepoResponse.getErrors());
+
                 if (cloudCommunicationState == SpotinstCloudCommunicationState.INITIALIZING) {
                     String failureDescription =
-                            String.format(GroupLockingManager.GROUP_CANNOT_BE_CONNECTED_DESCRIPTION_FORMAT,
-                                          getGroupId());
+                            String.format(GROUP_CANNOT_BE_CONNECTED_DESCRIPTION_FORMAT, getGroupId());
                     handleInitializingFailureTimeout(failureDescription);
                 }
             }
@@ -96,31 +95,16 @@ public class GroupLockingManager {
 
     public void deleteGroupControllerLock() {
         if (isActive()) {
-            ApiResponse<String> getLockGroupRepoResponse = GetGroupControllerLock(getAccountId(), getGroupId());
+            ApiResponse<String> getLockGroupRepoResponse =
+                    lockRepo.getGroupControllerLockValue(getAccountId(), getGroupId());
 
             if (getLockGroupRepoResponse.isRequestSucceed()) {
-                String  lockGroupControllerValue       = getLockGroupRepoResponse.getValue();
-                boolean isGroupAlreadyHasAnyController = lockGroupControllerValue != null;
-
-                if (isGroupAlreadyHasAnyController) {
-                    boolean isGroupBelongToController = currentControllerIdentifier.equals(lockGroupControllerValue);
-
-                    if (isGroupBelongToController) {
-                        deleteGroupLock();
-                    }
-                    else {
-                        LOGGER.error(
-                                "Controller {} could not unlock group {} - already locked by another Controller {}",
-                                currentControllerIdentifier, getGroupId(), lockGroupControllerValue);
-                    }
-                }
-                else {
-                    LOGGER.error("Failed to unlock group {}. group is not locked.", getGroupId());
-                }
+                String lockGroupControllerValue = getLockGroupRepoResponse.getValue();
+                deleteGroupLock(lockGroupControllerValue);
             }
             else {
-                LOGGER.error("group unlocking service failed to get lock for groupId {}, accountId {}. Errors: {}",
-                             getGroupId(), getAccountId(), getLockGroupRepoResponse.getErrors());
+                LOGGER.error("failed to get lock for groupId {} while unlocking. Errors: {}", getGroupId(),
+                             getLockGroupRepoResponse.getErrors());
             }
         }
     }
@@ -154,49 +138,102 @@ public class GroupLockingManager {
     //endregion
 
     //region private mehtods
-    private ApiResponse<String> GetGroupControllerLock(String accountId, String groupId) {
-        ILockRepo           lockRepo = RepoManager.getInstance().getLockRepo();
-        ApiResponse<String> retVal   = lockRepo.getGroupControllerLockValue(accountId, groupId);
-
-        return retVal;
-    }
-
     private void AcquireGroupLock() {
         LOGGER.info(String.format("group %s doesn't belong to any controller. trying to lock it", getGroupId()));
         ApiResponse<String> lockGroupRepoResponse =
                 lockRepo.acquireGroupControllerLock(getAccountId(), getGroupId(), currentControllerIdentifier,
                                                     LOCK_TIME_TO_LIVE_IN_SECONDS);
 
-        handleLockResponse(lockGroupRepoResponse);
+        if (lockGroupRepoResponse.isRequestSucceed()) {
+            String  currentLock                  = lockGroupRepoResponse.getValue();
+            boolean isLockedAcquiredSuccessfully = LOCK_OK_STATUS.equals(currentLock);
+
+            if (isLockedAcquiredSuccessfully) {
+                setReadyState();
+            }
+            else {
+                handleGroupManagedByOtherController();
+            }
+        }
+        else {
+            LOGGER.error("Failed to acquire group lock for group {}, error description:{}", getGroupId(),
+                         lockGroupRepoResponse.getErrors());
+
+            if (cloudCommunicationState == SpotinstCloudCommunicationState.INITIALIZING) {
+                String failureDescription = String.format(GROUP_CANNOT_BE_CONNECTED_DESCRIPTION_FORMAT, getGroupId());
+                handleInitializingFailureTimeout(failureDescription);
+            }
+        }
     }
 
     private void SetGroupLockExpiry() {
-        LOGGER.info("group {} already belongs this controller, reviving the lock duration.", getGroupId());
-        ApiResponse<String> lockGroupRepoResponse =
+        LOGGER.debug("group {} already belongs this controller, reviving the lock duration.", getGroupId());
+        ApiResponse<String> response =
                 lockRepo.setGroupControllerLockExpiry(getAccountId(), getGroupId(), currentControllerIdentifier,
                                                       LOCK_TIME_TO_LIVE_IN_SECONDS);
-        handleLockResponse(lockGroupRepoResponse);
-    }
+        if (response.isRequestSucceed()) {
+            String  currentLock                  = response.getValue();
+            boolean isLockedAcquiredSuccessfully = LOCK_OK_STATUS.equals(currentLock);
 
-    private void deleteGroupLock() {
-        ApiResponse<Integer> deleteGroupRepoResponse = lockRepo.deleteGroupControllerLock(getAccountId(), getGroupId());
-
-        if (deleteGroupRepoResponse.isRequestSucceed()) {
-            LOGGER.info("Successfully unlocked group {}", getGroupId());
+            if (isLockedAcquiredSuccessfully) {
+                setReadyState();
+            }
+            else {
+                LOGGER.error("Failed to revive the lock for group {} by the controller {}", getGroupId(),
+                             currentControllerIdentifier);
+                handleGroupManagedByOtherController();
+            }
         }
         else {
-            LOGGER.error("Failed to unlock group {}. Errors: {}", getGroupId(), deleteGroupRepoResponse.getErrors());
+            LOGGER.error("Failed to revive the lock for group {} by the controller {}, error description:{}",
+                         getGroupId(), currentControllerIdentifier, response.getErrors());
+
+            if (cloudCommunicationState == SpotinstCloudCommunicationState.INITIALIZING) {
+                String failureDescription = String.format(GROUP_CANNOT_BE_CONNECTED_DESCRIPTION_FORMAT, getGroupId());
+                handleInitializingFailureTimeout(failureDescription);
+            }
         }
     }
 
-    private void handleGroupManagedByOtherController(String failureDescription) {
+    private void deleteGroupLock(String lockGroupController) {
+        boolean isGroupAlreadyHasAnyController = lockGroupController != null;
+
+        if (isGroupAlreadyHasAnyController) {
+            boolean isGroupBelongToController = currentControllerIdentifier.equals(lockGroupController);
+
+            if (isGroupBelongToController) {
+                ApiResponse<Integer> deleteGroupRepoResponse =
+                        lockRepo.deleteGroupControllerLock(getAccountId(), getGroupId());
+
+                if (deleteGroupRepoResponse.isRequestSucceed()) {
+                    LOGGER.info("Successfully unlocked group {}", getGroupId());
+                }
+                else {
+                    LOGGER.error("Failed to unlock group {}. Errors: {}", getGroupId(),
+                                 deleteGroupRepoResponse.getErrors());
+                }
+            }
+            else {
+                LOGGER.error("Controller {} could not unlock group {} - already locked by another Controller {}",
+                             currentControllerIdentifier, getGroupId(), lockGroupController);
+            }
+        }
+        else {
+            LOGGER.error("Failed to unlock group {}. group is not locked.", getGroupId());
+        }
+    }
+
+    private void handleGroupManagedByOtherController() {
+
         if (cloudCommunicationState == SpotinstCloudCommunicationState.INITIALIZING) {
+            String failureDescription =
+                    String.format("group '%s' is already connected to a different Jenkins controller", getGroupId());
             handleInitializingFailureTimeout(failureDescription);
         }
         else if (cloudCommunicationState == SpotinstCloudCommunicationState.READY) {
-            LOGGER.warn("The group is in state ready but it belong to other controller," +
+            LOGGER.warn("The group {} is in state ready but it belong to other controller," +
                         " it may be because of jenkins plugin previous running(that saved in the jelly file and reloaded)," +
-                        "returning to initializing state,  error description:{}", failureDescription);
+                        "returning to initializing state", getGroupId());
             setInitializingState();
         }
     }
@@ -212,28 +249,6 @@ public class GroupLockingManager {
             LOGGER.warn(
                     "failed to take control of the group, staying in initialize state until the time will expired, description: {}",
                     errorDescription);
-        }
-    }
-
-    private void handleLockResponse(ApiResponse<String> response) {
-        if (response.isRequestSucceed()) {
-            String  currentLock                  = response.getValue();
-            boolean isLockedAcquiredSuccessfully = LOCK_OK_STATUS.equals(currentLock);
-
-            if (isLockedAcquiredSuccessfully) {
-                setReadyState();
-            }
-            else {
-                String failureDescription =
-                        String.format(GROUP_LOCKED_BY_OTHER_CONTROLLER_DESCRIPTION_FORMAT, getGroupId());
-                handleGroupManagedByOtherController(failureDescription);
-            }
-        }
-        else {
-            if (cloudCommunicationState == SpotinstCloudCommunicationState.INITIALIZING) {
-                String failureDescription = String.format(GROUP_CANNOT_BE_CONNECTED_DESCRIPTION_FORMAT, getGroupId());
-                handleInitializingFailureTimeout(failureDescription);
-            }
         }
     }
 

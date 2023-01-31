@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 public class SpotinstSyncGroupsOwner extends AsyncPeriodicWork {
     //region constants
     private static final Integer LOCK_TTL_TO_SYNC_GROUP_RATIO = 3;
-    public static final  Integer JOB_INTERVAL_IN_SECONDS      =
+    private static final  Integer JOB_INTERVAL_IN_SECONDS      =
             GroupLockingManager.LOCK_TIME_TO_LIVE_IN_SECONDS / LOCK_TTL_TO_SYNC_GROUP_RATIO;
     final static         long    RECURRENCE_PERIOD            = TimeUnit.SECONDS.toMillis(JOB_INTERVAL_IN_SECONDS);
     //endregion
@@ -44,24 +44,28 @@ public class SpotinstSyncGroupsOwner extends AsyncPeriodicWork {
     protected void execute(TaskListener taskListener) {
         synchronized (this) {
             Set<GroupLockingManager> activeGroupManagers = getActiveGroupLockingManagers();
-            Set<GroupLockingManager> groupManagersToUnlock = groupsManagersFromLastRun.stream()
-                                                                                      .filter(groupManagerFromLastRun -> activeGroupManagers.stream()
-                                                                                                                                            .anyMatch(
-                                                                                                                                                    activeGroupManager -> activeGroupManager.hasSameLock(
-                                                                                                                                                            groupManagerFromLastRun)))
-                                                                                      .collect(Collectors.toSet());
-            boolean hasGroupsToUnlock = groupManagersToUnlock.isEmpty() == false;
-
-            if (hasGroupsToUnlock) {
-                List<String> groupIds = groupManagersToUnlock.stream().map(GroupLockingManager::getGroupId)
-                                                             .collect(Collectors.toList());
-                LOGGER.info("the groups {} are not in use anymore by any active cloud. unlocking them.", groupIds);
-                groupManagersToUnlock.forEach(GroupLockingManager::deleteGroupControllerLock);
-            }
-
-            groupsManagersFromLastRun = activeGroupManagers;
+            handleRemovedGroupsSinceLastRun(activeGroupManagers);
             activeGroupManagers.forEach(GroupLockingManager::syncGroupController);
         }
+    }
+
+    private static void handleRemovedGroupsSinceLastRun(Set<GroupLockingManager> activeGroupManagers) {
+        Set<GroupLockingManager> removedGroupsManagers = groupsManagersFromLastRun.stream()
+                                                                                  .filter(groupManagerFromLastRun -> activeGroupManagers.stream()
+                                                                                                                                        .anyMatch(
+                                                                                                                                                activeGroupManager -> activeGroupManager.hasSameLock(
+                                                                                                                                                        groupManagerFromLastRun)))
+                                                                                  .collect(Collectors.toSet());
+        boolean hasGroupsToUnlock = removedGroupsManagers.isEmpty() == false;
+
+        if (hasGroupsToUnlock) {
+            List<String> groupIds = removedGroupsManagers.stream().map(GroupLockingManager::getGroupId)
+                                                         .collect(Collectors.toList());
+            LOGGER.info("the groups {} are not in use anymore by any active cloud. unlocking them.", groupIds);
+            removedGroupsManagers.forEach(GroupLockingManager::deleteGroupControllerLock);
+        }
+
+        groupsManagersFromLastRun = activeGroupManagers;
     }
 
     public void deallocateAll() {
@@ -79,7 +83,7 @@ public class SpotinstSyncGroupsOwner extends AsyncPeriodicWork {
             }
         }
 
-        groupsManagersFromLastRun = null;
+        groupsManagersFromLastRun = new HashSet<>();
     }
     //endregion
 
