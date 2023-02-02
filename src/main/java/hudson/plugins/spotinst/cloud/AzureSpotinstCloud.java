@@ -73,8 +73,7 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
     public Boolean detachInstance(String instanceId) {
         Boolean         retVal         = false;
         IAzureGroupRepo azureGroupRepo = RepoManager.getInstance().getAzureGroupRepo();
-        ApiResponse<Boolean> detachInstanceResponse =
-                azureGroupRepo.detachInstance(groupId, instanceId, accountId);
+        ApiResponse<Boolean> detachInstanceResponse = azureGroupRepo.detachInstance(groupId, instanceId, accountId);
 
         if (detachInstanceResponse.isRequestSucceed()) {
             LOGGER.info(String.format("Instance %s detached", instanceId));
@@ -94,12 +93,12 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
     }
 
     @Override
-    protected void handleSyncGroupInstances() {
+    protected void internalSyncGroupInstances() {
 
     }
 
     @Override
-    public Map<String, String> getInstanceIpsById() {//TODO: check if is different
+    public Map<String, String> getInstanceIpsById() {
         Map<String, String> retVal = new HashMap<>();
 
         IAzureGroupRepo awsGroupRepo = RepoManager.getInstance().getAzureGroupRepo();
@@ -128,11 +127,6 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
     }
 
     @Override
-    protected Map<String, String> handleGetInstanceIpsById() {
-        return null;
-    }
-
-    @Override
     public void monitorInstances() {
         IAzureGroupRepo azureGroupRepo = RepoManager.getInstance().getAzureGroupRepo();
         ApiResponse<List<AzureGroupInstance>> instancesResponse =
@@ -154,7 +148,13 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
             this.slaveInstancesDetailsByInstanceId = new HashMap<>(slaveInstancesDetailsByInstanceId);
 
             removeOldSlaveInstances(instances);
-            addNewSlaveInstances(instances);
+
+            if(isCloudReadyForGroupCommunication()) {
+                addNewSlaveInstances(instances);
+            }
+            else{
+                LOGGER.error(SKIPPED_METHOD_GROUP_IS_NIT_READY_ERROR_LOGGER_FORMAT, "addNewSlaveInstances", groupId);
+            }
         }
         else {
             LOGGER.error(String.format("Failed to get group %s instances. Errors: %s", groupId,
@@ -170,8 +170,17 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
     }
 
     @Override
-    public void onInstanceReady(String instanceId) {
-        removeFromPending();
+    public Boolean onInstanceReady(String instanceId) {
+        Boolean retVal = isCloudReadyForGroupCommunication();
+
+        if (retVal) {
+            removeFromPending();
+        }
+        else {
+            LOGGER.error(SKIPPED_METHOD_GROUP_IS_NIT_READY_ERROR_LOGGER_FORMAT, "onInstanceReady", groupId);
+        }
+
+        return retVal;
     }
 
     @Override
@@ -290,9 +299,9 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
         SpotinstSlave slave = null;
 
         if (instance.getInstanceId() != null) {
-            String                vmSize     = instance.getVmSize();
+            String vmSize = instance.getVmSize();
             LOGGER.info(String.format("Setting the # of executors for instance type: %s", vmSize));
-            Integer               executors  = getNumOfExecutors(vmSize);
+            Integer executors = getNumOfExecutors(vmSize);
             slave = buildSpotinstSlave(instance.getInstanceId(), vmSize, String.valueOf(executors));
         }
 

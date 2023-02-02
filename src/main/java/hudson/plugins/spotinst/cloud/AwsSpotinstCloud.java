@@ -118,7 +118,7 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
     }
 
     @Override
-    protected void handleSyncGroupInstances() {
+    protected void internalSyncGroupInstances() {
         IAwsGroupRepo                       awsGroupRepo      = RepoManager.getInstance().getAwsGroupRepo();
         ApiResponse<List<AwsGroupInstance>> instancesResponse = awsGroupRepo.getGroupInstances(groupId, this.accountId);
 
@@ -146,7 +146,7 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
 
 
     @Override
-    public Map<String, String> handleGetInstanceIpsById() {
+    public Map<String, String> getInstanceIpsById() {
         Map<String, String> retVal       = new HashMap<>();
         IAwsGroupRepo       awsGroupRepo = RepoManager.getInstance().getAwsGroupRepo();
         ApiResponse<List<AwsGroupInstance>> instancesResponse = awsGroupRepo.getGroupInstances(groupId, accountId);
@@ -195,7 +195,7 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
 
     //region Private Methods
     @Override
-    protected int getOverridedNumberOfExecutors(String instanceType) {
+    protected int getOverriddenNumberOfExecutors(String instanceType) {
         Integer retVal;
 
         if (executorsByInstanceType == null) {

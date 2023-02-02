@@ -19,23 +19,23 @@ import java.util.stream.Collectors;
  * Created by itayshklar on 25/01/2023.
  */
 @Extension
-public class SpotinstSyncGroupsOwner extends AsyncPeriodicWork {
+public class SpotinstSyncGroupsController extends AsyncPeriodicWork {
     //region constants
     private static final Integer LOCK_TTL_TO_SYNC_GROUP_RATIO = 3;
-    private static final  Integer JOB_INTERVAL_IN_SECONDS      =
+    private static final Integer JOB_INTERVAL_IN_SECONDS      =
             GroupLockingManager.LOCK_TIME_TO_LIVE_IN_SECONDS / LOCK_TTL_TO_SYNC_GROUP_RATIO;
     final static         long    RECURRENCE_PERIOD            = TimeUnit.SECONDS.toMillis(JOB_INTERVAL_IN_SECONDS);
     //endregion
 
     //region Members
     private static final Logger                   LOGGER                    =
-            LoggerFactory.getLogger(SpotinstSyncGroupsOwner.class);
+            LoggerFactory.getLogger(SpotinstSyncGroupsController.class);
     private static       Set<GroupLockingManager> groupsManagersFromLastRun = new HashSet<>();
     //endregion
 
     //region Constructor
-    public SpotinstSyncGroupsOwner() {
-        super("Sync Groups Owner");
+    public SpotinstSyncGroupsController() {
+        super("Sync Groups Controller");
     }
     //endregion
 
@@ -47,25 +47,6 @@ public class SpotinstSyncGroupsOwner extends AsyncPeriodicWork {
             handleRemovedGroupsSinceLastRun(activeGroupManagers);
             activeGroupManagers.forEach(GroupLockingManager::syncGroupController);
         }
-    }
-
-    private static void handleRemovedGroupsSinceLastRun(Set<GroupLockingManager> activeGroupManagers) {
-        Set<GroupLockingManager> removedGroupsManagers = groupsManagersFromLastRun.stream()
-                                                                                  .filter(groupManagerFromLastRun -> activeGroupManagers.stream()
-                                                                                                                                        .anyMatch(
-                                                                                                                                                activeGroupManager -> activeGroupManager.hasSameLock(
-                                                                                                                                                        groupManagerFromLastRun)) == false)
-                                                                                  .collect(Collectors.toSet());
-        boolean hasGroupsToUnlock = removedGroupsManagers.isEmpty() == false;
-
-        if (hasGroupsToUnlock) {
-            List<String> groupIds = removedGroupsManagers.stream().map(GroupLockingManager::getGroupId)
-                                                         .collect(Collectors.toList());
-            LOGGER.info("the groups {} are not in use anymore by any active cloud. unlocking them.", groupIds);
-            removedGroupsManagers.forEach(GroupLockingManager::deleteGroupControllerLock);
-        }
-
-        groupsManagersFromLastRun = activeGroupManagers;
     }
 
     public void deallocateAll() {
@@ -102,6 +83,25 @@ public class SpotinstSyncGroupsOwner extends AsyncPeriodicWork {
         }
 
         return retVal;
+    }
+
+    private static void handleRemovedGroupsSinceLastRun(Set<GroupLockingManager> activeGroupManagers) {
+        Set<GroupLockingManager> removedGroupsManagers =
+                groupsManagersFromLastRun.stream().filter(groupManagerFromLastRun -> {
+                    boolean isStillActive = activeGroupManagers.stream().anyMatch(
+                            activeGroupManager -> activeGroupManager.hasSameLock(groupManagerFromLastRun));
+                    return isStillActive == false;
+                }).collect(Collectors.toSet());
+        boolean hasGroupsToUnlock = CollectionUtils.isNotEmpty(removedGroupsManagers);
+
+        if (hasGroupsToUnlock) {
+            List<String> groupIds =
+                    removedGroupsManagers.stream().map(GroupLockingManager::getGroupId).collect(Collectors.toList());
+            LOGGER.info("the groups {} are not in use anymore by any active cloud. unlocking them.", groupIds);
+            removedGroupsManagers.forEach(GroupLockingManager::deleteGroupControllerLock);
+        }
+
+        groupsManagersFromLastRun = activeGroupManagers;
     }
     //endregion
 

@@ -184,12 +184,18 @@ public class SpotinstSlave extends Slave implements EphemeralNode {
                 removeIfInPending();
                 try {
                     Jenkins.getInstance().removeNode(this);
-                } catch (IOException e) {
+                }
+                catch (IOException e) {
                     e.printStackTrace();
                 }
-            } else {
+            }
+            else {
                 LOGGER.error(String.format("Failed to terminate instance: %s", getInstanceId()));
             }
+        }
+        else {
+            LOGGER.error("Skipped terminating slave instance {} - slave's group {} is not ready for communication.",
+                         getInstanceId(), getSpotinstCloud().getGroupId());
         }
     }
 
@@ -203,17 +209,24 @@ public class SpotinstSlave extends Slave implements EphemeralNode {
             if (isTerminated) {
                 LOGGER.info(String.format("Instance: %s terminated successfully", getInstanceId()));
                 removeIfInPending();
-            } else {
+            }
+            else {
                 LOGGER.error(String.format("Failed to terminate instance: %s", getInstanceId()));
             }
 
             try {
                 Jenkins.get().removeNode(this);
-            } catch (IOException e) {
+            }
+            catch (IOException e) {
                 e.printStackTrace();
             }
 
             retVal = isTerminated;
+        }
+        else {
+            LOGGER.error(
+                    "Skipped force terminating slave instance {} - slave's group {} is not ready for communication.",
+                    getInstanceId(), getSpotinstCloud().getGroupId());
         }
 
         return retVal;
@@ -234,8 +247,9 @@ public class SpotinstSlave extends Slave implements EphemeralNode {
         return retVal;
     }
 
-    public void onSlaveConnected() {
-        getSpotinstCloud().onInstanceReady(getNodeName());
+    public Boolean onSlaveConnected() {
+        Boolean retVal = getSpotinstCloud().onInstanceReady(getNodeName());
+        return retVal;
     }
     //endregion
 

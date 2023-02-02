@@ -108,7 +108,7 @@ public class AzureSpotCloud extends BaseSpotinstCloud {
     }
 
     @Override
-    protected void handleSyncGroupInstances() {
+    protected void internalSyncGroupInstances() {
         IAzureVmGroupRepo               azureVmGroupRepo  = RepoManager.getInstance().getAzureVmGroupRepo();
         ApiResponse<List<AzureGroupVm>> instancesResponse = azureVmGroupRepo.getGroupVms(groupId, this.accountId);
 
@@ -136,7 +136,7 @@ public class AzureSpotCloud extends BaseSpotinstCloud {
     }
 
     @Override
-    public Map<String, String> handleGetInstanceIpsById() {
+    public Map<String, String> getInstanceIpsById() {
         Map<String, String> retVal = new HashMap<>();
 
         IAzureVmGroupRepo               awsGroupRepo      = RepoManager.getInstance().getAzureVmGroupRepo();

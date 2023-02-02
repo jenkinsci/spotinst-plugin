@@ -3,11 +3,14 @@ package hudson.plugins.spotinst.common;
 import hudson.plugins.spotinst.api.infra.ApiResponse;
 import hudson.plugins.spotinst.repos.ILockRepo;
 import hudson.plugins.spotinst.repos.RepoManager;
+import jenkins.model.Jenkins;
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.URL;
+import java.net.UnknownHostException;
 import java.util.Calendar;
 import java.util.Date;
 
@@ -18,6 +21,7 @@ public class GroupLockingManager {
     private static final String  GROUP_CANNOT_BE_CONNECTED_DESCRIPTION_FORMAT    =
             "group '%s' cannot be connected - check cloud's configuration";
     private static final String  LOCK_OK_STATUS                                  = "OK";
+    private static final Integer DEFAULT_JENKINS_PORT                            = 8080;
     private static final Integer MILI_TO_SECONDS                                 = 1000;
     private static final Integer SUSPENDED_GROUP_FETCHING_TIME_TO_LIVE_IN_MILLIS =
             MILI_TO_SECONDS * LOCK_TIME_TO_LIVE_IN_SECONDS + 10;
@@ -27,7 +31,7 @@ public class GroupLockingManager {
 
     //region members
     private static final Logger    LOGGER                      = LoggerFactory.getLogger(GroupLockingManager.class);
-    private static final String    currentControllerIdentifier = RandomStringUtils.randomAlphanumeric(10);
+    private static final String    currentControllerIdentifier = generateControllerHostName();
     private static final ILockRepo lockRepo                    = RepoManager.getInstance().getLockRepo();
 
     private final GroupLockKey                    key;
@@ -266,6 +270,47 @@ public class GroupLockingManager {
     private void setFailedState(String description) {
         setCloudCommunicationState(SpotinstCloudCommunicationState.FAILED);
         setErrorDescription(description);
+    }
+
+    private static String generateControllerHostName() {
+        String retVal;
+        String hostName;
+
+        try {
+            hostName = java.net.InetAddress.getLocalHost().getHostAddress();
+        }
+        catch (UnknownHostException exception) {
+            hostName = RandomStringUtils.randomAlphanumeric(10);
+            LOGGER.error("Exception while getting hostname. generating random identifier {}. Exception {}", hostName,
+                         exception);
+        }
+
+        Integer port = generateControllerPort();
+
+        retVal = String.format("%s/%s", hostName, port);
+        return retVal;
+    }
+
+    private static Integer generateControllerPort() {
+        String fullControllerUrl = Jenkins.getInstance().getConfiguredRootUrl();
+        int    retVal;
+
+        if(StringUtils.isNotEmpty(fullControllerUrl)) {
+            try {
+                URL urlHelper = new URL(fullControllerUrl);
+                retVal = urlHelper.getPort();
+            }
+            catch (Exception ex) {
+                LOGGER.warn("Were unable to get Controller's port. using default port {}", DEFAULT_JENKINS_PORT);
+                retVal = DEFAULT_JENKINS_PORT;
+            }
+        }
+        else{
+            LOGGER.warn("Were unable to get Controller's URL. using default port {}", DEFAULT_JENKINS_PORT);
+            retVal = DEFAULT_JENKINS_PORT;
+        }
+
+        return retVal;
     }
     //endregion
 

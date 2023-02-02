@@ -27,32 +27,36 @@ import java.util.stream.Collectors;
  * Created by ohadmuchnik on 25/05/2016.
  */
 public abstract class BaseSpotinstCloud extends Cloud {
+    //region constants
+    protected static final int    NO_OVERRIDDEN_NUM_OF_EXECUTORS                        = -1;
+    protected static final String SKIPPED_METHOD_GROUP_IS_NIT_READY_ERROR_LOGGER_FORMAT =
+            "Skipped {} - group {} is not ready for communication";
+    //endregion
 
     //region Members
     private static final Logger LOGGER = LoggerFactory.getLogger(BaseSpotinstCloud.class);
 
-    protected static final int                               NO_OVERRIDDEN_NUM_OF_EXECUTORS = -1;
-    protected              String                            accountId;
-    protected              String                            groupId;
-    protected              Map<String, PendingInstance>      pendingInstances;
-    protected              Map<String, SlaveInstanceDetails> slaveInstancesDetailsByInstanceId;
-    private                String                            labelString;
-    private                String                            idleTerminationMinutes;
-    private                String                            workspaceDir;
-    private                Set<LabelAtom>                    labelSet;
-    private                SlaveUsageEnum                    usage;
-    private                String                            tunnel;
-    private                String                            vmargs;
-    private                EnvironmentVariablesNodeProperty  environmentVariables;
-    private                ToolLocationNodeProperty          toolLocations;
-    private                Boolean                           shouldUseWebsocket;
-    private                Boolean                           shouldRetriggerBuilds;
-    private                Boolean                           isSingleTaskNodesEnabled;
-    private                ComputerConnector                 computerConnector;
-    private                ConnectionMethodEnum              connectionMethod;
-    private                Boolean                           shouldUsePrivateIp;
-    private                SpotGlobalExecutorOverride        globalExecutorOverride;
-    private final          GroupLockingManager               groupLockingManager;
+    protected String                            accountId;
+    protected String                            groupId;
+    protected Map<String, PendingInstance>      pendingInstances;
+    protected Map<String, SlaveInstanceDetails> slaveInstancesDetailsByInstanceId;
+    private   String                            labelString;
+    private   String                            idleTerminationMinutes;
+    private   String                            workspaceDir;
+    private   Set<LabelAtom>                    labelSet;
+    private   SlaveUsageEnum                    usage;
+    private   String                            tunnel;
+    private   String                            vmargs;
+    private   EnvironmentVariablesNodeProperty  environmentVariables;
+    private   ToolLocationNodeProperty          toolLocations;
+    private   Boolean                           shouldUseWebsocket;
+    private   Boolean                           shouldRetriggerBuilds;
+    private   Boolean                           isSingleTaskNodesEnabled;
+    private   ComputerConnector                 computerConnector;
+    private   ConnectionMethodEnum              connectionMethod;
+    private   Boolean                           shouldUsePrivateIp;
+    private   SpotGlobalExecutorOverride        globalExecutorOverride;
+    private   GroupLockingManager               groupLockingManager;
     //endregion
 
     //region Constructor
@@ -147,6 +151,9 @@ public abstract class BaseSpotinstCloud extends Cloud {
                 LOGGER.info("No need to scale up new slaves, there are some that are initiating");
             }
         }
+        else {
+            LOGGER.error(SKIPPED_METHOD_GROUP_IS_NIT_READY_ERROR_LOGGER_FORMAT, "provision", groupId);
+        }
 
         return Collections.emptyList();
     }
@@ -184,8 +191,18 @@ public abstract class BaseSpotinstCloud extends Cloud {
     //endregion
 
     //region Public Methods
-    public void onInstanceReady(String instanceId) {
-        removeInstanceFromPending(instanceId);
+    public Boolean onInstanceReady(String instanceId) {
+        boolean retVal = isCloudReadyForGroupCommunication();
+
+        //TODO:check correctness
+        if (retVal) {
+            removeInstanceFromPending(instanceId);
+        }
+        else {
+            LOGGER.error(SKIPPED_METHOD_GROUP_IS_NIT_READY_ERROR_LOGGER_FORMAT, "onInstanceReady", groupId);
+        }
+
+        return retVal;
     }
 
     public void removeInstanceFromPending(String instanceId) {
@@ -214,7 +231,12 @@ public abstract class BaseSpotinstCloud extends Cloud {
                 }
             }
 
-            connectOfflineSshAgents();
+            if (isCloudReadyForGroupCommunication()) {
+                connectOfflineSshAgents();
+            }
+            else {
+                LOGGER.error(SKIPPED_METHOD_GROUP_IS_NIT_READY_ERROR_LOGGER_FORMAT, "connectOfflineSshAgents", groupId);
+            }
         }
     }
 
@@ -243,7 +265,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
         }
     }
 
-    public void connectAgent(SpotinstSlave offlineAgent, String ipForAgent) {
+    private void connectAgent(SpotinstSlave offlineAgent, String ipForAgent) {
         SpotinstComputer computerForAgent = (SpotinstComputer) offlineAgent.toComputer();
 
         if (computerForAgent != null) {
@@ -317,7 +339,8 @@ public abstract class BaseSpotinstCloud extends Cloud {
         return retVal;
     }
 
-    protected void terminateOfflineSlaves(SpotinstSlave slave, String slaveInstanceId) {
+    protected void terminateOfflineSlaves(SpotinstSlave slave,
+                                          String slaveInstanceId) {//TODO: slave.terminate() checks groupLockManager. check again?
         SlaveComputer computer = slave.getComputer();
         if (computer != null) {
             Integer offlineThreshold  = getSlaveOfflineThreshold();
@@ -354,7 +377,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
     }
 
     public boolean isCloudReadyForGroupCommunication() {
-        boolean retVal = groupLockingManager.isCloudReadyForGroupCommunication();
+        boolean retVal = getGroupLockingManager().isCloudReadyForGroupCommunication();
 
         return retVal;
     }
@@ -448,7 +471,8 @@ public abstract class BaseSpotinstCloud extends Cloud {
     //endregion
 
     //region Protected Methods
-    protected void addToPending(String id, Integer numOfExecutors, PendingInstance.StatusEnum status, String label) {
+    protected void addToPending(String id, Integer numOfExecutors, PendingInstance.StatusEnum status,
+                                String label) {//TODO: no unchecked groupLockManager accesses. check again?
         PendingInstance pendingInstance = new PendingInstance();
         pendingInstance.setId(id);
         pendingInstance.setNumOfExecutors(numOfExecutors);
@@ -458,7 +482,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
         pendingInstances.put(id, pendingInstance);
     }
 
-    protected SpotinstSlave buildSpotinstSlave(String id, String instanceType, String numOfExecutors) {
+    protected SpotinstSlave buildSpotinstSlave(String id, String instanceType, String numOfExecutors) {//TODO: no unchecked groupLockManager accesses. check again?
         SpotinstSlave slave = null;
         Node.Mode     mode  = Node.Mode.NORMAL;
 
@@ -605,7 +629,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
             retVal = 1;
         }
         else {
-            int     overridedNumOfExecutors   = getOverridedNumberOfExecutors(instanceType);
+            int     overridedNumOfExecutors   = getOverriddenNumberOfExecutors(instanceType);
             boolean isNumOfExecutorsOverrided = overridedNumOfExecutors != NO_OVERRIDDEN_NUM_OF_EXECUTORS;
 
             if (isNumOfExecutorsOverrided) {
@@ -643,7 +667,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
         return retVal;
     }
 
-    protected int getOverridedNumberOfExecutors(String instanceType) {
+    protected int getOverriddenNumberOfExecutors(String instanceType) {
         return NO_OVERRIDDEN_NUM_OF_EXECUTORS;
     }
 
@@ -780,6 +804,10 @@ public abstract class BaseSpotinstCloud extends Cloud {
     }
 
     public GroupLockingManager getGroupLockingManager() {
+        if (groupLockingManager == null) {
+            groupLockingManager = new GroupLockingManager(groupId, accountId);
+        }
+
         return groupLockingManager;
     }
 
@@ -799,37 +827,28 @@ public abstract class BaseSpotinstCloud extends Cloud {
     //endregion
 
     //region Abstract Methods
-    abstract List<SpotinstSlave> scaleUp(ProvisionRequest request);
+    abstract List<SpotinstSlave> scaleUp(
+            ProvisionRequest request);//TODO: no unchecked groupLockManager accesses. check again?
 
-    public abstract Boolean detachInstance(String instanceId);
+    public abstract Boolean detachInstance(
+            String instanceId);//TODO: no unchecked groupLockManager accesses. check again?
 
     public abstract String getCloudUrl();
 
     public void syncGroupInstances() {
-        boolean isGroupManagedByThisController = isCloudReadyForGroupCommunication();
+        boolean isCloudReadyForGroupCommunication = isCloudReadyForGroupCommunication();
 
-        if (isGroupManagedByThisController) {
-            handleSyncGroupInstances();
-        }
-    }
-
-    protected abstract void handleSyncGroupInstances();
-
-    public Map<String, String> getInstanceIpsById() {
-        Map<String, String> retVal;
-        boolean             isGroupManagedByThisController = isCloudReadyForGroupCommunication();
-
-        if (isGroupManagedByThisController) {
-            retVal = handleGetInstanceIpsById();
+        if (isCloudReadyForGroupCommunication) {
+            internalSyncGroupInstances();
         }
         else {
-            retVal = new HashMap<>();
+            LOGGER.error(SKIPPED_METHOD_GROUP_IS_NIT_READY_ERROR_LOGGER_FORMAT, "syncGroupInstances", groupId);
         }
-
-        return retVal;
     }
 
-    protected abstract Map<String, String> handleGetInstanceIpsById();
+    protected abstract void internalSyncGroupInstances();
+
+    public abstract Map<String, String> getInstanceIpsById();//TODO: no unchecked groupLockManager accesses. check again?
 
     protected abstract Integer getDefaultExecutorsNumber(String instanceType);
     //endregion

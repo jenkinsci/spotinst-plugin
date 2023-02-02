@@ -116,7 +116,7 @@ public class GcpSpotinstCloud extends BaseSpotinstCloud {
     }
 
     @Override
-    protected void handleSyncGroupInstances() {
+    protected void internalSyncGroupInstances() {
         IGcpGroupRepo                       gcpGroupRepo      = RepoManager.getInstance().getGcpGroupRepo();
         ApiResponse<List<GcpGroupInstance>> instancesResponse = gcpGroupRepo.getGroupInstances(groupId, this.accountId);
 
@@ -145,7 +145,7 @@ public class GcpSpotinstCloud extends BaseSpotinstCloud {
     }
 
     @Override
-    public Map<String, String> handleGetInstanceIpsById() {
+    public Map<String, String> getInstanceIpsById() {
         Map<String, String> retVal = new HashMap<>();
 
         IGcpGroupRepo                       awsGroupRepo      = RepoManager.getInstance().getGcpGroupRepo();
