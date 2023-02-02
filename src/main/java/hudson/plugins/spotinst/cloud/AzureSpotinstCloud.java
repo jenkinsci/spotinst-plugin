@@ -128,37 +128,36 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
 
     @Override
     public void monitorInstances() {
-        IAzureGroupRepo azureGroupRepo = RepoManager.getInstance().getAzureGroupRepo();
-        ApiResponse<List<AzureGroupInstance>> instancesResponse =
-                azureGroupRepo.getGroupInstances(groupId, this.accountId);
+        if(isCloudReadyForGroupCommunication()) {
+            IAzureGroupRepo azureGroupRepo = RepoManager.getInstance().getAzureGroupRepo();
+            ApiResponse<List<AzureGroupInstance>> instancesResponse = azureGroupRepo.getGroupInstances(groupId, this.accountId);
 
-        if (instancesResponse.isRequestSucceed()) {
-            List<AzureGroupInstance> instances = instancesResponse.getValue();
+            if (instancesResponse.isRequestSucceed()) {
+                List<AzureGroupInstance> instances = instancesResponse.getValue();
 
-            LOGGER.info(String.format("There are %s instances in group %s", instances.size(), groupId));
+                LOGGER.info(String.format("There are %s instances in group %s", instances.size(), groupId));
 
 
-            Map<String, SlaveInstanceDetails> slaveInstancesDetailsByInstanceId = new HashMap<>();
+                Map<String, SlaveInstanceDetails> slaveInstancesDetailsByInstanceId = new HashMap<>();
 
-            for (AzureGroupInstance instance : instances) {
-                SlaveInstanceDetails instanceDetails = SlaveInstanceDetails.build(instance);
-                slaveInstancesDetailsByInstanceId.put(instanceDetails.getInstanceId(), instanceDetails);
-            }
+                for (AzureGroupInstance instance : instances) {
+                    SlaveInstanceDetails instanceDetails = SlaveInstanceDetails.build(instance);
+                    slaveInstancesDetailsByInstanceId.put(instanceDetails.getInstanceId(), instanceDetails);
+                }
 
-            this.slaveInstancesDetailsByInstanceId = new HashMap<>(slaveInstancesDetailsByInstanceId);
+                this.slaveInstancesDetailsByInstanceId = new HashMap<>(slaveInstancesDetailsByInstanceId);
 
-            removeOldSlaveInstances(instances);
+                removeOldSlaveInstances(instances);
 
-            if(isCloudReadyForGroupCommunication()) {
                 addNewSlaveInstances(instances);
+
             }
-            else{
-                LOGGER.error(SKIPPED_METHOD_GROUP_IS_NIT_READY_ERROR_LOGGER_FORMAT, "addNewSlaveInstances", groupId);
+            else {
+                LOGGER.error(String.format("Failed to get group %s instances. Errors: %s", groupId, instancesResponse.getErrors()));
             }
         }
-        else {
-            LOGGER.error(String.format("Failed to get group %s instances. Errors: %s", groupId,
-                                       instancesResponse.getErrors()));
+        else{
+            LOGGER.error(SKIPPED_METHOD_GROUP_IS_NIT_READY_ERROR_LOGGER_FORMAT, "monitorInstances", groupId);
         }
 
         super.monitorInstances();

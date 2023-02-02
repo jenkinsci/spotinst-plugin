@@ -9,8 +9,8 @@ import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.UnknownHostException;
 import java.util.Calendar;
 import java.util.Date;
 
@@ -21,7 +21,6 @@ public class GroupLockingManager {
     private static final String  GROUP_CANNOT_BE_CONNECTED_DESCRIPTION_FORMAT    =
             "group '%s' cannot be connected - check cloud's configuration";
     private static final String  LOCK_OK_STATUS                                  = "OK";
-    private static final Integer DEFAULT_JENKINS_PORT                            = 8080;
     private static final Integer MILI_TO_SECONDS                                 = 1000;
     private static final Integer SUSPENDED_GROUP_FETCHING_TIME_TO_LIVE_IN_MILLIS =
             MILI_TO_SECONDS * LOCK_TIME_TO_LIVE_IN_SECONDS + 10;
@@ -31,7 +30,7 @@ public class GroupLockingManager {
 
     //region members
     private static final Logger    LOGGER                      = LoggerFactory.getLogger(GroupLockingManager.class);
-    private static final String    currentControllerIdentifier = generateControllerHostName();
+    private static final String    currentControllerIdentifier = generateControllerIdentifier();
     private static final ILockRepo lockRepo                    = RepoManager.getInstance().getLockRepo();
 
     private final GroupLockKey                    key;
@@ -77,7 +76,7 @@ public class GroupLockingManager {
                         SetGroupLockExpiry();
                     }
                     else {
-                        handleGroupManagedByOtherController();
+                        handleGroupManagedByOtherController(lockGroupControllerValue);
                     }
                 }
                 else {
@@ -156,7 +155,20 @@ public class GroupLockingManager {
                 setReadyState();
             }
             else {
-                handleGroupManagedByOtherController();
+                String groupController;
+                ApiResponse<String> getLockGroupRepoResponse =
+                        lockRepo.getGroupControllerLockValue(getAccountId(), getGroupId());
+
+                if (getLockGroupRepoResponse.isRequestSucceed()) {
+                    groupController = getLockGroupRepoResponse.getValue();
+                }
+                else {
+                    groupController = "Unknown";
+                    LOGGER.error("failed to get group {} lock controller. Error: {}", getGroupId(),
+                                 getLockGroupRepoResponse.getErrors());
+                }
+
+                handleGroupManagedByOtherController(groupController);
             }
         }
         else {
@@ -185,17 +197,12 @@ public class GroupLockingManager {
             else {
                 LOGGER.error("Failed to revive the lock for group {} by the controller {}", getGroupId(),
                              currentControllerIdentifier);
-                handleGroupManagedByOtherController();
             }
         }
         else {
             LOGGER.error("Failed to revive the lock for group {} by the controller {}, error description:{}",
                          getGroupId(), currentControllerIdentifier, response.getErrors());
 
-            if (cloudCommunicationState == SpotinstCloudCommunicationState.INITIALIZING) {
-                String failureDescription = String.format(GROUP_CANNOT_BE_CONNECTED_DESCRIPTION_FORMAT, getGroupId());
-                handleInitializingFailureTimeout(failureDescription);
-            }
         }
     }
 
@@ -227,17 +234,18 @@ public class GroupLockingManager {
         }
     }
 
-    private void handleGroupManagedByOtherController() {
+    private void handleGroupManagedByOtherController(String groupLockController) {
 
         if (cloudCommunicationState == SpotinstCloudCommunicationState.INITIALIZING) {
             String failureDescription =
-                    String.format("group '%s' is already connected to a different Jenkins controller", getGroupId());
+                    String.format("group '%s' is already connected to a different Jenkins controller %s", getGroupId(),
+                                  groupLockController);
             handleInitializingFailureTimeout(failureDescription);
         }
         else if (cloudCommunicationState == SpotinstCloudCommunicationState.READY) {
-            LOGGER.warn("The group {} is in state ready but it belong to other controller," +
+            LOGGER.warn("The group {} is in state ready but it belong to controller {}," +
                         " it may be because of jenkins plugin previous running(that saved in the jelly file and reloaded)," +
-                        "returning to initializing state", getGroupId());
+                        "returning to initializing state", getGroupId(), groupLockController);
             setInitializingState();
         }
     }
@@ -272,43 +280,31 @@ public class GroupLockingManager {
         setErrorDescription(description);
     }
 
-    private static String generateControllerHostName() {
+    private static String generateControllerIdentifier() {
         String retVal;
         String hostName;
 
         try {
             hostName = java.net.InetAddress.getLocalHost().getHostAddress();
+            Integer port = generateControllerPort();
+
+            retVal = String.format("%s:%s", hostName, port);
         }
-        catch (UnknownHostException exception) {
-            hostName = RandomStringUtils.randomAlphanumeric(10);
-            LOGGER.error("Exception while getting hostname. generating random identifier {}. Exception {}", hostName,
-                         exception);
+        catch (Exception exception) {
+            retVal = RandomStringUtils.randomAlphanumeric(10);
+            LOGGER.warn("Exception while getting hostname. generating random identifier '{}' instead. Exception {}",
+                        retVal, exception);
         }
 
-        Integer port = generateControllerPort();
-
-        retVal = String.format("%s/%s", hostName, port);
         return retVal;
     }
 
-    private static Integer generateControllerPort() {
+    private static Integer generateControllerPort() throws MalformedURLException {
         String fullControllerUrl = Jenkins.getInstance().getConfiguredRootUrl();
         int    retVal;
 
-        if(StringUtils.isNotEmpty(fullControllerUrl)) {
-            try {
-                URL urlHelper = new URL(fullControllerUrl);
-                retVal = urlHelper.getPort();
-            }
-            catch (Exception ex) {
-                LOGGER.warn("Were unable to get Controller's port. using default port {}", DEFAULT_JENKINS_PORT);
-                retVal = DEFAULT_JENKINS_PORT;
-            }
-        }
-        else{
-            LOGGER.warn("Were unable to get Controller's URL. using default port {}", DEFAULT_JENKINS_PORT);
-            retVal = DEFAULT_JENKINS_PORT;
-        }
+        URL urlHelper = new URL(fullControllerUrl);
+        retVal = urlHelper.getPort();
 
         return retVal;
     }

@@ -210,33 +210,33 @@ public abstract class BaseSpotinstCloud extends Cloud {
     }
 
     public void monitorInstances() {
-        if (pendingInstances.size() > 0) {
-            List<String> keys = new LinkedList<>(pendingInstances.keySet());
+        if (isCloudReadyForGroupCommunication()) {
+            if (pendingInstances.size() > 0) {
+                List<String> keys = new LinkedList<>(pendingInstances.keySet());
 
-            for (String key : keys) {
-                PendingInstance pendingInstance = pendingInstances.get(key);
+                for (String key : keys) {
+                    PendingInstance pendingInstance = pendingInstances.get(key);
 
-                if (pendingInstance != null) {
+                    if (pendingInstance != null) {
 
-                    Integer pendingThreshold = getPendingThreshold();
-                    Boolean isPendingOverThreshold =
-                            TimeUtils.isTimePassed(pendingInstance.getCreatedAt(), pendingThreshold, Calendar.MINUTE);
+                        Integer pendingThreshold = getPendingThreshold();
+                        Boolean isPendingOverThreshold =
+                                TimeUtils.isTimePassed(pendingInstance.getCreatedAt(), pendingThreshold,
+                                                       Calendar.MINUTE);
 
-                    if (isPendingOverThreshold) {
-                        LOGGER.info(String.format(
-                                "Instance %s is in initiating state for over than %s minutes, ignoring this instance",
-                                pendingInstance.getId(), pendingThreshold));
-                        removeInstanceFromPending(key);
+                        if (isPendingOverThreshold) {
+                            LOGGER.info(String.format(
+                                    "Instance %s is in initiating state for over than %s minutes, ignoring this instance",
+                                    pendingInstance.getId(), pendingThreshold));
+                            removeInstanceFromPending(key);
+                        }
                     }
                 }
-            }
-
-            if (isCloudReadyForGroupCommunication()) {
                 connectOfflineSshAgents();
             }
-            else {
-                LOGGER.error(SKIPPED_METHOD_GROUP_IS_NIT_READY_ERROR_LOGGER_FORMAT, "connectOfflineSshAgents", groupId);
-            }
+        }
+        else {
+            LOGGER.error(SKIPPED_METHOD_GROUP_IS_NIT_READY_ERROR_LOGGER_FORMAT, "monitorInstances", groupId);
         }
     }
 
@@ -339,8 +339,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
         return retVal;
     }
 
-    protected void terminateOfflineSlaves(SpotinstSlave slave,
-                                          String slaveInstanceId) {//TODO: slave.terminate() checks groupLockManager. check again?
+    protected void terminateOfflineSlaves(SpotinstSlave slave, String slaveInstanceId) {
         SlaveComputer computer = slave.getComputer();
         if (computer != null) {
             Integer offlineThreshold  = getSlaveOfflineThreshold();
@@ -471,8 +470,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
     //endregion
 
     //region Protected Methods
-    protected void addToPending(String id, Integer numOfExecutors, PendingInstance.StatusEnum status,
-                                String label) {//TODO: no unchecked groupLockManager accesses. check again?
+    protected void addToPending(String id, Integer numOfExecutors, PendingInstance.StatusEnum status, String label) {
         PendingInstance pendingInstance = new PendingInstance();
         pendingInstance.setId(id);
         pendingInstance.setNumOfExecutors(numOfExecutors);
@@ -482,7 +480,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
         pendingInstances.put(id, pendingInstance);
     }
 
-    protected SpotinstSlave buildSpotinstSlave(String id, String instanceType, String numOfExecutors) {//TODO: no unchecked groupLockManager accesses. check again?
+    protected SpotinstSlave buildSpotinstSlave(String id, String instanceType, String numOfExecutors) {
         SpotinstSlave slave = null;
         Node.Mode     mode  = Node.Mode.NORMAL;
 
@@ -827,11 +825,9 @@ public abstract class BaseSpotinstCloud extends Cloud {
     //endregion
 
     //region Abstract Methods
-    abstract List<SpotinstSlave> scaleUp(
-            ProvisionRequest request);//TODO: no unchecked groupLockManager accesses. check again?
+    abstract List<SpotinstSlave> scaleUp(ProvisionRequest request);
 
-    public abstract Boolean detachInstance(
-            String instanceId);//TODO: no unchecked groupLockManager accesses. check again?
+    public abstract Boolean detachInstance(String instanceId);
 
     public abstract String getCloudUrl();
 
@@ -848,7 +844,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
 
     protected abstract void internalSyncGroupInstances();
 
-    public abstract Map<String, String> getInstanceIpsById();//TODO: no unchecked groupLockManager accesses. check again?
+    public abstract Map<String, String> getInstanceIpsById();
 
     protected abstract Integer getDefaultExecutorsNumber(String instanceType);
     //endregion

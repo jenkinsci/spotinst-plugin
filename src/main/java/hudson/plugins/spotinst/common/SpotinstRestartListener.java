@@ -25,7 +25,7 @@ public class SpotinstRestartListener extends RestartListener {
     }
 
     @Override
-    public void onRestart() {//TODO: no need
+    public void onRestart() {//TODO: check
         SpotinstSyncGroupsController groupsOwnerJob = new SpotinstSyncGroupsController();
         groupsOwnerJob.deallocateAll();
         super.onRestart();
