@@ -42,18 +42,20 @@ public class GroupLockingManager {
     //region Constructor
     public GroupLockingManager(String groupId, String accountId) {
         key = new GroupLockKey(groupId, accountId);
+        setInitializingState();
+        String errMsg = null;
 
         if (StringUtils.isEmpty(groupId)) {
-            setFailedState("Found a cloud with uninitialized Group ID. please check configuration");
+            errMsg = "Found a cloud with uninitialized Group ID. please check configuration";
         }
         else if (StringUtils.isEmpty(accountId)) {
-            String errMsg = String.format(
+            errMsg = String.format(
                     "Found a cloud with groupId '%s' and uninitialized Account ID. please check configuration",
                     groupId);
-            setFailedState(errMsg);
         }
-        else {
-            setInitializingState();
+
+        if(StringUtils.isNotEmpty(errMsg)){
+            setFailedState(errMsg);
         }
     }
     //endregion
@@ -235,18 +237,25 @@ public class GroupLockingManager {
     }
 
     private void handleGroupManagedByOtherController(String groupLockController) {
+        String failureDescription =
+                String.format("group '%s' is already connected to a different Jenkins controller %s", getGroupId(),
+                              groupLockController);
 
-        if (cloudCommunicationState == SpotinstCloudCommunicationState.INITIALIZING) {
-            String failureDescription =
-                    String.format("group '%s' is already connected to a different Jenkins controller %s", getGroupId(),
-                                  groupLockController);
-            handleInitializingFailureTimeout(failureDescription);
-        }
-        else if (cloudCommunicationState == SpotinstCloudCommunicationState.READY) {
-            LOGGER.warn("The group {} is in state ready but it belong to controller {}," +
-                        " it may be because of jenkins plugin previous running(that saved in the jelly file and reloaded)," +
-                        "returning to initializing state", getGroupId(), groupLockController);
-            setInitializingState();
+        switch (cloudCommunicationState) {
+            case INITIALIZING:
+                handleInitializingFailureTimeout(failureDescription);
+                break;
+
+            case FAILED:
+                setFailedState(failureDescription);
+                break;
+
+            case READY:
+                LOGGER.warn("The group {} is in state ready but it belong to controller {}," +
+                            " it may be because of jenkins plugin previous running(that saved in the jelly file and reloaded)," +
+                            "returning to initializing state", getGroupId(), groupLockController);
+                setInitializingState();
+                break;
         }
     }
 
