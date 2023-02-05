@@ -46,7 +46,7 @@ public class LockRepo implements ILockRepo {
         ApiResponse<String> retVal;
 
         try {
-            String controllerIdentifier = SpotinstApi.getGroupLockValueById(accountId, groupId);
+            String controllerIdentifier = SpotinstApi.getGroupLockValue(accountId, groupId);
             retVal = new ApiResponse<>(controllerIdentifier);
         }
         catch (ApiException e) {
