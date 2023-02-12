@@ -1,14 +1,11 @@
 package hudson.plugins.spotinst.jobs;
 
 import hudson.Extension;
-import hudson.ExtensionList;
 import hudson.model.AsyncPeriodicWork;
-import hudson.model.PeriodicWork;
 import hudson.model.TaskListener;
 import hudson.plugins.spotinst.cloud.BaseSpotinstCloud;
 import hudson.slaves.Cloud;
 import jenkins.model.Jenkins;
-import org.apache.commons.collections.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,8 +21,7 @@ public class SpotinstSyncInstances extends AsyncPeriodicWork {
     //region Members
     private static final Logger  LOGGER                  = LoggerFactory.getLogger(SpotinstSyncInstances.class);
     public static final  Integer JOB_INTERVAL_IN_MINUTES = 1;
-    final long recurrencePeriod;
-    boolean isJobExecuted;
+    final                long    recurrencePeriod;
     //endregion
 
     //region Constructor
@@ -44,15 +40,6 @@ public class SpotinstSyncInstances extends AsyncPeriodicWork {
             for (Cloud cloud : cloudList) {
                 if (cloud instanceof BaseSpotinstCloud) {
                     BaseSpotinstCloud spotinstCloud = (BaseSpotinstCloud) cloud;
-
-                    if(this.isJobExecuted == false) {
-                        ExtensionList<PeriodicWork> spotinstGroupsOwnerMonitorPeriodicWork = SpotinstSyncGroupsController.all();
-
-                        if (CollectionUtils.isNotEmpty(spotinstGroupsOwnerMonitorPeriodicWork)) {
-                            spotinstGroupsOwnerMonitorPeriodicWork.get(0).run();
-                            this.isJobExecuted = true;
-                        }
-                    }
 
                     try {
                         spotinstCloud.syncGroupInstances();

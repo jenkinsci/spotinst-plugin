@@ -4,14 +4,9 @@ import hudson.Extension;
 import hudson.model.RestartListener;
 import hudson.plugins.spotinst.jobs.SpotinstSyncGroupsController;
 import jenkins.model.Jenkins;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-//TODO Liron - this part not working yet
 @Extension
 public class SpotinstRestartListener extends RestartListener {
-    private static final Logger LOGGER = LoggerFactory.getLogger(SpotinstRestartListener.class);
-
     public static SpotinstRestartListener getInstance() {
         return Jenkins.get().getExtensionList(RestartListener.class).get(SpotinstRestartListener.class);
     }
@@ -25,7 +20,7 @@ public class SpotinstRestartListener extends RestartListener {
     }
 
     @Override
-    public void onRestart() {//TODO: check
+    public void onRestart() {//TODO: check **DONE**
         SpotinstSyncGroupsController groupsOwnerJob = new SpotinstSyncGroupsController();
         groupsOwnerJob.deallocateAll();
         super.onRestart();

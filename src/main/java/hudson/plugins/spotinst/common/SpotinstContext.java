@@ -2,7 +2,6 @@ package hudson.plugins.spotinst.common;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.plugins.spotinst.model.aws.AwsInstanceType;
-import org.apache.commons.lang.RandomStringUtils;
 
 import java.util.*;
 
@@ -12,13 +11,11 @@ import java.util.*;
 public class SpotinstContext {
 
     //region Members
-    private static SpotinstContext instance;
-    private String spotinstToken;
-    private String accountId;
-    private List<AwsInstanceType> awsInstanceTypes;
-    private Date awsInstanceTypesLastUpdate;
-    private String                             controllerIdentifier;
-    private Set<GroupLockKey> cachedProcessedGroupIds;
+    private static SpotinstContext       instance;
+    private        String                spotinstToken;
+    private        String                accountId;
+    private        List<AwsInstanceType> awsInstanceTypes;
+    private        Date                  awsInstanceTypesLastUpdate;
     //endregion
 
     public static SpotinstContext getInstance() {
@@ -64,26 +61,6 @@ public class SpotinstContext {
     @SuppressFBWarnings(value = {"EI_EXPOSE_REP"})
     public void setAwsInstanceTypesLastUpdate(Date awsInstanceTypesLastUpdate) {
         this.awsInstanceTypesLastUpdate = awsInstanceTypesLastUpdate;
-    }
-
-    public String getControllerIdentifier() {//TODO: verify with Ziv
-        if(controllerIdentifier == null){
-            controllerIdentifier = RandomStringUtils.randomAlphanumeric(10);
-        }
-
-        return controllerIdentifier;
-    }
-
-    public Set<GroupLockKey> getCachedProcessedGroupIds() {
-        if(cachedProcessedGroupIds == null){
-            cachedProcessedGroupIds = new HashSet<>();
-        }
-
-        return cachedProcessedGroupIds;
-    }
-
-    public void setCachedProcessedGroupIds(Set<GroupLockKey> cachedProcessedGroupIds) {
-        this.cachedProcessedGroupIds = cachedProcessedGroupIds;
     }
     //endregion
 

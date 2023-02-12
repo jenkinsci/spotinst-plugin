@@ -1,6 +1,9 @@
 package hudson.plugins.spotinst.jobs;
 
 import hudson.Extension;
+import hudson.ExtensionList;
+import hudson.init.InitMilestone;
+import hudson.init.Initializer;
 import hudson.model.AsyncPeriodicWork;
 import hudson.model.TaskListener;
 import hudson.plugins.spotinst.cloud.BaseSpotinstCloud;
@@ -40,6 +43,23 @@ public class SpotinstSyncGroupsController extends AsyncPeriodicWork {
     //endregion
 
     //region Public Methods
+    @Initializer(after = InitMilestone.JOB_CONFIG_ADAPTED)
+    public static void init() {
+        ExtensionList<SpotinstSyncGroupsController> spotinstGroupsOwnerMonitorPeriodicWork =
+                SpotinstSyncGroupsController.allSpotinstSyncGroupsController();
+
+        if (CollectionUtils.isNotEmpty(spotinstGroupsOwnerMonitorPeriodicWork)) {
+            spotinstGroupsOwnerMonitorPeriodicWork.get(0).run();
+        }
+        else{
+            LOGGER.warn("could not find SpotinstSyncGroupsController JOB");
+        }
+    }
+
+    public static ExtensionList<SpotinstSyncGroupsController> allSpotinstSyncGroupsController() {
+        return ExtensionList.lookup(SpotinstSyncGroupsController.class);
+    }
+
     @Override
     protected void execute(TaskListener taskListener) {
         synchronized (this) {

@@ -10,7 +10,7 @@ import java.io.IOException;
 import java.util.logging.Logger;
 
 @Extension
-public class PluginImpl extends Plugin implements Describable<PluginImpl> {
+public class PluginImpl extends Plugin implements Describable<PluginImpl> {//TODO: check if needed and delete
     private static final Logger LOGGER = Logger.getLogger(PluginImpl.class.getName());
 
     // Whether the SshHostKeyVerificationAdministrativeMonitor should show messages when we have templates using

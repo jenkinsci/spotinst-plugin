@@ -11,18 +11,17 @@ import org.slf4j.LoggerFactory;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Calendar;
 import java.util.Date;
 
 public class GroupLockingManager {
     //region constants
-    public static final  Integer LOCK_TIME_TO_LIVE_IN_SECONDS                 = 60 * 3;
-    private static final String  GROUP_CANNOT_BE_CONNECTED_DESCRIPTION_FORMAT =
+    public static final  Integer LOCK_TIME_TO_LIVE_IN_SECONDS                       = 60 * 3;
+    private static final String  GROUP_CANNOT_BE_CONNECTED_DESCRIPTION_FORMAT       =
             "group '%s' cannot be connected - check cloud's configuration";
-    private static final String  LOCK_OK_STATUS                               = "OK";
-    private static final Integer KEEP_ALIVE_MAXIMUM_ASSUMED_RUNNING_TIME      = 10;
-    private static final Integer INITIALIZING_PERIOD_IN_SECONDS               =
-            LOCK_TIME_TO_LIVE_IN_SECONDS + KEEP_ALIVE_MAXIMUM_ASSUMED_RUNNING_TIME;
+    private static final String  LOCK_OK_STATUS                                     = "OK";
+    private static final Integer KEEP_ALIVE_MAXIMUM_ASSUMED_RUNNING_TIME_IN_SECONDS = 10;
+    private static final Integer INITIALIZING_PERIOD_IN_SECONDS                     =
+            LOCK_TIME_TO_LIVE_IN_SECONDS + KEEP_ALIVE_MAXIMUM_ASSUMED_RUNNING_TIME_IN_SECONDS;
     //endregion
 
     //region members
@@ -33,25 +32,21 @@ public class GroupLockingManager {
     private final GroupLockKey                    key;
     private       SpotinstCloudCommunicationState cloudCommunicationState;
     private       String                          errorDescription;
-    private       Date                            timeStamp;
+    private       Date                            initializingStateStartTimeStamp;
     //endregion
 
     //region Constructor
     public GroupLockingManager(String groupId, String accountId) {
         key = new GroupLockKey(groupId, accountId);
         setInitializingState();
-        String errMsg = null;
 
         if (StringUtils.isEmpty(groupId)) {
-            errMsg = "Found a cloud with uninitialized Group ID. please check configuration";
+            setFailedState("Found a cloud with uninitialized Group ID. please check configuration");
         }
         else if (StringUtils.isEmpty(accountId)) {
-            errMsg = String.format(
+            String errMsg = String.format(
                     "Found a cloud with groupId '%s' and uninitialized Account ID. please check configuration",
                     groupId);
-        }
-
-        if (StringUtils.isNotEmpty(errMsg)) {
             setFailedState(errMsg);
         }
     }
@@ -151,6 +146,7 @@ public class GroupLockingManager {
             boolean isLockedAcquiredSuccessfully = LOCK_OK_STATUS.equals(currentLock);
 
             if (isLockedAcquiredSuccessfully) {
+                LOGGER.info("Successfully locked group {} controller", getGroupId());
                 setReadyState();
             }
             else {
@@ -229,7 +225,7 @@ public class GroupLockingManager {
             }
         }
         else {
-            LOGGER.error("Failed to unlock group {}. group is not locked.", getGroupId());
+            LOGGER.info("Failed to unlock group {}. group is not locked.", getGroupId());
         }
     }
 
@@ -257,7 +253,7 @@ public class GroupLockingManager {
     }
 
     private void handleInitializingFailureTimeout(String errorDescription) {
-        boolean isTimeout = TimeUtils.isTimePassed(timeStamp, INITIALIZING_PERIOD_IN_SECONDS, Calendar.SECOND);
+        boolean isTimeout = TimeUtils.isTimePassedInSeconds(initializingStateStartTimeStamp, INITIALIZING_PERIOD_IN_SECONDS);
 
         if (isTimeout) {
             LOGGER.error("Initialization time has expired, error description: {}", errorDescription);
@@ -273,11 +269,10 @@ public class GroupLockingManager {
     private void setInitializingState() {
         setCloudCommunicationState(SpotinstCloudCommunicationState.INITIALIZING);
         setErrorDescription(null);
-        timeStamp = new Date();
+        initializingStateStartTimeStamp = new Date();
     }
 
     private void setReadyState() {
-        LOGGER.info("Successfully locked group {} controller", getGroupId());
         setCloudCommunicationState(SpotinstCloudCommunicationState.READY);
     }
 

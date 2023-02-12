@@ -194,7 +194,6 @@ public abstract class BaseSpotinstCloud extends Cloud {
     public Boolean onInstanceReady(String instanceId) {
         boolean retVal = isCloudReadyForGroupCommunication();
 
-        //TODO:check correctness
         if (retVal) {
             removeInstanceFromPending(instanceId);
         }
@@ -218,7 +217,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
         }
     }
 
-    protected void internalMonitorInstances(){
+    protected void internalMonitorInstances() {
         if (pendingInstances.size() > 0) {
             List<String> keys = new LinkedList<>(pendingInstances.keySet());
 
@@ -229,8 +228,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
 
                     Integer pendingThreshold = getPendingThreshold();
                     Boolean isPendingOverThreshold =
-                            TimeUtils.isTimePassed(pendingInstance.getCreatedAt(), pendingThreshold,
-                                                   Calendar.MINUTE);
+                            TimeUtils.isTimePassedInMinutes(pendingInstance.getCreatedAt(), pendingThreshold);
 
                     if (isPendingOverThreshold) {
                         LOGGER.info(String.format(
@@ -360,7 +358,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
 
 
             Date    slaveCreatedAt         = slave.getCreatedAt();
-            Boolean isOverOfflineThreshold = TimeUtils.isTimePassed(slaveCreatedAt, offlineThreshold, Calendar.MINUTE);
+            Boolean isOverOfflineThreshold = TimeUtils.isTimePassedInMinutes(slaveCreatedAt, offlineThreshold);
 
             if (isSlaveOffline && isSlaveConnecting == false && isOverOfflineThreshold && temporarilyOffline == false &&
                 isOverIdleThreshold) {
