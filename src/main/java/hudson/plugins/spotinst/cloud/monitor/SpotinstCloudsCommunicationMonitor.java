@@ -43,12 +43,12 @@ public class SpotinstCloudsCommunicationMonitor extends AdministrativeMonitor {
     }
 
     private boolean isSpotinstCloudsCommunicationStateExist(SpotinstCloudCommunicationState state) {
-        Stream<GroupLockingManager> groupsDetails =
+        Stream<GroupLockingManager> cloudGroupsLockingManager =
                 Jenkins.getInstance().clouds.stream().filter(cloud -> cloud instanceof BaseSpotinstCloud)
                                             .map(baseCloud -> ((BaseSpotinstCloud) baseCloud).getGroupLockingManager())
                                             .filter(Objects::nonNull);
-
-        boolean isCloudsWithReadyStateExist = groupsDetails.anyMatch(groupDetails -> state == groupDetails.getCloudCommunicationState());
+        boolean isCloudsWithReadyStateExist =
+                cloudGroupsLockingManager.anyMatch(groupDetails -> state == groupDetails.getCloudCommunicationState());
 
         return isCloudsWithReadyStateExist;
     }
@@ -60,10 +60,10 @@ public class SpotinstCloudsCommunicationMonitor extends AdministrativeMonitor {
                 Jenkins.getInstance().clouds.stream().filter(cloud -> cloud instanceof BaseSpotinstCloud)
                                             .map(baseCloud -> ((BaseSpotinstCloud) baseCloud).getGroupLockingManager())
                                             .filter(Objects::nonNull);
-        spotinstCloudsCommunicationFailures =
-                groupsDetails.filter(group -> group.getCloudCommunicationState() == SpotinstCloudCommunicationState.FAILED)
-                             .map(GroupLockingManager::getErrorDescription).collect(Collectors.toList());
-
+        spotinstCloudsCommunicationFailures = groupsDetails.filter(
+                                                                   group -> group.getCloudCommunicationState() == SpotinstCloudCommunicationState.FAILED)
+                                                           .map(GroupLockingManager::getErrorDescription)
+                                                           .collect(Collectors.toList());
         return spotinstCloudsCommunicationFailures;
     }
 

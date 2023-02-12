@@ -211,32 +211,36 @@ public abstract class BaseSpotinstCloud extends Cloud {
 
     public void monitorInstances() {
         if (isCloudReadyForGroupCommunication()) {
-            if (pendingInstances.size() > 0) {
-                List<String> keys = new LinkedList<>(pendingInstances.keySet());
-
-                for (String key : keys) {
-                    PendingInstance pendingInstance = pendingInstances.get(key);
-
-                    if (pendingInstance != null) {
-
-                        Integer pendingThreshold = getPendingThreshold();
-                        Boolean isPendingOverThreshold =
-                                TimeUtils.isTimePassed(pendingInstance.getCreatedAt(), pendingThreshold,
-                                                       Calendar.MINUTE);
-
-                        if (isPendingOverThreshold) {
-                            LOGGER.info(String.format(
-                                    "Instance %s is in initiating state for over than %s minutes, ignoring this instance",
-                                    pendingInstance.getId(), pendingThreshold));
-                            removeInstanceFromPending(key);
-                        }
-                    }
-                }
-                connectOfflineSshAgents();
-            }
+            internalMonitorInstances();
         }
         else {
             LOGGER.error(SKIPPED_METHOD_GROUP_IS_NIT_READY_ERROR_LOGGER_FORMAT, "monitorInstances", groupId);
+        }
+    }
+
+    protected void internalMonitorInstances(){
+        if (pendingInstances.size() > 0) {
+            List<String> keys = new LinkedList<>(pendingInstances.keySet());
+
+            for (String key : keys) {
+                PendingInstance pendingInstance = pendingInstances.get(key);
+
+                if (pendingInstance != null) {
+
+                    Integer pendingThreshold = getPendingThreshold();
+                    Boolean isPendingOverThreshold =
+                            TimeUtils.isTimePassed(pendingInstance.getCreatedAt(), pendingThreshold,
+                                                   Calendar.MINUTE);
+
+                    if (isPendingOverThreshold) {
+                        LOGGER.info(String.format(
+                                "Instance %s is in initiating state for over than %s minutes, ignoring this instance",
+                                pendingInstance.getId(), pendingThreshold));
+                        removeInstanceFromPending(key);
+                    }
+                }
+            }
+            connectOfflineSshAgents();
         }
     }
 

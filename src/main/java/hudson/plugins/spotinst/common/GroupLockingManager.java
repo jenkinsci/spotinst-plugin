@@ -16,16 +16,13 @@ import java.util.Date;
 
 public class GroupLockingManager {
     //region constants
-    public static final Integer LOCK_TIME_TO_LIVE_IN_SECONDS = 60 * 3;
-
-    private static final String  GROUP_CANNOT_BE_CONNECTED_DESCRIPTION_FORMAT    =
+    public static final  Integer LOCK_TIME_TO_LIVE_IN_SECONDS                 = 60 * 3;
+    private static final String  GROUP_CANNOT_BE_CONNECTED_DESCRIPTION_FORMAT =
             "group '%s' cannot be connected - check cloud's configuration";
-    private static final String  LOCK_OK_STATUS                                  = "OK";
-    private static final Integer MILI_TO_SECONDS                                 = 1000;
-    private static final Integer SUSPENDED_GROUP_FETCHING_TIME_TO_LIVE_IN_MILLIS =
-            MILI_TO_SECONDS * LOCK_TIME_TO_LIVE_IN_SECONDS + 10;
-    private static final Integer INITIALIZING_PERIOD                             =
-            SUSPENDED_GROUP_FETCHING_TIME_TO_LIVE_IN_MILLIS / MILI_TO_SECONDS;
+    private static final String  LOCK_OK_STATUS                               = "OK";
+    private static final Integer KEEP_ALIVE_MAXIMUM_ASSUMED_RUNNING_TIME      = 10;
+    private static final Integer INITIALIZING_PERIOD_IN_SECONDS               =
+            LOCK_TIME_TO_LIVE_IN_SECONDS + KEEP_ALIVE_MAXIMUM_ASSUMED_RUNNING_TIME;
     //endregion
 
     //region members
@@ -54,7 +51,7 @@ public class GroupLockingManager {
                     groupId);
         }
 
-        if(StringUtils.isNotEmpty(errMsg)){
+        if (StringUtils.isNotEmpty(errMsg)) {
             setFailedState(errMsg);
         }
     }
@@ -260,7 +257,7 @@ public class GroupLockingManager {
     }
 
     private void handleInitializingFailureTimeout(String errorDescription) {
-        boolean isTimeout = TimeUtils.isTimePassed(timeStamp, INITIALIZING_PERIOD, Calendar.SECOND);
+        boolean isTimeout = TimeUtils.isTimePassed(timeStamp, INITIALIZING_PERIOD_IN_SECONDS, Calendar.SECOND);
 
         if (isTimeout) {
             LOGGER.error("Initialization time has expired, error description: {}", errorDescription);

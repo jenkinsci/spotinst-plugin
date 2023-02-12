@@ -21,10 +21,10 @@ import java.util.stream.Collectors;
 @Extension
 public class SpotinstSyncGroupsController extends AsyncPeriodicWork {
     //region constants
-    private static final Integer LOCK_TTL_TO_SYNC_GROUP_RATIO = 3;
-    private static final Integer JOB_INTERVAL_IN_SECONDS      =
-            GroupLockingManager.LOCK_TIME_TO_LIVE_IN_SECONDS / LOCK_TTL_TO_SYNC_GROUP_RATIO;
-    final static         long    RECURRENCE_PERIOD            = TimeUnit.SECONDS.toMillis(JOB_INTERVAL_IN_SECONDS);
+    private static final Integer LOCK_TTL_TO_SYNC_GROUPS_JOB_RATIO = 3;
+    private static final Integer JOB_INTERVAL_IN_SECONDS           =
+            GroupLockingManager.LOCK_TIME_TO_LIVE_IN_SECONDS / LOCK_TTL_TO_SYNC_GROUPS_JOB_RATIO;
+    final static         long    RECURRENCE_PERIOD                 = TimeUnit.SECONDS.toMillis(JOB_INTERVAL_IN_SECONDS);
     //endregion
 
     //region Members
