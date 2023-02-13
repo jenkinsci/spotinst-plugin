@@ -3,7 +3,7 @@ package hudson.plugins.spotinst.common;
 import hudson.plugins.spotinst.api.infra.ApiResponse;
 import hudson.plugins.spotinst.repos.ILockRepo;
 import hudson.plugins.spotinst.repos.RepoManager;
-import jenkins.model.Jenkins;
+import jenkins.model.JenkinsLocationConfiguration;
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -301,11 +301,12 @@ public class GroupLockingManager {
     }
 
     private static Integer generateControllerPort() throws MalformedURLException {
-        String fullControllerUrl = Jenkins.getInstance().getConfiguredRootUrl();
-        int    retVal;
+        String fullControllerUrl;
 
+        JenkinsLocationConfiguration globalConfig = JenkinsLocationConfiguration.get();
+        fullControllerUrl = globalConfig.getUrl();
         URL urlHelper = new URL(fullControllerUrl);
-        retVal = urlHelper.getPort();
+        int retVal = urlHelper.getPort();
 
         return retVal;
     }
