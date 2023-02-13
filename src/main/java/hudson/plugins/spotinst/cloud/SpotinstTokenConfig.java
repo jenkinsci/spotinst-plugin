@@ -76,8 +76,8 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
 
             if (spotTokenCredentials != null) {
                 Secret secret = spotTokenCredentials.getSecret();
-                credentialsStoreSpotToken = secret.getPlainText();
-                tokenToUse = credentialsStoreSpotToken;
+                credentialsStoreSpotToken = secret.getEncryptedValue();
+                tokenToUse = secret.getPlainText();
             }
             else {
                 String failureMassage = "Failed to load token match to credentials ID: %s";
