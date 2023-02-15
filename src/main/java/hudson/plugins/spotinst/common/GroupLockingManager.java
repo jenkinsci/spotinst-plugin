@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Date;
+import java.util.Objects;
 
 public class GroupLockingManager {
     //region constants
@@ -290,6 +291,7 @@ public class GroupLockingManager {
             Integer port = generateControllerPort();
 
             retVal = String.format("%s:%s", hostName, port);
+            LOGGER.info("Generated Jenkins controller identifier: {}", retVal);
         }
         catch (Exception exception) {
             retVal = RandomStringUtils.randomAlphanumeric(10);
@@ -305,6 +307,7 @@ public class GroupLockingManager {
 
         JenkinsLocationConfiguration globalConfig = JenkinsLocationConfiguration.get();
         fullControllerUrl = globalConfig.getUrl();
+        Objects.requireNonNull(fullControllerUrl);
         URL urlHelper = new URL(fullControllerUrl);
         int retVal = urlHelper.getPort();
 
