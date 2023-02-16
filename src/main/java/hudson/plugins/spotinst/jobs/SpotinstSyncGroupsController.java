@@ -1,13 +1,13 @@
 package hudson.plugins.spotinst.jobs;
 
 import hudson.Extension;
-import hudson.ExtensionList;
 import hudson.init.InitMilestone;
 import hudson.init.Initializer;
 import hudson.model.AsyncPeriodicWork;
 import hudson.model.TaskListener;
 import hudson.plugins.spotinst.cloud.BaseSpotinstCloud;
 import hudson.plugins.spotinst.common.GroupLockingManager;
+import hudson.plugins.spotinst.jobs.jobSynchronizer.JobSynchronizer;
 import hudson.slaves.Cloud;
 import jenkins.model.Jenkins;
 import org.apache.commons.collections.CollectionUtils;
@@ -34,6 +34,7 @@ public class SpotinstSyncGroupsController extends AsyncPeriodicWork {
     private static final Logger                   LOGGER                    =
             LoggerFactory.getLogger(SpotinstSyncGroupsController.class);
     private static       Set<GroupLockingManager> groupsManagersFromLastRun = new HashSet<>();
+    private static final Object                   monitor                   = new Object();
     //endregion
 
     //region Constructor
@@ -45,31 +46,22 @@ public class SpotinstSyncGroupsController extends AsyncPeriodicWork {
     //region Public Methods
     @Initializer(after = InitMilestone.JOB_CONFIG_ADAPTED)
     public static void init() {
-        ExtensionList<SpotinstSyncGroupsController> spotinstGroupsOwnerMonitorPeriodicWork =
-                SpotinstSyncGroupsController.allSpotinstSyncGroupsController();
+        new SpotinstSyncGroupsController().execute(null);
 
-        if (CollectionUtils.isNotEmpty(spotinstGroupsOwnerMonitorPeriodicWork)) {
-            spotinstGroupsOwnerMonitorPeriodicWork.get(0).run();
-        }
-        else{
-            LOGGER.warn("could not find SpotinstSyncGroupsController JOB");
-        }
-    }
-
-    public static ExtensionList<SpotinstSyncGroupsController> allSpotinstSyncGroupsController() {
-        return ExtensionList.lookup(SpotinstSyncGroupsController.class);
+        JobSynchronizer.getInstance().release();
+        LOGGER.info("Finished initializing groups' controllers, Ready to run Jobs");
     }
 
     @Override
     protected void execute(TaskListener taskListener) {
-        synchronized (this) {
+        synchronized (monitor) {
             Set<GroupLockingManager> activeGroupManagers = getActiveGroupLockingManagers();
             handleRemovedGroupsSinceLastRun(activeGroupManagers);
             activeGroupManagers.forEach(GroupLockingManager::syncGroupController);
         }
     }
 
-    public void deallocateAll() {
+    public static void deallocateAll() {
         List<Cloud> cloudList = Jenkins.getInstance().clouds;
 
         if (CollectionUtils.isNotEmpty(cloudList)) {

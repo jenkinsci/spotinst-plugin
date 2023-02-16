@@ -4,6 +4,7 @@ import hudson.Extension;
 import hudson.model.AsyncPeriodicWork;
 import hudson.model.TaskListener;
 import hudson.plugins.spotinst.cloud.BaseSpotinstCloud;
+import hudson.plugins.spotinst.jobs.jobSynchronizer.JobSynchronizer;
 import hudson.slaves.Cloud;
 import jenkins.model.Jenkins;
 
@@ -31,6 +32,7 @@ public class SpotinstInstancesMonitor extends AsyncPeriodicWork {
     //region Public Methods
     @Override
     protected void execute(TaskListener taskListener) {
+        JobSynchronizer.getInstance().await();
         List<Cloud> cloudList = Jenkins.getInstance().clouds;
 
         if (cloudList != null && cloudList.size() > 0) {

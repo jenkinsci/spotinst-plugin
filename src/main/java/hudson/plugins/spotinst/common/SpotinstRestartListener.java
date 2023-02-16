@@ -20,9 +20,8 @@ public class SpotinstRestartListener extends RestartListener {
     }
 
     @Override
-    public void onRestart() {//TODO: check **DONE**
-        SpotinstSyncGroupsController groupsOwnerJob = new SpotinstSyncGroupsController();
-        groupsOwnerJob.deallocateAll();
+    public void onRestart() {
+        SpotinstSyncGroupsController.deallocateAll();
         super.onRestart();
     }
 }

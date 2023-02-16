@@ -1,7 +1,6 @@
 package hudson.plugins.spotinst.common;
 
 import hudson.plugins.spotinst.api.infra.ApiResponse;
-import hudson.plugins.spotinst.repos.ILockRepo;
 import hudson.plugins.spotinst.repos.RepoManager;
 import jenkins.model.JenkinsLocationConfiguration;
 import org.apache.commons.lang.RandomStringUtils;
@@ -12,7 +11,6 @@ import org.slf4j.LoggerFactory;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Date;
-import java.util.Objects;
 
 public class GroupLockingManager {
     //region constants
@@ -26,9 +24,8 @@ public class GroupLockingManager {
     //endregion
 
     //region members
-    private static final Logger    LOGGER                      = LoggerFactory.getLogger(GroupLockingManager.class);
-    private static final String    currentControllerIdentifier = generateControllerIdentifier();
-    private static final ILockRepo lockRepo                    = RepoManager.getInstance().getLockRepo();
+    private static final Logger LOGGER                      = LoggerFactory.getLogger(GroupLockingManager.class);
+    private static final String currentControllerIdentifier = generateControllerIdentifier();
 
     private final GroupLockKey                    key;
     private       SpotinstCloudCommunicationState cloudCommunicationState;
@@ -57,7 +54,7 @@ public class GroupLockingManager {
     public void syncGroupController() {
         if (isActive()) {
             ApiResponse<String> getLockGroupRepoResponse =
-                    lockRepo.getGroupControllerLockValue(getAccountId(), getGroupId());
+                    RepoManager.getInstance().getLockRepo().getGroupControllerLockValue(getAccountId(), getGroupId());
 
             if (getLockGroupRepoResponse.isRequestSucceed()) {
                 String  lockGroupControllerValue       = getLockGroupRepoResponse.getValue();
@@ -94,7 +91,7 @@ public class GroupLockingManager {
     public void deleteGroupControllerLock() {
         if (isActive()) {
             ApiResponse<String> getLockGroupRepoResponse =
-                    lockRepo.getGroupControllerLockValue(getAccountId(), getGroupId());
+                    RepoManager.getInstance().getLockRepo().getGroupControllerLockValue(getAccountId(), getGroupId());
 
             if (getLockGroupRepoResponse.isRequestSucceed()) {
                 String lockGroupControllerValue = getLockGroupRepoResponse.getValue();
@@ -138,9 +135,10 @@ public class GroupLockingManager {
     //region private mehtods
     private void AcquireGroupLock() {
         LOGGER.info(String.format("group %s doesn't belong to any controller. trying to lock it", getGroupId()));
-        ApiResponse<String> lockGroupRepoResponse =
-                lockRepo.acquireGroupControllerLock(getAccountId(), getGroupId(), currentControllerIdentifier,
-                                                    LOCK_TIME_TO_LIVE_IN_SECONDS);
+        ApiResponse<String> lockGroupRepoResponse = RepoManager.getInstance().getLockRepo()
+                                                               .acquireGroupControllerLock(getAccountId(), getGroupId(),
+                                                                                           currentControllerIdentifier,
+                                                                                           LOCK_TIME_TO_LIVE_IN_SECONDS);
 
         if (lockGroupRepoResponse.isRequestSucceed()) {
             String  currentLock                  = lockGroupRepoResponse.getValue();
@@ -152,8 +150,9 @@ public class GroupLockingManager {
             }
             else {
                 String groupController;
-                ApiResponse<String> getLockGroupRepoResponse =
-                        lockRepo.getGroupControllerLockValue(getAccountId(), getGroupId());
+                ApiResponse<String> getLockGroupRepoResponse = RepoManager.getInstance().getLockRepo()
+                                                                          .getGroupControllerLockValue(getAccountId(),
+                                                                                                       getGroupId());
 
                 if (getLockGroupRepoResponse.isRequestSucceed()) {
                     groupController = getLockGroupRepoResponse.getValue();
@@ -180,9 +179,10 @@ public class GroupLockingManager {
 
     private void SetGroupLockExpiry() {
         LOGGER.debug("group {} already belongs this controller, reviving the lock duration.", getGroupId());
-        ApiResponse<String> response =
-                lockRepo.setGroupControllerLockExpiry(getAccountId(), getGroupId(), currentControllerIdentifier,
-                                                      LOCK_TIME_TO_LIVE_IN_SECONDS);
+        ApiResponse<String> response = RepoManager.getInstance().getLockRepo()
+                                                  .setGroupControllerLockExpiry(getAccountId(), getGroupId(),
+                                                                                currentControllerIdentifier,
+                                                                                LOCK_TIME_TO_LIVE_IN_SECONDS);
         if (response.isRequestSucceed()) {
             String  currentLock                  = response.getValue();
             boolean isLockedAcquiredSuccessfully = LOCK_OK_STATUS.equals(currentLock);
@@ -210,7 +210,7 @@ public class GroupLockingManager {
 
             if (isGroupBelongToController) {
                 ApiResponse<Integer> deleteGroupRepoResponse =
-                        lockRepo.deleteGroupControllerLock(getAccountId(), getGroupId());
+                        RepoManager.getInstance().getLockRepo().deleteGroupControllerLock(getAccountId(), getGroupId());
 
                 if (deleteGroupRepoResponse.isRequestSucceed()) {
                     LOGGER.info("Successfully unlocked group {}", getGroupId());
@@ -254,7 +254,8 @@ public class GroupLockingManager {
     }
 
     private void handleInitializingFailureTimeout(String errorDescription) {
-        boolean isTimeout = TimeUtils.isTimePassedInSeconds(initializingStateStartTimeStamp, INITIALIZING_PERIOD_IN_SECONDS);
+        boolean isTimeout =
+                TimeUtils.isTimePassedInSeconds(initializingStateStartTimeStamp, INITIALIZING_PERIOD_IN_SECONDS);
 
         if (isTimeout) {
             LOGGER.error("Initialization time has expired, error description: {}", errorDescription);
@@ -290,32 +291,45 @@ public class GroupLockingManager {
             hostName = java.net.InetAddress.getLocalHost().getHostAddress();
             Integer port = generateControllerPort();
 
+            boolean isValidPort = port > 0;
+
+            if (isValidPort == false) {
+                throw new Exception("Cant get plugin controller port");
+            }
+
             retVal = String.format("%s:%s", hostName, port);
             LOGGER.info("Generated Jenkins controller identifier: {}", retVal);
         }
         catch (Exception exception) {
             retVal = RandomStringUtils.randomAlphanumeric(10);
-            LOGGER.warn("Exception while getting hostname. generating random identifier '{}' instead. Exception {}",
-                        retVal, exception);
+            LOGGER.warn(
+                    "Exception while getting Controller identifier by host name and port. generating random identifier '{}' as fallback instead. Exception {}",
+                    retVal, exception);
         }
 
         return retVal;
     }
 
-    private static Integer generateControllerPort() throws MalformedURLException {
-        String fullControllerUrl;
-
+    private static Integer generateControllerPort() throws MalformedURLException, NullPointerException {
+        String                       fullControllerUrl;
+        int                          retVal       = -1;
         JenkinsLocationConfiguration globalConfig = JenkinsLocationConfiguration.get();
         fullControllerUrl = globalConfig.getUrl();
-        Objects.requireNonNull(fullControllerUrl);
-        URL urlHelper = new URL(fullControllerUrl);
-        int retVal = urlHelper.getPort();
+
+        if (fullControllerUrl != null) {
+            URL urlHelper = new URL(fullControllerUrl);
+            retVal = urlHelper.getPort();
+        }
 
         return retVal;
     }
     //endregion
 
     //region getters & setters
+    public static String getCurrentControllerIdentifier() {
+        return currentControllerIdentifier;
+    }
+
     public String getGroupId() {
         return key.getGroupId();
     }

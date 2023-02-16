@@ -30,7 +30,7 @@ public class TimeUtils {
     //endregion
 
     //region private methods
-    private static Boolean isTimePassed(Date from, Integer amount, Integer timeUnit) {//TODO: split to 2 func ** DONE
+    private static Boolean isTimePassed(Date from, Integer amount, Integer timeUnit) {
         Boolean  retVal   = false;
         Date     now      = new Date();
         Calendar calendar = Calendar.getInstance();
