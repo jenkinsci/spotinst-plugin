@@ -40,6 +40,11 @@ termination"
 
 [SpotinstPlugin-Versionhistory]
 == Version history
+[SpotinstPlugin-Version2.2.10(Mar6,2023)]
+=== Version 2.2.10 (Mar 6, 2023)
+
+* Added restriction for more than one orchestrator from engaging with the same elastigroup
+
 [SpotinstPlugin-Version2.2.9(Dec29,2022)]
 === Version 2.2.9 (Dec 29, 2022)
 

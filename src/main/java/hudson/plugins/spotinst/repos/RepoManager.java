@@ -10,6 +10,7 @@ public class RepoManager {
     private IAzureGroupRepo       azureGroupRepo;
     private IAzureVmGroupRepo     azureVmGroupRepo;
     private IAwsInstanceTypesRepo awsInstanceTypesRepo;
+    private ILockRepo             lockRepo;
     //endregion
 
     //region Constructor
@@ -19,6 +20,7 @@ public class RepoManager {
         this.azureGroupRepo = new AzureGroupRepo();
         this.azureVmGroupRepo = new AzureVmGroupRepo();
         this.awsInstanceTypesRepo = new AwsInstanceTypesRepo();
+        this.lockRepo = new LockRepo();
     }
 
     private static RepoManager instance = new RepoManager();
@@ -67,6 +69,14 @@ public class RepoManager {
 
     public void setAwsInstanceTypesRepo(IAwsInstanceTypesRepo awsInstanceTypesRepo) {
         this.awsInstanceTypesRepo = awsInstanceTypesRepo;
+    }
+
+    public ILockRepo getLockRepo() {
+        return lockRepo;
+    }
+
+    public void setLockRepo(ILockRepo lockRepo) {
+        this.lockRepo = lockRepo;
     }
     //endregion
 }

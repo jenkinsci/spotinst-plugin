@@ -1,6 +1,5 @@
 package hudson.plugins.spotinst.cloud;
 
-import edu.umd.cs.findbugs.annotations.CheckForNull;
 import hudson.DescriptorExtensionList;
 import hudson.model.*;
 import hudson.model.labels.LabelAtom;
@@ -28,31 +27,36 @@ import java.util.stream.Collectors;
  * Created by ohadmuchnik on 25/05/2016.
  */
 public abstract class BaseSpotinstCloud extends Cloud {
+    //region constants
+    protected static final int    NO_OVERRIDDEN_NUM_OF_EXECUTORS                        = -1;
+    protected static final String SKIPPED_METHOD_GROUP_IS_NIT_READY_ERROR_LOGGER_FORMAT =
+            "Skipped {} - group {} is not ready for communication";
+    //endregion
 
     //region Members
     private static final Logger LOGGER = LoggerFactory.getLogger(BaseSpotinstCloud.class);
 
-    protected static final int                               NO_OVERRIDED_NUM_OF_EXECUTORS = -1;
-    protected              String                            accountId;
-    protected              String                            groupId;
-    protected              Map<String, PendingInstance>      pendingInstances;
-    protected              Map<String, SlaveInstanceDetails> slaveInstancesDetailsByInstanceId;
-    private                String                            labelString;
-    private                String                            idleTerminationMinutes;
-    private                String                            workspaceDir;
-    private                Set<LabelAtom>                    labelSet;
-    private                SlaveUsageEnum                    usage;
-    private                String                            tunnel;
-    private                String                            vmargs;
-    private                EnvironmentVariablesNodeProperty  environmentVariables;
-    private                ToolLocationNodeProperty          toolLocations;
-    private                Boolean                           shouldUseWebsocket;
-    private                Boolean                           shouldRetriggerBuilds;
-    private                Boolean                           isSingleTaskNodesEnabled;
-    private                ComputerConnector                 computerConnector;
-    private                ConnectionMethodEnum              connectionMethod;
-    private                Boolean                           shouldUsePrivateIp;
-    private                SpotGlobalExecutorOverride        globalExecutorOverride;
+    protected String                            accountId;
+    protected String                            groupId;
+    protected Map<String, PendingInstance>      pendingInstances;
+    protected Map<String, SlaveInstanceDetails> slaveInstancesDetailsByInstanceId;
+    private   String                            labelString;
+    private   String                            idleTerminationMinutes;
+    private   String                            workspaceDir;
+    private   Set<LabelAtom>                    labelSet;
+    private   SlaveUsageEnum                    usage;
+    private   String                            tunnel;
+    private   String                            vmargs;
+    private   EnvironmentVariablesNodeProperty  environmentVariables;
+    private   ToolLocationNodeProperty          toolLocations;
+    private   Boolean                           shouldUseWebsocket;
+    private   Boolean                           shouldRetriggerBuilds;
+    private   Boolean                           isSingleTaskNodesEnabled;
+    private   ComputerConnector                 computerConnector;
+    private   ConnectionMethodEnum              connectionMethod;
+    private   Boolean                           shouldUsePrivateIp;
+    private   SpotGlobalExecutorOverride        globalExecutorOverride;
+    private   GroupLockingManager               groupLockingManager;
     //endregion
 
     //region Constructor
@@ -110,6 +114,9 @@ public abstract class BaseSpotinstCloud extends Cloud {
         else {
             this.globalExecutorOverride = new SpotGlobalExecutorOverride(false, 1);
         }
+
+        groupLockingManager = new GroupLockingManager(groupId, accountId);
+        groupLockingManager.syncGroupController();
     }
     //endregion
 
@@ -119,28 +126,33 @@ public abstract class BaseSpotinstCloud extends Cloud {
         ProvisionRequest request = new ProvisionRequest(label, excessWorkload);
 
         LOGGER.info(String.format("Got provision slave request: %s", JsonMapper.toJson(request)));
+        boolean isGroupManagedByThisController = isCloudReadyForGroupCommunication();
 
-        setNumOfNeededExecutors(request);
+        if (isGroupManagedByThisController) {
+            setNumOfNeededExecutors(request);
 
-        if (request.getExecutors() > 0) {
-            LOGGER.info(String.format("Need to scale up %s units", request.getExecutors()));
+            if (request.getExecutors() > 0) {
+                LOGGER.info(String.format("Need to scale up %s units", request.getExecutors()));
+                List<SpotinstSlave> slaves = provisionSlaves(request);
 
-            List<SpotinstSlave> slaves = provisionSlaves(request);
-
-            if (slaves.size() > 0) {
-                for (final SpotinstSlave slave : slaves) {
-
-                    try {
-                        Jenkins.getInstance().addNode(slave);
-                    }
-                    catch (IOException e) {
-                        LOGGER.error(String.format("Failed to create node for slave: %s", slave.getInstanceId()), e);
+                if (slaves.size() > 0) {
+                    for (final SpotinstSlave slave : slaves) {
+                        try {
+                            Jenkins.getInstance().addNode(slave);
+                        }
+                        catch (IOException e) {
+                            LOGGER.error(String.format("Failed to create node for slave: %s", slave.getInstanceId()),
+                                         e);
+                        }
                     }
                 }
             }
+            else {
+                LOGGER.info("No need to scale up new slaves, there are some that are initiating");
+            }
         }
         else {
-            LOGGER.info("No need to scale up new slaves, there are some that are initiating");
+            LOGGER.error(SKIPPED_METHOD_GROUP_IS_NIT_READY_ERROR_LOGGER_FORMAT, "provision", groupId);
         }
 
         return Collections.emptyList();
@@ -179,8 +191,17 @@ public abstract class BaseSpotinstCloud extends Cloud {
     //endregion
 
     //region Public Methods
-    public void onInstanceReady(String instanceId) {
-        removeInstanceFromPending(instanceId);
+    public Boolean onInstanceReady(String instanceId) {
+        boolean retVal = isCloudReadyForGroupCommunication();
+
+        if (retVal) {
+            removeInstanceFromPending(instanceId);
+        }
+        else {
+            LOGGER.error(SKIPPED_METHOD_GROUP_IS_NIT_READY_ERROR_LOGGER_FORMAT, "onInstanceReady", groupId);
+        }
+
+        return retVal;
     }
 
     public void removeInstanceFromPending(String instanceId) {
@@ -188,6 +209,15 @@ public abstract class BaseSpotinstCloud extends Cloud {
     }
 
     public void monitorInstances() {
+        if (isCloudReadyForGroupCommunication()) {
+            internalMonitorInstances();
+        }
+        else {
+            LOGGER.error(SKIPPED_METHOD_GROUP_IS_NIT_READY_ERROR_LOGGER_FORMAT, "monitorInstances", groupId);
+        }
+    }
+
+    protected void internalMonitorInstances() {
         if (pendingInstances.size() > 0) {
             List<String> keys = new LinkedList<>(pendingInstances.keySet());
 
@@ -198,7 +228,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
 
                     Integer pendingThreshold = getPendingThreshold();
                     Boolean isPendingOverThreshold =
-                            TimeUtils.isTimePassed(pendingInstance.getCreatedAt(), pendingThreshold);
+                            TimeUtils.isTimePassedInMinutes(pendingInstance.getCreatedAt(), pendingThreshold);
 
                     if (isPendingOverThreshold) {
                         LOGGER.info(String.format(
@@ -208,7 +238,6 @@ public abstract class BaseSpotinstCloud extends Cloud {
                     }
                 }
             }
-
             connectOfflineSshAgents();
         }
     }
@@ -238,7 +267,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
         }
     }
 
-    public void connectAgent(SpotinstSlave offlineAgent, String ipForAgent) {
+    private void connectAgent(SpotinstSlave offlineAgent, String ipForAgent) {
         SpotinstComputer computerForAgent = (SpotinstComputer) offlineAgent.toComputer();
 
         if (computerForAgent != null) {
@@ -329,7 +358,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
 
 
             Date    slaveCreatedAt         = slave.getCreatedAt();
-            Boolean isOverOfflineThreshold = TimeUtils.isTimePassed(slaveCreatedAt, offlineThreshold);
+            Boolean isOverOfflineThreshold = TimeUtils.isTimePassedInMinutes(slaveCreatedAt, offlineThreshold);
 
             if (isSlaveOffline && isSlaveConnecting == false && isOverOfflineThreshold && temporarilyOffline == false &&
                 isOverIdleThreshold) {
@@ -347,14 +376,20 @@ public abstract class BaseSpotinstCloud extends Cloud {
 
         return retVal;
     }
+
+    public boolean isCloudReadyForGroupCommunication() {
+        boolean retVal = getGroupLockingManager().isCloudReadyForGroupCommunication();
+
+        return retVal;
+    }
     //endregion
 
     //region Private Methods
     private synchronized List<SpotinstSlave> provisionSlaves(ProvisionRequest request) {
         LOGGER.info(String.format("Scale up group: %s with %s workload units", groupId, request.getExecutors()));
 
-        List<SpotinstSlave> slaves = scaleUp(request);
-        return slaves;
+        List<SpotinstSlave> retVal = scaleUp(request);
+        return retVal;
     }
 
     private void setNumOfNeededExecutors(ProvisionRequest request) {
@@ -594,10 +629,10 @@ public abstract class BaseSpotinstCloud extends Cloud {
             retVal = 1;
         }
         else {
-            int overridedNumOfExecutors = getOverridedNumberOfExecutors(instanceType);
-            boolean isNumOfExecutorsOverrided = overridedNumOfExecutors != NO_OVERRIDED_NUM_OF_EXECUTORS;
+            int     overridedNumOfExecutors   = getOverriddenNumberOfExecutors(instanceType);
+            boolean isNumOfExecutorsOverrided = overridedNumOfExecutors != NO_OVERRIDDEN_NUM_OF_EXECUTORS;
 
-            if(isNumOfExecutorsOverrided){
+            if (isNumOfExecutorsOverrided) {
                 retVal = overridedNumOfExecutors;
             }
             else {
@@ -632,8 +667,8 @@ public abstract class BaseSpotinstCloud extends Cloud {
         return retVal;
     }
 
-    protected int getOverridedNumberOfExecutors(String instanceType) {
-        return NO_OVERRIDED_NUM_OF_EXECUTORS;
+    protected int getOverriddenNumberOfExecutors(String instanceType) {
+        return NO_OVERRIDDEN_NUM_OF_EXECUTORS;
     }
 
     protected Integer getPendingThreshold() {
@@ -643,6 +678,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
     protected Integer getSlaveOfflineThreshold() {
         return Constants.SLAVE_OFFLINE_THRESHOLD_IN_MINUTES;
     }
+
     //endregion
 
     //region Getters / Setters
@@ -767,18 +803,26 @@ public abstract class BaseSpotinstCloud extends Cloud {
         }
     }
 
+    public GroupLockingManager getGroupLockingManager() {
+        if (groupLockingManager == null) {
+            groupLockingManager = new GroupLockingManager(groupId, accountId);
+        }
+
+        return groupLockingManager;
+    }
+
     @DataBoundSetter
     public void setIsSingleTaskNodesEnabled(Boolean isSingleTaskNodesEnabled) {
         this.isSingleTaskNodesEnabled = isSingleTaskNodesEnabled;
 
         // if enabled, enable and override GlobalExecutorOverride to 1
         // better clarity to user, avoid race conditions
-        boolean shouldDisableGlobalExecutors = isSingleTaskNodesEnabled != null && isSingleTaskNodesEnabled && this.globalExecutorOverride != null;
+        boolean shouldDisableGlobalExecutors =
+                isSingleTaskNodesEnabled != null && isSingleTaskNodesEnabled && this.globalExecutorOverride != null;
         if (shouldDisableGlobalExecutors) {
             this.globalExecutorOverride.setIsEnabled(false);
         }
     }
-
 
     //endregion
 
@@ -789,7 +833,18 @@ public abstract class BaseSpotinstCloud extends Cloud {
 
     public abstract String getCloudUrl();
 
-    public abstract void syncGroupInstances();
+    public void syncGroupInstances() {
+        boolean isCloudReadyForGroupCommunication = isCloudReadyForGroupCommunication();
+
+        if (isCloudReadyForGroupCommunication) {
+            internalSyncGroupInstances();
+        }
+        else {
+            LOGGER.error(SKIPPED_METHOD_GROUP_IS_NIT_READY_ERROR_LOGGER_FORMAT, "syncGroupInstances", groupId);
+        }
+    }
+
+    protected abstract void internalSyncGroupInstances();
 
     public abstract Map<String, String> getInstanceIpsById();
 

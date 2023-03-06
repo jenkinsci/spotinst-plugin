@@ -4,6 +4,7 @@ import hudson.Extension;
 import hudson.model.AsyncPeriodicWork;
 import hudson.model.TaskListener;
 import hudson.plugins.spotinst.cloud.BaseSpotinstCloud;
+import hudson.plugins.spotinst.jobs.jobSynchronizer.JobSynchronizer;
 import hudson.slaves.Cloud;
 import jenkins.model.Jenkins;
 import org.slf4j.Logger;
@@ -21,7 +22,7 @@ public class SpotinstSyncInstances extends AsyncPeriodicWork {
     //region Members
     private static final Logger  LOGGER                  = LoggerFactory.getLogger(SpotinstSyncInstances.class);
     public static final  Integer JOB_INTERVAL_IN_MINUTES = 1;
-    final long recurrencePeriod;
+    final                long    recurrencePeriod;
     //endregion
 
     //region Constructor
@@ -34,12 +35,14 @@ public class SpotinstSyncInstances extends AsyncPeriodicWork {
     //region Public Methods
     @Override
     protected void execute(TaskListener taskListener) {
+        JobSynchronizer.getInstance().await();
         List<Cloud> cloudList = Jenkins.getInstance().clouds;
 
         if (cloudList != null && cloudList.size() > 0) {
             for (Cloud cloud : cloudList) {
                 if (cloud instanceof BaseSpotinstCloud) {
                     BaseSpotinstCloud spotinstCloud = (BaseSpotinstCloud) cloud;
+
                     try {
                         spotinstCloud.syncGroupInstances();
                     }

@@ -3,8 +3,7 @@ package hudson.plugins.spotinst.common;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.plugins.spotinst.model.aws.AwsInstanceType;
 
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 /**
  * Created by ohadmuchnik on 24/05/2016.
