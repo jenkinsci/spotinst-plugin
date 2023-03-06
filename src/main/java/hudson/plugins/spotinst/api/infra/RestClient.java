@@ -61,11 +61,49 @@ public class RestClient {
 
         return retVal;
     }
+
+    public static RestResponse sendDelete(String url, Map<String, String> headers,
+                                          Map<String, String> queryParams) throws ApiException {
+
+        HttpDelete getRequest = new HttpDelete(url);
+        addQueryParams(getRequest, queryParams);
+        addHeaders(getRequest, headers);
+        RestResponse retVal = sendRequest(getRequest);
+
+        return retVal;
+    }
+
+    public static RestResponse sendPost(String url, String body, Map<String, String> headers,
+                                        Map<String, String> queryParams) throws ApiException {
+
+        HttpPost postRequest = new HttpPost(url);
+
+        if (body != null) {
+            StringEntity entity;
+
+            try {
+                entity = new StringEntity(body);
+            }
+            catch (UnsupportedEncodingException e) {
+                String errorMessage = String.format("Exception when building post body %s. Exception %s", body, e);
+                LOGGER.error(errorMessage);
+                throw new ApiException(errorMessage);
+            }
+
+            postRequest.setEntity(entity);
+        }
+
+        addQueryParams(postRequest, queryParams);
+        addHeaders(postRequest, headers);
+        RestResponse retVal = sendRequest(postRequest);
+
+        return retVal;
+    }
     //endregion
 
     //region Private Methods
     private static RestResponse sendRequest(HttpUriRequest urlRequest) throws ApiException {
-        RestResponse retVal = null;
+        RestResponse retVal;
 
         RequestConfig.Builder configBuilder = RequestConfig.custom();
 
@@ -136,7 +174,7 @@ public class RestClient {
             rd = new BufferedReader(new InputStreamReader(response.getEntity().getContent(), StandardCharsets.UTF_8));
 
             StringBuffer result = new StringBuffer();
-            String       line   = "";
+            String       line;
             while ((line = rd.readLine()) != null) {
                 result.append(line);
             }
