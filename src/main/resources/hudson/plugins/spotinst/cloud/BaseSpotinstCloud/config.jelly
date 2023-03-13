@@ -17,7 +17,9 @@
         <f:textbox/>
     </f:entry>
     <f:entry title="${%Instance Pending minutes before termination}">
-        <f:number value="${it.pendingThreshold}" field="pendingThreshold" clazz="required positive-number" min="1" checkMessage="Required field. You haven't specified a positive number - this setting will be ignored."/>
+        <f:number value="${instance.pendingThreshold != null ? it.pendingThreshold : descriptor.getDefaultPendingThreshold()}" field="pendingThreshold"
+                  clazz="required positive-number" min="1"
+                  checkMessage="Required field. You haven't specified a positive number - this setting will be ignored."/>
     </f:entry>
     <f:entry title="${%Remote root directory}" field="workspaceDir" description='For SSH clouds, root directory must be specified and must exist on the agent in order for it to connect. For JNLP clouds the default may vary. Using an absolute path is recommended.'>
         <f:textbox/>

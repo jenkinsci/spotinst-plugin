@@ -890,6 +890,10 @@ public abstract class BaseSpotinstCloud extends Cloud {
             return Jenkins.get().getDescriptorList(ComputerConnector.class).stream()
                           .filter(x -> x.isSubTypeOf(SSHConnector.class)).collect(Collectors.toList());
         }
+
+        public Integer getDefaultPendingThreshold(){
+            return Constants.PENDING_INSTANCE_TIMEOUT_IN_MINUTES;
+        }
     }
     //endregion
 }

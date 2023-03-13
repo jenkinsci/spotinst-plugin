@@ -303,6 +303,11 @@ public class AzureSpotCloud extends BaseSpotinstCloud {
         public String getDisplayName() {
             return "Spot Azure Elastigroup";
         }
+
+        @Override
+        public Integer getDefaultPendingThreshold() {
+            return Constants.AZURE_PENDING_INSTANCE_TIMEOUT_IN_MINUTES;
+        }
     }
     //endregion
 

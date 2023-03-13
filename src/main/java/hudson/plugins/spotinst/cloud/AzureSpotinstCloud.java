@@ -353,6 +353,11 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
         public String getDisplayName() {
             return "Spot Azure LPVM (old)";
         }
+
+        @Override
+        public Integer getDefaultPendingThreshold() {
+            return Constants.AZURE_PENDING_INSTANCE_TIMEOUT_IN_MINUTES;
+        }
     }
     //endregion
 }
