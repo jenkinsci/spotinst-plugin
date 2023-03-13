@@ -48,7 +48,7 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
         }
 
         else {
-            tokenToUse = credentialsStoreSpotToken;
+            tokenToUse = getCredentialsStoreSpotToken();
         }
 
         SpotinstContext.getInstance().setAccountId(accountId);
@@ -57,7 +57,7 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
 
     @Override
     public boolean configure(StaplerRequest req, JSONObject json) {
-        String tokenToUse = null;
+        String tokenToUse;
         accountId = json.getString("accountId");
         boolean isSpecifiedCredentialMethod = json.has("credentialsMethod");
 
@@ -71,18 +71,7 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
 
         if (credentialsMethod.equals(CredentialsMethodEnum.CredentialsStore.getName())) {
             credentialsId = json.getString("credentialsId");
-            CredentialsStoreReader credentialsStoreReader = new CredentialsStoreReader(credentialsId);
-            SpotTokenCredentials   spotTokenCredentials   = credentialsStoreReader.getSpotToken();
-
-            if (spotTokenCredentials != null) {
-                Secret secret = spotTokenCredentials.getSecret();
-                credentialsStoreSpotToken = secret.getEncryptedValue();
-                tokenToUse = secret.getPlainText();
-            }
-            else {
-                String failureMassage = "Failed to load token match to credentials ID: %s";
-                LOGGER.error(String.format(failureMassage, credentialsId));
-            }
+            tokenToUse = getCredentialsStoreSpotToken();
         }
         else {
             spotinstToken = json.getString("spotinstToken");
@@ -95,6 +84,24 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
         SpotinstContext.getInstance().setAccountId(accountId);
 
         return true;
+    }
+
+    private String getCredentialsStoreSpotToken(){
+        String retVal = null;
+        CredentialsStoreReader credentialsStoreReader = new CredentialsStoreReader(credentialsId);
+        SpotTokenCredentials   spotTokenCredentials   = credentialsStoreReader.getSpotToken();
+
+        if (spotTokenCredentials != null) {
+            Secret secret = spotTokenCredentials.getSecret();
+            credentialsStoreSpotToken = secret.getEncryptedValue();
+            retVal = secret.getPlainText();
+        }
+        else {
+            String failureMassage = "Failed to load token match to credentials ID: %s";
+            LOGGER.error(String.format(failureMassage, credentialsId));
+        }
+
+        return retVal;
     }
 
     private static int validateToken(String token, String accountId) {
