@@ -35,7 +35,6 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
     private String accountId;
     private String credentialsMethod;
     private String credentialsId;
-    private String credentialsStoreSpotToken;
     //endregion
 
     public SpotinstTokenConfig() {
@@ -93,7 +92,6 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
 
         if (spotTokenCredentials != null) {
             Secret secret = spotTokenCredentials.getSecret();
-            credentialsStoreSpotToken = secret.getEncryptedValue();
             retVal = secret.getPlainText();
         }
         else {
@@ -161,7 +159,7 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
             retToken = spotinstToken;
         }
         else{
-            retToken = credentialsStoreSpotToken;
+            retToken = getCredentialsStoreSpotToken();
         }
 
         return retToken;
