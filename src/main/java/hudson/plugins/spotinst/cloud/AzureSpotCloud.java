@@ -43,10 +43,11 @@ public class AzureSpotCloud extends BaseSpotinstCloud {
                           Boolean shouldRetriggerBuilds, String vmargs,
                           EnvironmentVariablesNodeProperty environmentVariables, ToolLocationNodeProperty toolLocations,
                           String accountId, ConnectionMethodEnum connectionMethod, ComputerConnector computerConnector,
-                          Boolean shouldUsePrivateIp, SpotGlobalExecutorOverride globalExecutorOverride) {
+                          Boolean shouldUsePrivateIp, SpotGlobalExecutorOverride globalExecutorOverride,
+                          Integer pendingThreshold) {
         super(groupId, labelString, idleTerminationMinutes, workspaceDir, usage, tunnel, shouldUseWebsocket,
               shouldRetriggerBuilds, vmargs, environmentVariables, toolLocations, accountId, connectionMethod,
-              computerConnector, shouldUsePrivateIp, globalExecutorOverride);
+              computerConnector, shouldUsePrivateIp, globalExecutorOverride, pendingThreshold);
     }
     //endregion
 
@@ -103,8 +104,12 @@ public class AzureSpotCloud extends BaseSpotinstCloud {
     }
 
     @Override
-    protected Integer getPendingThreshold() {
-        return Constants.AZURE_PENDING_INSTANCE_TIMEOUT_IN_MINUTES;
+    public Integer getPendingThreshold() {
+        if (pendingThreshold == null) {
+            pendingThreshold = Constants.AZURE_PENDING_INSTANCE_TIMEOUT_IN_MINUTES;
+        }
+
+        return pendingThreshold;
     }
 
     @Override

@@ -56,6 +56,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
     private   ConnectionMethodEnum              connectionMethod;
     private   Boolean                           shouldUsePrivateIp;
     private   SpotGlobalExecutorOverride        globalExecutorOverride;
+    protected Integer                           pendingThreshold;
     private   GroupLockingManager               groupLockingManager;
     //endregion
 
@@ -66,7 +67,8 @@ public abstract class BaseSpotinstCloud extends Cloud {
                              EnvironmentVariablesNodeProperty environmentVariables,
                              ToolLocationNodeProperty toolLocations, String accountId,
                              ConnectionMethodEnum connectionMethod, ComputerConnector computerConnector,
-                             Boolean shouldUsePrivateIp, SpotGlobalExecutorOverride globalExecutorOverride) {
+                             Boolean shouldUsePrivateIp, SpotGlobalExecutorOverride globalExecutorOverride,
+                             Integer pendingThreshold) {
 
         super(groupId);
         this.groupId = groupId;
@@ -113,6 +115,15 @@ public abstract class BaseSpotinstCloud extends Cloud {
         }
         else {
             this.globalExecutorOverride = new SpotGlobalExecutorOverride(false, 1);
+        }
+
+        boolean isValidPendingThreshold = pendingThreshold != null && pendingThreshold > 0;
+
+        if (isValidPendingThreshold) {
+            this.pendingThreshold = pendingThreshold;
+        }
+        else{
+            this.pendingThreshold = getPendingThreshold();
         }
 
         groupLockingManager = new GroupLockingManager(groupId, accountId);
@@ -671,10 +682,6 @@ public abstract class BaseSpotinstCloud extends Cloud {
         return NO_OVERRIDDEN_NUM_OF_EXECUTORS;
     }
 
-    protected Integer getPendingThreshold() {
-        return Constants.PENDING_INSTANCE_TIMEOUT_IN_MINUTES;
-    }
-
     protected Integer getSlaveOfflineThreshold() {
         return Constants.SLAVE_OFFLINE_THRESHOLD_IN_MINUTES;
     }
@@ -791,6 +798,23 @@ public abstract class BaseSpotinstCloud extends Cloud {
 
     public void setGlobalExecutorOverride(SpotGlobalExecutorOverride globalExecutorOverride) {
         this.globalExecutorOverride = globalExecutorOverride;
+    }
+
+    public Integer getPendingThreshold() {
+        if (pendingThreshold == null) {
+            pendingThreshold = Constants.PENDING_INSTANCE_TIMEOUT_IN_MINUTES;
+        }
+
+        return pendingThreshold;
+    }
+
+    @DataBoundSetter
+    public void setPendingThreshold(Integer pendingThreshold) {
+        boolean isValidPendingThreshold = pendingThreshold != null && pendingThreshold > 0;
+
+        if (isValidPendingThreshold) {
+            this.pendingThreshold = pendingThreshold;
+        }
     }
 
 
