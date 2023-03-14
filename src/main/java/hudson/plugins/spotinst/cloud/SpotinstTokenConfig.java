@@ -88,23 +88,6 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
         return true;
     }
 
-    private String getCredentialsStoreSpotToken(){
-        String retVal = null;
-        CredentialsStoreReader credentialsStoreReader = new CredentialsStoreReader(credentialsId);
-        SpotTokenCredentials   spotTokenCredentials   = credentialsStoreReader.getSpotToken();
-
-        if (spotTokenCredentials != null) {
-            Secret secret = spotTokenCredentials.getSecret();
-            retVal = secret.getPlainText();
-        }
-        else {
-            String failureMassage = "Failed to load token match to credentials ID: %s";
-            LOGGER.error(String.format(failureMassage, credentialsId));
-        }
-
-        return retVal;
-    }
-
     private static int validateToken(String token, String accountId) {
         int retVal = SpotinstApi.validateToken(token, accountId);
         return retVal;
@@ -208,6 +191,23 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
             credentialsStoreSpotToken = null;
             save();
         }
+    }
+
+    private String getCredentialsStoreSpotToken(){
+        String retVal = null;
+        CredentialsStoreReader credentialsStoreReader = new CredentialsStoreReader(credentialsId);
+        SpotTokenCredentials   spotTokenCredentials   = credentialsStoreReader.getSpotToken();
+
+        if (spotTokenCredentials != null) {
+            Secret secret = spotTokenCredentials.getSecret();
+            retVal = secret.getPlainText();
+        }
+        else {
+            String failureMassage = "Failed to load token match to credentials ID: %s";
+            LOGGER.error(String.format(failureMassage, credentialsId));
+        }
+
+        return retVal;
     }
     //endregion
 }
