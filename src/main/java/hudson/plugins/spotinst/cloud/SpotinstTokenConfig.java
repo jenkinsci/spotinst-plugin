@@ -73,6 +73,7 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
         if (credentialsMethod.equals(CredentialsMethodEnum.CredentialsStore.getName())) {
             credentialsId = json.getString("credentialsId");
             tokenToUse = getCredentialsStoreSpotToken();
+            spotinstToken = null;
         }
         else {
             spotinstToken = json.getString("spotinstToken");
@@ -155,16 +156,7 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
     }
 
     public String getSpotinstToken() {
-        String retToken;
-
-        if(credentialsMethod == null || credentialsMethod.equals(CredentialsMethodEnum.PlainText.getName())){
-            retToken = spotinstToken;
-        }
-        else{
-            retToken = getCredentialsStoreSpotToken();
-        }
-
-        return retToken;
+        return spotinstToken;
     }
 
     public String getAccountId() {
@@ -217,4 +209,5 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
             save();
         }
     }
+    //endregion
 }
