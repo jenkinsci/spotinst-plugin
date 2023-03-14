@@ -35,10 +35,12 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
     private String accountId;
     private String credentialsMethod;
     private String credentialsId;
+    private String credentialsStoreSpotToken;
     //endregion
 
     public SpotinstTokenConfig() {
         load();
+        clearPreviousVersionsCredentialsSpotToken();
         String tokenToUse;
         boolean isPlanTextToken = credentialsMethod == null || credentialsMethod.equals(CredentialsMethodEnum.PlainText.getName());
 
@@ -204,5 +206,15 @@ public class SpotinstTokenConfig extends GlobalConfiguration {
                                                               Collections.emptyList(), CredentialsMatchers.always());
 
         return retVal;
+    }
+
+    //region private methods
+    private void clearPreviousVersionsCredentialsSpotToken(){
+        //The configuration used to have a plain text secret token in xml file
+        //In this version - we don't use the secret from the xml anymore, and need to remove it
+        if(credentialsStoreSpotToken != null){
+            credentialsStoreSpotToken = null;
+            save();
+        }
     }
 }
