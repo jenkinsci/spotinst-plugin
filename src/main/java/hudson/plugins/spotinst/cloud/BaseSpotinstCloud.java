@@ -122,7 +122,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
         if (isValidPendingThreshold) {
             this.pendingThreshold = pendingThreshold;
         }
-        else{
+        else {
             this.pendingThreshold = getPendingThreshold();
         }
 
@@ -802,7 +802,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
 
     public Integer getPendingThreshold() {
         if (pendingThreshold == null) {
-            pendingThreshold = Constants.PENDING_INSTANCE_TIMEOUT_IN_MINUTES;
+            pendingThreshold = Constants.DEFAULT_PENDING_INSTANCE_TIMEOUT_IN_MINUTES;
         }
 
         return pendingThreshold;
@@ -891,8 +891,8 @@ public abstract class BaseSpotinstCloud extends Cloud {
                           .filter(x -> x.isSubTypeOf(SSHConnector.class)).collect(Collectors.toList());
         }
 
-        public Integer getDefaultPendingThreshold(){
-            return Constants.PENDING_INSTANCE_TIMEOUT_IN_MINUTES;
+        public Integer getDefaultPendingThreshold() {
+            return Constants.DEFAULT_PENDING_INSTANCE_TIMEOUT_IN_MINUTES;
         }
     }
     //endregion

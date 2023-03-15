@@ -169,7 +169,7 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
     @Override
     public Integer getPendingThreshold() {
         if (pendingThreshold == null) {
-            pendingThreshold = Constants.AZURE_PENDING_INSTANCE_TIMEOUT_IN_MINUTES;
+            pendingThreshold = Constants.DEFAULT_AZURE_PENDING_INSTANCE_TIMEOUT_IN_MINUTES;
         }
 
         return pendingThreshold;
@@ -356,7 +356,7 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
 
         @Override
         public Integer getDefaultPendingThreshold() {
-            return Constants.AZURE_PENDING_INSTANCE_TIMEOUT_IN_MINUTES;
+            return Constants.DEFAULT_AZURE_PENDING_INSTANCE_TIMEOUT_IN_MINUTES;
         }
     }
     //endregion
