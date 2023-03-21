@@ -53,6 +53,11 @@ public class AzureSpotCloud extends BaseSpotinstCloud {
 
     // region Override Methods
     @Override
+    public DescriptorImpl getDescriptor() {
+        return (DescriptorImpl) super.getDescriptor();
+    }
+
+    @Override
     List<SpotinstSlave> scaleUp(ProvisionRequest request) {
         List<SpotinstSlave> retVal           = new LinkedList<>();
         IAzureVmGroupRepo   azureVmGroupRepo = RepoManager.getInstance().getAzureVmGroupRepo();

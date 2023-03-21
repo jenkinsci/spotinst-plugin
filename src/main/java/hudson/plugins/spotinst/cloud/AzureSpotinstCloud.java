@@ -53,7 +53,7 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
     //region Overrides
     @Override
     public DescriptorImpl getDescriptor() {
-        return (DescriptorImpl) super.getDescriptor();//Jenkins.get().getDescriptorOrDie(this.getClass());
+        return (DescriptorImpl) super.getDescriptor();
     }
 
     @Override
