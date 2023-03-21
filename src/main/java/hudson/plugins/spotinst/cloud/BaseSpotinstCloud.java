@@ -802,7 +802,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
 
     public Integer getPendingThreshold() {
         if (pendingThreshold == null) {
-            pendingThreshold = getDescriptor().getDefaultPendingThreshold();
+            pendingThreshold = Constants.DEFAULT_PENDING_INSTANCE_TIMEOUT_IN_MINUTES;
         }
 
         return pendingThreshold;

@@ -53,7 +53,7 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
     //region Overrides
     @Override
     public DescriptorImpl getDescriptor() {
-        return (DescriptorImpl) super.getDescriptor();
+        return (DescriptorImpl) super.getDescriptor();//Jenkins.get().getDescriptorOrDie(this.getClass());
     }
 
     @Override
@@ -166,14 +166,14 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
         super.internalMonitorInstances();
     }
 
-//    @Override
-//    public Integer getPendingThreshold() {
-//        if (pendingThreshold == null) {
-//            pendingThreshold = Constants.DEFAULT_AZURE_PENDING_INSTANCE_TIMEOUT_IN_MINUTES;
-//        }
-//
-//        return pendingThreshold;
-//    }
+    @Override
+    public Integer getPendingThreshold() {
+        if (pendingThreshold == null) {
+            pendingThreshold = Constants.DEFAULT_AZURE_PENDING_INSTANCE_TIMEOUT_IN_MINUTES;
+        }
+
+        return pendingThreshold;
+    }
 
     @Override
     public Boolean onInstanceReady(String instanceId) {
