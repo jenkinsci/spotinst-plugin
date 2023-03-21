@@ -167,15 +167,6 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
     }
 
     @Override
-    public Integer getPendingThreshold() {
-        if (pendingThreshold == null) {
-            pendingThreshold = Constants.DEFAULT_AZURE_PENDING_INSTANCE_TIMEOUT_IN_MINUTES;
-        }
-
-        return pendingThreshold;
-    }
-
-    @Override
     public Boolean onInstanceReady(String instanceId) {
         Boolean retVal = isCloudReadyForGroupCommunication();
 

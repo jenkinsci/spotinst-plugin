@@ -109,15 +109,6 @@ public class AzureSpotCloud extends BaseSpotinstCloud {
     }
 
     @Override
-    public Integer getPendingThreshold() {
-        if (pendingThreshold == null) {
-            pendingThreshold = Constants.DEFAULT_AZURE_PENDING_INSTANCE_TIMEOUT_IN_MINUTES;
-        }
-
-        return pendingThreshold;
-    }
-
-    @Override
     protected void internalSyncGroupInstances() {
         IAzureVmGroupRepo               azureVmGroupRepo  = RepoManager.getInstance().getAzureVmGroupRepo();
         ApiResponse<List<AzureGroupVm>> instancesResponse = azureVmGroupRepo.getGroupVms(groupId, this.accountId);
