@@ -13,7 +13,7 @@
                     <f:textbox/>
                 </f:entry>
                 <f:radioBlock
-                        checked="${instance == null || instance.credentialsMethod == null || instance.credentialsMethod == 'PlainText'}"
+                        checked="${instance == null || instance.credentialsMethod == null || instance.credentialsMethod == 'Plain Text'}"
                         name="credentialsMethod" title="Plain Text Personal Access Token" value="Plain Text"
                         inline="true">
                     <f:entry field="spotinstToken">
@@ -23,7 +23,7 @@
                                       with="spotinstToken,accountId"/>
                 </f:radioBlock>
 
-                <f:radioBlock checked="${instance.credentialsMethod == 'CredentialsStore'}" name="credentialsMethod"
+                <f:radioBlock checked="${instance.credentialsMethod == 'Credentials Store'}" name="credentialsMethod"
                               title="Credentials Store Personal Access Token" value="Credentials Store" inline="true">
                     <f:entry field="credentialsId">
                         <c:select/>
