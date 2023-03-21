@@ -53,6 +53,11 @@ public class AzureSpotCloud extends BaseSpotinstCloud {
 
     // region Override Methods
     @Override
+    public AzureSpotinstCloud.DescriptorImpl getDescriptor() {
+        return (AzureSpotinstCloud.DescriptorImpl) super.getDescriptor();
+    }
+
+    @Override
     List<SpotinstSlave> scaleUp(ProvisionRequest request) {
         List<SpotinstSlave> retVal           = new LinkedList<>();
         IAzureVmGroupRepo   azureVmGroupRepo = RepoManager.getInstance().getAzureVmGroupRepo();
@@ -103,14 +108,14 @@ public class AzureSpotCloud extends BaseSpotinstCloud {
         return "azure/compute";
     }
 
-    @Override
-    public Integer getPendingThreshold() {
-        if (pendingThreshold == null) {
-            pendingThreshold = Constants.DEFAULT_AZURE_PENDING_INSTANCE_TIMEOUT_IN_MINUTES;
-        }
-
-        return pendingThreshold;
-    }
+//    @Override
+//    public Integer getPendingThreshold() {
+//        if (pendingThreshold == null) {
+//            pendingThreshold = Constants.DEFAULT_AZURE_PENDING_INSTANCE_TIMEOUT_IN_MINUTES;
+//        }
+//
+//        return pendingThreshold;
+//    }
 
     @Override
     protected void internalSyncGroupInstances() {
