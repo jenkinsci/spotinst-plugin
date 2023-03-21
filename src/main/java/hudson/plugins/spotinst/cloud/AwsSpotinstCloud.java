@@ -44,11 +44,12 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
                             EnvironmentVariablesNodeProperty environmentVariables,
                             ToolLocationNodeProperty toolLocations, String accountId,
                             ConnectionMethodEnum connectionMethod, ComputerConnector computerConnector,
-                            Boolean shouldUsePrivateIp, SpotGlobalExecutorOverride globalExecutorOverride) {
+                            Boolean shouldUsePrivateIp, SpotGlobalExecutorOverride globalExecutorOverride,
+                            Integer pendingThreshold) {
 
         super(groupId, labelString, idleTerminationMinutes, workspaceDir, usage, tunnel, shouldUseWebsocket,
               shouldRetriggerBuilds, vmargs, environmentVariables, toolLocations, accountId, connectionMethod,
-              computerConnector, shouldUsePrivateIp, globalExecutorOverride);
+              computerConnector, shouldUsePrivateIp, globalExecutorOverride, pendingThreshold);
 
         this.executorsForTypes = new LinkedList<>();
 
@@ -147,8 +148,8 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
 
     @Override
     public Map<String, String> getInstanceIpsById() {
-        Map<String, String> retVal       = new HashMap<>();
-        IAwsGroupRepo       awsGroupRepo = RepoManager.getInstance().getAwsGroupRepo();
+        Map<String, String>                 retVal            = new HashMap<>();
+        IAwsGroupRepo                       awsGroupRepo      = RepoManager.getInstance().getAwsGroupRepo();
         ApiResponse<List<AwsGroupInstance>> instancesResponse = awsGroupRepo.getGroupInstances(groupId, accountId);
 
         if (instancesResponse.isRequestSucceed()) {

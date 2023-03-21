@@ -42,17 +42,18 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
                               EnvironmentVariablesNodeProperty environmentVariables,
                               ToolLocationNodeProperty toolLocations, String accountId,
                               ConnectionMethodEnum connectionMethod, ComputerConnector computerConnector,
-                              Boolean shouldUsePrivateIp, SpotGlobalExecutorOverride globalExecutorOverride) {
+                              Boolean shouldUsePrivateIp, SpotGlobalExecutorOverride globalExecutorOverride,
+                              Integer pendingThreshold) {
         super(groupId, labelString, idleTerminationMinutes, workspaceDir, usage, tunnel, shouldUseWebsocket,
               shouldRetriggerBuilds, vmargs, environmentVariables, toolLocations, accountId, connectionMethod,
-              computerConnector, shouldUsePrivateIp, globalExecutorOverride);
+              computerConnector, shouldUsePrivateIp, globalExecutorOverride, pendingThreshold);
     }
     //endregion
 
     //region Overrides
     @Override
     public DescriptorImpl getDescriptor() {
-        return (DescriptorImpl) super.getDescriptor();//Jenkins.get().getDescriptorOrDie(this.getClass());
+        return (DescriptorImpl) super.getDescriptor();
     }
 
     @Override
@@ -133,7 +134,7 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
 
     @Override
     protected void internalMonitorInstances() {
-        IAzureGroupRepo                       azureGroupRepo    = RepoManager.getInstance().getAzureGroupRepo();
+        IAzureGroupRepo azureGroupRepo = RepoManager.getInstance().getAzureGroupRepo();
         ApiResponse<List<AzureGroupInstance>> instancesResponse =
                 azureGroupRepo.getGroupInstances(groupId, this.accountId);
 
@@ -163,11 +164,6 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
         }
 
         super.internalMonitorInstances();
-    }
-
-    @Override
-    protected Integer getPendingThreshold() {
-        return Constants.AZURE_PENDING_INSTANCE_TIMEOUT_IN_MINUTES;
     }
 
     @Override
@@ -347,6 +343,11 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
         @Override
         public String getDisplayName() {
             return "Spot Azure LPVM (old)";
+        }
+
+        @Override
+        public Integer getDefaultPendingThreshold() {
+            return Constants.DEFAULT_AZURE_PENDING_INSTANCE_TIMEOUT_IN_MINUTES;
         }
     }
     //endregion
