@@ -88,7 +88,7 @@ public class SpotinstCloudTest {
         String groupId = "sig-1";
         BaseSpotinstCloud spotinstCloud =
                 new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, SlaveUsageEnum.NORMAL, "", false, true, "", null,
-                                     null, null, null, null, null, null);
+                                     null, null, null, null, null, null, null);
         Map<String, PendingInstance> pendingInstances = new HashMap<>();
         pendingInstances.put("sir-1", buildPendingInstance("sir-1", PendingInstance.StatusEnum.PENDING, 2));
         spotinstCloud.setPendingInstances(pendingInstances);
@@ -103,7 +103,7 @@ public class SpotinstCloudTest {
         String accountId = "act-111";
         AwsSpotinstCloud spotinstCloud =
                 new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, SlaveUsageEnum.NORMAL, "", false, true, "", null,
-                                     null, accountId, null, null, null, null);
+                                     null, accountId, null, null, null, null, null);
 
         jenkinsRule.jenkins.clouds.add(spotinstCloud);
         Map<String, PendingInstance> pendingInstances = new HashMap<>();
@@ -136,7 +136,7 @@ public class SpotinstCloudTest {
         String groupId = "sig-1";
         BaseSpotinstCloud spotCloud =
                 new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, null, "", true, null, null, null, null, null,
-                                     null, null, false, null);
+                                     null, null, false, null, null);
         jenkinsRule.jenkins.clouds.add(spotCloud);
         assertEquals(spotCloud.getConnectionMethod(), ConnectionMethodEnum.JNLP);
 
@@ -171,7 +171,7 @@ public class SpotinstCloudTest {
         String accountId = "act-111";
         BaseSpotinstCloud spotCloud =
                 new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, null, "", true, null, null, null, null, accountId,
-                                     ConnectionMethodEnum.SSH, getSSHConnector(), false, null);
+                                     ConnectionMethodEnum.SSH, getSSHConnector(), false, null, null);
         jenkinsRule.jenkins.clouds.add(spotCloud);
         assertEquals(spotCloud.getConnectionMethod(), ConnectionMethodEnum.SSH);
 
@@ -217,7 +217,7 @@ public class SpotinstCloudTest {
         String accountId = "act-111";
         BaseSpotinstCloud spotCloud =
                 new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, null, "", true, null, null, null, null, accountId,
-                                     ConnectionMethodEnum.SSH, getSSHConnector(), false, null);
+                                     ConnectionMethodEnum.SSH, getSSHConnector(), false, null, null);
         jenkinsRule.jenkins.clouds.add(spotCloud);
         assertEquals(spotCloud.getConnectionMethod(), ConnectionMethodEnum.SSH);
 
@@ -266,7 +266,7 @@ public class SpotinstCloudTest {
         String groupId = "sig-1";
         BaseSpotinstCloud spotCloud =
                 new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, null, "", true, null, null, null, null, null,
-                                     null, null, null, null);
+                                     null, null, null, null, null);
 
         assertEquals(spotCloud.getShouldUsePrivateIp(), false);
     }
@@ -276,7 +276,7 @@ public class SpotinstCloudTest {
         String groupId = "sig-1";
         BaseSpotinstCloud spotCloud =
                 new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, null, "", true, null, null, null, null, null,
-                                     null, null, true, null);
+                                     null, null, true, null, null);
 
         assertEquals(spotCloud.getShouldUsePrivateIp(), true);
     }
@@ -286,7 +286,7 @@ public class SpotinstCloudTest {
         String groupId = "sig-1";
         BaseSpotinstCloud spotCloud =
                 new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, null, "", true, null, null, null, null, null,
-                                     null, null, false, null);
+                                     null, null, false, null, null);
 
         assertEquals(spotCloud.getShouldUsePrivateIp(), false);
     }
@@ -298,7 +298,7 @@ public class SpotinstCloudTest {
         String groupId = "sig-1";
         BaseSpotinstCloud spotinstCloud =
                 new GcpSpotinstCloud(groupId, "", "20", "/tmp", null, "", false, true, "", null, null, null, null, null,
-                                     null, null);
+                                     null, null, null);
         Map<String, PendingInstance> pendingInstances = new HashMap<>();
         pendingInstances.put("sin-1", buildPendingInstance("sin-1", PendingInstance.StatusEnum.PENDING, 2));
         spotinstCloud.setPendingInstances(pendingInstances);
@@ -313,7 +313,7 @@ public class SpotinstCloudTest {
         String accountId = "act-111";
         GcpSpotinstCloud spotinstCloud =
                 new GcpSpotinstCloud(groupId, "", "20", "/tmp", null, "", false, true, "", null, null, accountId, null,
-                                     null, null, null);
+                                     null, null, null, null);
         jenkinsRule.jenkins.clouds.add(spotinstCloud);
         Map<String, PendingInstance> pendingInstances = new HashMap<>();
         pendingInstances.put("sin-1", buildPendingInstance("sin-1", PendingInstance.StatusEnum.PENDING, 2));
@@ -347,7 +347,7 @@ public class SpotinstCloudTest {
         String groupId = "sig-1";
         BaseSpotinstCloud spotinstCloud =
                 new AzureSpotinstCloud(groupId, "", "20", "/tmp", null, "", false, false, "", null, null, null, null,
-                                       null, null, null);
+                                       null, null, null, null);
         Map<String, PendingInstance> pendingInstances = new HashMap<>();
         pendingInstances.put("q3213", buildPendingInstance(groupId, PendingInstance.StatusEnum.PENDING, 1));
         pendingInstances.put("41234", buildPendingInstance(groupId, PendingInstance.StatusEnum.PENDING, 1));
@@ -363,7 +363,7 @@ public class SpotinstCloudTest {
         String accountId = "act-111";
         AzureSpotinstCloud spotinstCloud =
                 new AzureSpotinstCloud(groupId, "", "20", "/tmp", null, "", false, false, "", null, null, accountId,
-                                       null, null, null, null);
+                                       null, null, null, null, null);
         Map<String, PendingInstance> pendingInstances = new HashMap<>();
         pendingInstances.put("asda", buildPendingInstance(groupId, PendingInstance.StatusEnum.PENDING, 1));
         pendingInstances.put("ada", buildPendingInstance(groupId, PendingInstance.StatusEnum.PENDING, 1));
@@ -391,7 +391,7 @@ public class SpotinstCloudTest {
         String groupId = "sig-1";
         BaseSpotinstCloud spotinstCloud =
                 new AzureSpotCloud(groupId, "", "20", "/tmp", null, "", false, true, "", null, null, null, null, null,
-                                   null, null);
+                                   null, null, null);
 
         Map<String, PendingInstance> pendingInstances = new HashMap<>();
         pendingInstances.put("vm-1", buildPendingInstance("vm-1", PendingInstance.StatusEnum.PENDING, 2));
@@ -408,7 +408,7 @@ public class SpotinstCloudTest {
         String accountId = "act-111";
         BaseSpotinstCloud spotinstCloud =
                 new AzureSpotCloud(groupId, "", "20", "/tmp", null, "", false, true, "", null, null, accountId, null,
-                                   null, null, null);
+                                   null, null, null, null);
         jenkinsRule.jenkins.clouds.add(spotinstCloud);
         Map<String, PendingInstance> pendingInstances = new HashMap<>();
         pendingInstances.put("vm-1", buildPendingInstance("vm-1", PendingInstance.StatusEnum.PENDING, 2));
@@ -443,7 +443,7 @@ public class SpotinstCloudTest {
         String accountId = "act-111";
         BaseSpotinstCloud spotinstCloud =
                 new AzureSpotCloud(groupId, "", "20", "/tmp", null, "", false, true, "", null, null, accountId, null,
-                                   null, null, null);
+                                   null, null, null, null);
         jenkinsRule.jenkins.clouds.add(spotinstCloud);
         AzureScaleUpResultNewVm newSpot = new AzureScaleUpResultNewVm();
         newSpot.setVmName("vm-2");
@@ -469,7 +469,7 @@ public class SpotinstCloudTest {
         String accountId = "act-111";
         BaseSpotinstCloud spotinstCloud =
                 new AzureSpotCloud(groupId, "", "20", "/tmp", null, "", false, true, "", null, null, accountId, null,
-                                   null, null, null);
+                                   null, null, null, null);
         jenkinsRule.jenkins.clouds.add(spotinstCloud);
         AzureVmSizeEnum vmSizeBasicA1 = AzureVmSizeEnum.BASIC_A1;
         AzureVmSizeEnum vmSizeBasicA2 = AzureVmSizeEnum.BASIC_A2;
@@ -506,7 +506,7 @@ public class SpotinstCloudTest {
         String accountId = "act-111";
         BaseSpotinstCloud spotinstCloud =
                 new AzureSpotCloud(groupId, "", "20", "/tmp", null, "", false, true, "", null, null, accountId, null,
-                                   null, null, null);
+                                   null, null, null, null);
         jenkinsRule.jenkins.clouds.add(spotinstCloud);
         Map<String, PendingInstance> pendingInstances = new HashMap<>();
         pendingInstances.put("vm-1", buildPendingInstance("vm-1", PendingInstance.StatusEnum.PENDING, 2));
@@ -545,7 +545,7 @@ public class SpotinstCloudTest {
         String groupId = "sig-1";
         BaseSpotinstCloud spotCloud =
                 new AzureSpotCloud(groupId, "", "20", "/tmp", null, "", false, true, "", null, null, null, null, null,
-                                   null, null);
+                                   null, null, null);
 
         jenkinsRule.jenkins.clouds.add(spotCloud);
         assertEquals(spotCloud.getConnectionMethod(), ConnectionMethodEnum.JNLP);
@@ -581,7 +581,7 @@ public class SpotinstCloudTest {
         SpotGlobalExecutorOverride globalOverride = null;
         BaseSpotinstCloud cloud =
                 new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, null, "", true, null, null, null, null, null,
-                                     ConnectionMethodEnum.SSH, getSSHConnector(), false, globalOverride);
+                                     ConnectionMethodEnum.SSH, getSSHConnector(), false, globalOverride, null);
 
         jenkinsRule.jenkins.clouds.add(cloud);
         assertNotNull(cloud.getGlobalExecutorOverride());
@@ -598,7 +598,7 @@ public class SpotinstCloudTest {
         SpotGlobalExecutorOverride globalOverride = new SpotGlobalExecutorOverride(true, 23);
         BaseSpotinstCloud cloud =
                 new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, null, "", true, null, null, null, null, accountId,
-                                     ConnectionMethodEnum.SSH, getSSHConnector(), false, globalOverride);
+                                     ConnectionMethodEnum.SSH, getSSHConnector(), false, globalOverride, null);
 
         jenkinsRule.jenkins.clouds.add(cloud);
         AwsScaleResultNewSpot newSpot = new AwsScaleResultNewSpot();
@@ -638,7 +638,7 @@ public class SpotinstCloudTest {
         SpotGlobalExecutorOverride globalOverride = new SpotGlobalExecutorOverride(true, 23);
         BaseSpotinstCloud cloud =
                 new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, null, "", true, null, null, null, null, accountId,
-                                     ConnectionMethodEnum.SSH, getSSHConnector(), false, globalOverride);
+                                     ConnectionMethodEnum.SSH, getSSHConnector(), false, globalOverride, null);
 
         jenkinsRule.jenkins.clouds.add(cloud);
         AwsScaleResultNewSpot newSpot = new AwsScaleResultNewSpot();
@@ -684,7 +684,7 @@ public class SpotinstCloudTest {
         BaseSpotinstCloud cloud =
                 new AwsSpotinstCloud(groupId, "", "20", "/tmp", executorForTypes, null, "", true, null, null, null,
                                      null, accountId, ConnectionMethodEnum.SSH, getSSHConnector(), false,
-                                     globalOverride);
+                                     globalOverride, null);
 
         jenkinsRule.jenkins.clouds.add(cloud);
         AwsScaleResultNewSpot newSpot = new AwsScaleResultNewSpot();
@@ -726,7 +726,7 @@ public class SpotinstCloudTest {
         SpotGlobalExecutorOverride globalOverride = new SpotGlobalExecutorOverride(false, 23);
         BaseSpotinstCloud cloud =
                 new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, null, "", true, null, null, null, null, accountId,
-                                     ConnectionMethodEnum.SSH, getSSHConnector(), false, globalOverride);
+                                     ConnectionMethodEnum.SSH, getSSHConnector(), false, globalOverride, null);
 
         jenkinsRule.jenkins.clouds.add(cloud);
         AwsScaleResultNewSpot newSpot = new AwsScaleResultNewSpot();
@@ -766,7 +766,7 @@ public class SpotinstCloudTest {
         SpotGlobalExecutorOverride globalOverride = new SpotGlobalExecutorOverride(false, 23);
         BaseSpotinstCloud cloud =
                 new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, null, "", true, null, null, null, null, accountId,
-                                     ConnectionMethodEnum.SSH, getSSHConnector(), false, globalOverride);
+                                     ConnectionMethodEnum.SSH, getSSHConnector(), false, globalOverride, null);
 
         jenkinsRule.jenkins.clouds.add(cloud);
         AwsScaleResultNewSpot newSpot = new AwsScaleResultNewSpot();
@@ -813,7 +813,7 @@ public class SpotinstCloudTest {
         BaseSpotinstCloud cloud =
                 new AwsSpotinstCloud(groupId, "", "20", "/tmp", executorForTypes, null, "", true, null, null, null,
                                      null, accountId, ConnectionMethodEnum.SSH, getSSHConnector(), false,
-                                     globalOverride);
+                                     globalOverride, null);
 
         jenkinsRule.jenkins.clouds.add(cloud);
         AwsScaleResultNewSpot newSpot = new AwsScaleResultNewSpot();
@@ -854,7 +854,7 @@ public class SpotinstCloudTest {
         SpotGlobalExecutorOverride globalOverride = new SpotGlobalExecutorOverride(true, -23);
         BaseSpotinstCloud cloud =
                 new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, null, "", true, null, null, null, null, accountId,
-                                     ConnectionMethodEnum.SSH, getSSHConnector(), false, globalOverride);
+                                     ConnectionMethodEnum.SSH, getSSHConnector(), false, globalOverride, null);
 
         jenkinsRule.jenkins.clouds.add(cloud);
         AwsScaleResultNewSpot newSpot = new AwsScaleResultNewSpot();
@@ -894,7 +894,7 @@ public class SpotinstCloudTest {
         SpotGlobalExecutorOverride globalOverride = new SpotGlobalExecutorOverride(true, -23);
         BaseSpotinstCloud cloud =
                 new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, null, "", true, null, null, null, null, accountId,
-                                     ConnectionMethodEnum.SSH, getSSHConnector(), false, globalOverride);
+                                     ConnectionMethodEnum.SSH, getSSHConnector(), false, globalOverride, null);
 
         jenkinsRule.jenkins.clouds.add(cloud);
         AwsScaleResultNewSpot newSpot = new AwsScaleResultNewSpot();
@@ -941,7 +941,7 @@ public class SpotinstCloudTest {
         BaseSpotinstCloud cloud =
                 new AwsSpotinstCloud(groupId, "", "20", "/tmp", executorForTypes, null, "", true, null, null, null,
                                      null, accountId, ConnectionMethodEnum.SSH, getSSHConnector(), false,
-                                     globalOverride);
+                                     globalOverride, null);
 
         jenkinsRule.jenkins.clouds.add(cloud);
         AwsScaleResultNewSpot newSpot = new AwsScaleResultNewSpot();
@@ -981,7 +981,7 @@ public class SpotinstCloudTest {
         SpotGlobalExecutorOverride globalOverride = new SpotGlobalExecutorOverride(true, null);
         BaseSpotinstCloud cloud =
                 new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, null, "", true, null, null, null, null, accountId,
-                                     ConnectionMethodEnum.SSH, getSSHConnector(), false, globalOverride);
+                                     ConnectionMethodEnum.SSH, getSSHConnector(), false, globalOverride, null);
 
         jenkinsRule.jenkins.clouds.add(cloud);
         AwsScaleResultNewSpot newSpot = new AwsScaleResultNewSpot();
@@ -1021,7 +1021,7 @@ public class SpotinstCloudTest {
         SpotGlobalExecutorOverride globalOverride = new SpotGlobalExecutorOverride(true, null);
         BaseSpotinstCloud cloud =
                 new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, null, "", true, null, null, null, null, accountId,
-                                     ConnectionMethodEnum.SSH, getSSHConnector(), false, globalOverride);
+                                     ConnectionMethodEnum.SSH, getSSHConnector(), false, globalOverride, null);
 
         jenkinsRule.jenkins.clouds.add(cloud);
         AwsScaleResultNewSpot newSpot = new AwsScaleResultNewSpot();
@@ -1068,7 +1068,7 @@ public class SpotinstCloudTest {
         BaseSpotinstCloud cloud =
                 new AwsSpotinstCloud(groupId, "", "20", "/tmp", executorForTypes, null, "", true, null, null, null,
                                      null, accountId, ConnectionMethodEnum.SSH, getSSHConnector(), false,
-                                     globalOverride);
+                                     globalOverride, null);
 
         jenkinsRule.jenkins.clouds.add(cloud);
         AwsScaleResultNewSpot newSpot = new AwsScaleResultNewSpot();
@@ -1109,7 +1109,7 @@ public class SpotinstCloudTest {
         String accountId = "act-111";
         BaseSpotinstCloud cloud =
                 new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, null, "", true, null, null, null, null, accountId,
-                                     ConnectionMethodEnum.SSH, getSSHConnector(), false, null);
+                                     ConnectionMethodEnum.SSH, getSSHConnector(), false, null, null);
 
         jenkinsRule.jenkins.clouds.add(cloud);
         AwsScaleResultNewSpot newSpot = new AwsScaleResultNewSpot();
@@ -1148,7 +1148,7 @@ public class SpotinstCloudTest {
         String accountId = "act-111";
         BaseSpotinstCloud cloud =
                 new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, null, "", true, null, null, null, null, accountId,
-                                     ConnectionMethodEnum.SSH, getSSHConnector(), false, null);
+                                     ConnectionMethodEnum.SSH, getSSHConnector(), false, null, null);
 
         jenkinsRule.jenkins.clouds.add(cloud);
         AwsScaleResultNewSpot newSpot = new AwsScaleResultNewSpot();
@@ -1195,7 +1195,7 @@ public class SpotinstCloudTest {
         BaseSpotinstCloud cloud =
                 new AwsSpotinstCloud(groupId, "", "20", "/tmp", executorForTypes, null, "", true, null, null, null,
                                      null, accountId, ConnectionMethodEnum.SSH, getSSHConnector(), false,
-                                     globalOverride);
+                                     globalOverride, null);
 
         jenkinsRule.jenkins.clouds.add(cloud);
         AwsScaleResultNewSpot newSpot = new AwsScaleResultNewSpot();
@@ -1237,7 +1237,7 @@ public class SpotinstCloudTest {
         String accountId = "act-111";
         BaseSpotinstCloud cloud =
                 new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, null, "", true, null, null, null, null, accountId,
-                                     ConnectionMethodEnum.SSH, getSSHConnector(), false, null);
+                                     ConnectionMethodEnum.SSH, getSSHConnector(), false, null, null);
 
         jenkinsRule.jenkins.clouds.add(cloud);
         AwsInstanceTypeEnum   vmSizeBasicA2 = AwsInstanceTypeEnum.C4Large;
@@ -1292,7 +1292,7 @@ public class SpotinstCloudTest {
         String accountId = "act-111";
         BaseSpotinstCloud spotinstCloud =
                 new AzureSpotinstCloud(groupId, "", "20", "/tmp", null, "", false, false, "", null, null, accountId,
-                                       null, null, null, null);
+                                       null, null, null, null, null);
 
         assertTrue(spotinstCloud.getDescriptor().toString().contains("AzureSpotinstCloud"));
     }
