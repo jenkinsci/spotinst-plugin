@@ -43,14 +43,20 @@ public class AzureSpotCloud extends BaseSpotinstCloud {
                           Boolean shouldRetriggerBuilds, String vmargs,
                           EnvironmentVariablesNodeProperty environmentVariables, ToolLocationNodeProperty toolLocations,
                           String accountId, ConnectionMethodEnum connectionMethod, ComputerConnector computerConnector,
-                          Boolean shouldUsePrivateIp, SpotGlobalExecutorOverride globalExecutorOverride) {
+                          Boolean shouldUsePrivateIp, SpotGlobalExecutorOverride globalExecutorOverride,
+                          Integer pendingThreshold) {
         super(groupId, labelString, idleTerminationMinutes, workspaceDir, usage, tunnel, shouldUseWebsocket,
               shouldRetriggerBuilds, vmargs, environmentVariables, toolLocations, accountId, connectionMethod,
-              computerConnector, shouldUsePrivateIp, globalExecutorOverride);
+              computerConnector, shouldUsePrivateIp, globalExecutorOverride, pendingThreshold);
     }
     //endregion
 
     // region Override Methods
+    @Override
+    public DescriptorImpl getDescriptor() {
+        return (DescriptorImpl) super.getDescriptor();
+    }
+
     @Override
     List<SpotinstSlave> scaleUp(ProvisionRequest request) {
         List<SpotinstSlave> retVal           = new LinkedList<>();
@@ -100,11 +106,6 @@ public class AzureSpotCloud extends BaseSpotinstCloud {
     @Override
     public String getCloudUrl() {
         return "azure/compute";
-    }
-
-    @Override
-    protected Integer getPendingThreshold() {
-        return Constants.AZURE_PENDING_INSTANCE_TIMEOUT_IN_MINUTES;
     }
 
     @Override
@@ -297,6 +298,11 @@ public class AzureSpotCloud extends BaseSpotinstCloud {
         @Override
         public String getDisplayName() {
             return "Spot Azure Elastigroup";
+        }
+
+        @Override
+        public Integer getDefaultPendingThreshold() {
+            return Constants.DEFAULT_AZURE_PENDING_INSTANCE_TIMEOUT_IN_MINUTES;
         }
     }
     //endregion
