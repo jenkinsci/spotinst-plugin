@@ -26,7 +26,11 @@ public class GroupLockingManager {
     //region members
     private static final Logger LOGGER = LoggerFactory.getLogger(GroupLockingManager.class);
 
-    //Jenkins ID. must only be accesses from the getter. must be initialized lazily, cannot be generated during initialization
+    /*
+    Jenkins ID. Must only be accesses only through the getter.
+    Must be initialized lazily, cannot call JenkinsLocationConfiguration.get() before initialization is complete,
+    Causing major UI bugs (defecting Jobs' pipelines loading)
+    */
     private static String currentControllerIdentifier;
 
     private final GroupLockKey                    key;
