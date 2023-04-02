@@ -24,8 +24,10 @@ public class GroupLockingManager {
     //endregion
 
     //region members
-    private static final Logger LOGGER                      = LoggerFactory.getLogger(GroupLockingManager.class);
-    private static final String currentControllerIdentifier = generateControllerIdentifier();
+    private static final Logger LOGGER = LoggerFactory.getLogger(GroupLockingManager.class);
+
+    //Jenkins ID. must only be accesses from the getter. must be initialized lazily, cannot be generated during initialization
+    private static String currentControllerIdentifier;
 
     private final GroupLockKey                    key;
     private       SpotinstCloudCommunicationState cloudCommunicationState;
@@ -62,7 +64,7 @@ public class GroupLockingManager {
 
                 if (isGroupAlreadyHasAnyController) {
                     boolean isGroupBelongToCurrentController =
-                            StringUtils.equals(currentControllerIdentifier, lockGroupControllerValue);
+                            StringUtils.equals(getCurrentControllerIdentifier(), lockGroupControllerValue);
 
                     if (isGroupBelongToCurrentController) {
                         SetGroupLockExpiry();
@@ -137,7 +139,7 @@ public class GroupLockingManager {
         LOGGER.info(String.format("group %s doesn't belong to any controller. trying to lock it", getGroupId()));
         ApiResponse<String> lockGroupRepoResponse = RepoManager.getInstance().getLockRepo()
                                                                .acquireGroupControllerLock(getAccountId(), getGroupId(),
-                                                                                           currentControllerIdentifier,
+                                                                                           getCurrentControllerIdentifier(),
                                                                                            LOCK_TIME_TO_LIVE_IN_SECONDS);
 
         if (lockGroupRepoResponse.isRequestSucceed()) {
@@ -181,7 +183,7 @@ public class GroupLockingManager {
         LOGGER.debug("group {} already belongs this controller, reviving the lock duration.", getGroupId());
         ApiResponse<String> response = RepoManager.getInstance().getLockRepo()
                                                   .setGroupControllerLockExpiry(getAccountId(), getGroupId(),
-                                                                                currentControllerIdentifier,
+                                                                                getCurrentControllerIdentifier(),
                                                                                 LOCK_TIME_TO_LIVE_IN_SECONDS);
         if (response.isRequestSucceed()) {
             String  currentLock                  = response.getValue();
@@ -192,12 +194,12 @@ public class GroupLockingManager {
             }
             else {
                 LOGGER.error("Failed to revive the lock for group {} by the controller {}", getGroupId(),
-                             currentControllerIdentifier);
+                             getCurrentControllerIdentifier());
             }
         }
         else {
             LOGGER.error("Failed to revive the lock for group {} by the controller {}, error description:{}",
-                         getGroupId(), currentControllerIdentifier, response.getErrors());
+                         getGroupId(), getCurrentControllerIdentifier(), response.getErrors());
 
         }
     }
@@ -206,7 +208,7 @@ public class GroupLockingManager {
         boolean isGroupAlreadyHasAnyController = lockGroupController != null;
 
         if (isGroupAlreadyHasAnyController) {
-            boolean isGroupBelongToController = currentControllerIdentifier.equals(lockGroupController);
+            boolean isGroupBelongToController = getCurrentControllerIdentifier().equals(lockGroupController);
 
             if (isGroupBelongToController) {
                 ApiResponse<Integer> deleteGroupRepoResponse =
@@ -222,7 +224,7 @@ public class GroupLockingManager {
             }
             else {
                 LOGGER.error("Controller {} could not unlock group {} - already locked by another Controller {}",
-                             currentControllerIdentifier, getGroupId(), lockGroupController);
+                             getCurrentControllerIdentifier(), getGroupId(), lockGroupController);
             }
         }
         else {
@@ -327,6 +329,10 @@ public class GroupLockingManager {
 
     //region getters & setters
     public static String getCurrentControllerIdentifier() {
+        if (currentControllerIdentifier == null) {
+            currentControllerIdentifier = generateControllerIdentifier();
+        }
+
         return currentControllerIdentifier;
     }
 
