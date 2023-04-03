@@ -40,6 +40,11 @@ termination"
 
 [SpotinstPlugin-Versionhistory]
 == Version history
+[SpotinstPlugin-Version2.2.12(Apr2,2023)]
+=== Version 2.2.12 (Apr 2, 2023)
+
+* Fixed severe UI bug: Pipeline projects' configurations weren't shown
+
 [SpotinstPlugin-Version2.2.11(Mar21,2023)]
 === Version 2.2.11 (Mar 21, 2023)
 
