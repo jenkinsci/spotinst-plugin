@@ -184,6 +184,19 @@ public enum AwsInstanceTypeEnum implements ISpotInstanceTypeEnum {
     H18xlarge("h1.8xlarge", 32),
     H116xlarge("h1.16xlarge", 64),
 
+    INF124xlarge("inf1.24xlarge", 96),
+    INF16xlarge("inf1.6xlarge", 24),
+    INF12xlarge("inf1.2xlarge", 8),
+    INF1xlarge("inf1.xlarge", 4),
+
+    G4DNXlarge("g4dn.xlarge", 4),
+    G4DN2xlarge("g4dn.2xlarge", 8),
+    G4DN4xlarge("g4dn.4xlarge", 16),
+    G4DN8xlarge("g4dn.8xlarge", 32),
+    G4DN12xlarge("g4dn.12xlarge", 48),
+    G4DN16xlarge("g4dn.16xlarge", 64),
+    G4DNmetal("g4dn.metal", 96),
+
     C5D18xlarge("c5d.18xlarge", 72),
     C5D12xlarge("c5d.12xlarge", 48),
     C5D24xlarge("c5d.24xlarge", 96),
@@ -363,6 +376,15 @@ public enum AwsInstanceTypeEnum implements ISpotInstanceTypeEnum {
     C6G12xlarge("c6g.12xlarge", 48),
     C6G16xlarge("c6g.16xlarge", 64),
     C6GMetal("c6g.metal", 64),
+
+    C6GNMedium("c6gn.medium", 1),
+    C6GNLarge("c6gn.large", 2),
+    C6GNXlarge("c6gn.xlarge", 4),
+    C6GN2xlarge("c6gn.2xlarge", 8),
+    C6GN4xlarge("c6gn.4xlarge", 16),
+    C6GN8xlarge("c6gn.8xlarge", 32),
+    C6GN12xlarge("c6gn.12xlarge", 48),
+    C6GN16xlarge("c6gn.16xlarge", 64),
 
     R6GMedium("r6g.medium", 1),
     R6GLarge("r6g.large", 2),
