@@ -47,12 +47,6 @@ public class GroupLockingManager {
         if (StringUtils.isEmpty(groupId)) {
             setFailedState("Found a cloud with uninitialized Group ID. please check configuration");
         }
-        else if (StringUtils.isEmpty(accountId)) {
-            String errMsg = String.format(
-                    "Found a cloud with groupId '%s' and uninitialized Account ID. please check configuration",
-                    groupId);
-            setFailedState(errMsg);
-        }
     }
     //endregion
 
@@ -117,7 +111,7 @@ public class GroupLockingManager {
     }
 
     public boolean isActive() {
-        boolean retVal = StringUtils.isNotEmpty(getAccountId()) && StringUtils.isNotEmpty(getGroupId());
+        boolean retVal = StringUtils.isNotEmpty(getGroupId());
 
         return retVal;
     }
