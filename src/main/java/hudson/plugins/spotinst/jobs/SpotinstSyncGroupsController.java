@@ -46,6 +46,7 @@ public class SpotinstSyncGroupsController extends AsyncPeriodicWork {
     //region Public Methods
     @Initializer(after = InitMilestone.JOB_CONFIG_ADAPTED)
     public static void init() {
+        initFailedGroupLockingManagers();
         new SpotinstSyncGroupsController().execute(null);
 
         JobSynchronizer.getInstance().release();
@@ -81,7 +82,18 @@ public class SpotinstSyncGroupsController extends AsyncPeriodicWork {
     //endregion
 
     //region private methods
-    private Set<GroupLockingManager> getActiveGroupLockingManagers() {
+    private static void initFailedGroupLockingManagers() {
+        List<Cloud> clouds = Jenkins.getInstance().clouds;
+
+        if (clouds != null) {
+            clouds.stream().filter(cloud -> cloud instanceof BaseSpotinstCloud)
+                  .map(baseCloud -> ((BaseSpotinstCloud) baseCloud).getGroupLockingManager())
+                  .filter(groupLockingManager -> groupLockingManager.isCloudReadyForGroupCommunication() == false)
+                  .forEach(GroupLockingManager::setInitializingState);
+        }
+    }
+
+    private static Set<GroupLockingManager> getActiveGroupLockingManagers() {
         List<Cloud>              clouds = Jenkins.getInstance().clouds;
         Set<GroupLockingManager> retVal;
 

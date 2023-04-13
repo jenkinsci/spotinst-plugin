@@ -43,10 +43,6 @@ public class GroupLockingManager {
     public GroupLockingManager(String groupId, String accountId) {
         key = new GroupLockKey(groupId, accountId);
         setInitializingState();
-
-        if (StringUtils.isEmpty(groupId)) {
-            setFailedState("Found a cloud with uninitialized Group ID. please check configuration");
-        }
     }
     //endregion
 
@@ -268,10 +264,15 @@ public class GroupLockingManager {
         }
     }
 
-    private void setInitializingState() {
+    public void setInitializingState() {
         setCloudCommunicationState(SpotinstCloudCommunicationState.INITIALIZING);
         setErrorDescription(null);
         initializingStateStartTimeStamp = new Date();
+        boolean hasGroupId = isActive();
+
+        if (hasGroupId == false) {
+            setFailedState("Found a cloud with uninitialized Group ID. please check configuration");
+        }
     }
 
     private void setReadyState() {
