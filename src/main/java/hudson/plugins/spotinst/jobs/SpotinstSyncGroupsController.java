@@ -86,10 +86,21 @@ public class SpotinstSyncGroupsController extends AsyncPeriodicWork {
         List<Cloud> clouds = Jenkins.getInstance().clouds;
 
         if (clouds != null) {
-            clouds.stream().filter(cloud -> cloud instanceof BaseSpotinstCloud)
-                  .map(baseCloud -> ((BaseSpotinstCloud) baseCloud).getGroupLockingManager())
-                  .filter(groupLockingManager -> groupLockingManager.isCloudReadyForGroupCommunication() == false)
-                  .forEach(GroupLockingManager::setInitializingState);
+            List<GroupLockingManager> groupsNotInReadyState =
+                    clouds.stream().filter(cloud -> cloud instanceof BaseSpotinstCloud)
+                          .map(baseCloud -> ((BaseSpotinstCloud) baseCloud).getGroupLockingManager())
+                          .filter(groupLockingManager -> groupLockingManager.isCloudReadyForGroupCommunication() ==
+                                                         false).collect(Collectors.toList());
+
+            for (GroupLockingManager group : groupsNotInReadyState) {
+                if (group.isActive()) {
+                    group.setInitializingState();
+                }
+                else {
+                    group.setFailedState("Found a cloud with uninitialized Group ID. please check configuration");
+                }
+            }
+
         }
     }
 
