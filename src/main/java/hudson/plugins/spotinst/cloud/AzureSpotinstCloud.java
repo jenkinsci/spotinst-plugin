@@ -174,7 +174,7 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
             removeFromPending();
         }
         else {
-            LOGGER.error(SKIPPED_METHOD_GROUP_IS_NIT_READY_ERROR_LOGGER_FORMAT, "onInstanceReady", groupId);
+            LOGGER.warn(SKIPPED_METHOD_GROUP_IS_NOT_READY_ERROR_LOGGER_FORMAT, "onInstanceReady", groupId);
         }
 
         return retVal;
