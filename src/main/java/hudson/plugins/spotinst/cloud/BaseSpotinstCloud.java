@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 public abstract class BaseSpotinstCloud extends Cloud {
     //region constants
     protected static final int    NO_OVERRIDDEN_NUM_OF_EXECUTORS                        = -1;
-    protected static final String SKIPPED_METHOD_GROUP_IS_NOT_READY_ERROR_LOGGER_FORMAT =
+    protected static final String SKIPPED_METHOD_GROUP_IS_NIT_READY_ERROR_LOGGER_FORMAT =
             "Skipped {} - group {} is not ready for communication";
     //endregion
 
@@ -163,7 +163,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
             }
         }
         else {
-            LOGGER.warn(SKIPPED_METHOD_GROUP_IS_NOT_READY_ERROR_LOGGER_FORMAT, "provision", groupId);
+            LOGGER.error(SKIPPED_METHOD_GROUP_IS_NIT_READY_ERROR_LOGGER_FORMAT, "provision", groupId);
         }
 
         return Collections.emptyList();
@@ -209,7 +209,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
             removeInstanceFromPending(instanceId);
         }
         else {
-            LOGGER.warn(SKIPPED_METHOD_GROUP_IS_NOT_READY_ERROR_LOGGER_FORMAT, "onInstanceReady", groupId);
+            LOGGER.error(SKIPPED_METHOD_GROUP_IS_NIT_READY_ERROR_LOGGER_FORMAT, "onInstanceReady", groupId);
         }
 
         return retVal;
@@ -224,7 +224,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
             internalMonitorInstances();
         }
         else {
-            LOGGER.warn(SKIPPED_METHOD_GROUP_IS_NOT_READY_ERROR_LOGGER_FORMAT, "monitorInstances", groupId);
+            LOGGER.error(SKIPPED_METHOD_GROUP_IS_NIT_READY_ERROR_LOGGER_FORMAT, "monitorInstances", groupId);
         }
     }
 
@@ -864,7 +864,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
             internalSyncGroupInstances();
         }
         else {
-            LOGGER.warn(SKIPPED_METHOD_GROUP_IS_NOT_READY_ERROR_LOGGER_FORMAT, "syncGroupInstances", groupId);
+            LOGGER.error(SKIPPED_METHOD_GROUP_IS_NIT_READY_ERROR_LOGGER_FORMAT, "syncGroupInstances", groupId);
         }
     }
 
