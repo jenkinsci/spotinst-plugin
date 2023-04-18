@@ -92,15 +92,15 @@ public class SpotinstSyncGroupsController extends AsyncPeriodicWork {
                           .filter(groupLockingManager -> groupLockingManager.isCloudReadyForGroupCommunication() ==
                                                          false).collect(Collectors.toList());
 
-            for (GroupLockingManager group : groupsNotInReadyState) {
-                if (group.isActive()) {
-                    group.setInitializingState();
+            for (GroupLockingManager groupLockingManager : groupsNotInReadyState) {
+                if (groupLockingManager.isActive()) {
+                    groupLockingManager.setInitializingState();
                 }
                 else {
-                    group.setFailedState("Found a cloud with uninitialized Group ID. please check configuration");
+                    groupLockingManager.setFailedState(
+                            "Found a cloud with uninitialized Group ID. please check configuration");
                 }
             }
-
         }
     }
 
