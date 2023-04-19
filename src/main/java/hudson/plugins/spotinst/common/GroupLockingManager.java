@@ -42,16 +42,13 @@ public class GroupLockingManager {
     //region Constructor
     public GroupLockingManager(String groupId, String accountId) {
         key = new GroupLockKey(groupId, accountId);
-        setInitializingState();
+        boolean hasGroupId = isActive();
 
-        if (StringUtils.isEmpty(groupId)) {
-            setFailedState("Found a cloud with uninitialized Group ID. please check configuration");
+        if (hasGroupId) {
+            setInitializingState();
         }
-        else if (StringUtils.isEmpty(accountId)) {
-            String errMsg = String.format(
-                    "Found a cloud with groupId '%s' and uninitialized Account ID. please check configuration",
-                    groupId);
-            setFailedState(errMsg);
+        else {
+            setFailedState("Found a cloud with uninitialized Group ID. please check configuration");
         }
     }
     //endregion
@@ -82,8 +79,8 @@ public class GroupLockingManager {
                 }
             }
             else {
-                LOGGER.error("failed to get lock for groupId {}, accountId {}. Errors: {}", getGroupId(),
-                             getAccountId(), getLockGroupRepoResponse.getErrors());
+                LOGGER.error("failed to get lock for groupId {}. Errors: {}", getGroupId(),
+                             getLockGroupRepoResponse.getErrors());
 
                 if (cloudCommunicationState == SpotinstCloudCommunicationState.INITIALIZING) {
                     String failureDescription =
@@ -117,7 +114,7 @@ public class GroupLockingManager {
     }
 
     public boolean isActive() {
-        boolean retVal = StringUtils.isNotEmpty(getAccountId()) && StringUtils.isNotEmpty(getGroupId());
+        boolean retVal = StringUtils.isNotEmpty(getGroupId());
 
         return retVal;
     }
@@ -274,7 +271,7 @@ public class GroupLockingManager {
         }
     }
 
-    private void setInitializingState() {
+    public void setInitializingState() {
         setCloudCommunicationState(SpotinstCloudCommunicationState.INITIALIZING);
         setErrorDescription(null);
         initializingStateStartTimeStamp = new Date();
@@ -284,7 +281,7 @@ public class GroupLockingManager {
         setCloudCommunicationState(SpotinstCloudCommunicationState.READY);
     }
 
-    private void setFailedState(String description) {
+    public void setFailedState(String description) {
         setCloudCommunicationState(SpotinstCloudCommunicationState.FAILED);
         setErrorDescription(description);
     }
