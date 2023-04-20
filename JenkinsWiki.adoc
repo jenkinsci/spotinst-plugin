@@ -40,6 +40,11 @@ termination"
 
 [SpotinstPlugin-Versionhistory]
 == Version history
+[SpotinstPlugin-Version2.2.13(Apr19,2023)]
+=== Version 2.2.13 (Apr 19, 2023)
+
+* Allow using default accountId by setting empty accountId in clouds configuration
+
 [SpotinstPlugin-Version2.2.12(Apr2,2023)]
 === Version 2.2.12 (Apr 2, 2023)
 
