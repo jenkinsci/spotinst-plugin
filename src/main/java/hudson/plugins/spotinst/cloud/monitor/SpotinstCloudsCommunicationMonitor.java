@@ -24,7 +24,9 @@ public class SpotinstCloudsCommunicationMonitor extends AdministrativeMonitor {
     //region Overridden Public Methods
     @Override
     public boolean isActivated() {
-        return true;
+        Boolean isActivated =
+                isSpotinstCloudsCommunicationFailuresExist() || isSpotinstCloudsCommunicationInitializingExist();
+        return isActivated;
     }
 
     @Override
