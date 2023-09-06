@@ -7,6 +7,7 @@ import hudson.plugins.spotinst.api.infra.ExceptionHelper;
 import hudson.plugins.spotinst.model.aws.AwsInstanceType;
 import hudson.plugins.spotinst.model.aws.AwsGroupInstance;
 import hudson.plugins.spotinst.model.aws.AwsScaleUpResult;
+import hudson.plugins.spotinst.model.aws.stateful.AwsStatefulInstance;
 
 import java.util.List;
 
@@ -33,11 +34,45 @@ public class AwsGroupRepo implements IAwsGroupRepo {
     }
 
     @Override
+    public ApiResponse<List<AwsStatefulInstance>> getStatefulInstances(String groupId, String accountId) {
+        ApiResponse<List<AwsStatefulInstance>> retVal;
+
+        try {
+            List<AwsStatefulInstance> instances = SpotinstApi.getAwsStatefulInstances(groupId, accountId);
+
+            retVal = new ApiResponse<>(instances);
+
+        }
+        catch (ApiException e) {
+            retVal = ExceptionHelper.handleDalException(e);
+        }
+
+        return retVal;
+    }
+
+    @Override
     public ApiResponse<Boolean> detachInstance(String instanceId, String accountId) {
         ApiResponse<Boolean> retVal;
 
         try {
             Boolean isDetached = SpotinstApi.awsDetachInstance(instanceId, accountId);
+
+            retVal = new ApiResponse<>(isDetached);
+
+        }
+        catch (ApiException e) {
+            retVal = ExceptionHelper.handleDalException(e);
+        }
+
+        return retVal;
+    }
+
+    @Override
+    public ApiResponse<Boolean> deallocateInstance(String groupId, String statefulInstanceId, String accountId) {
+        ApiResponse<Boolean> retVal;
+
+        try {
+            Boolean isDetached = SpotinstApi.awsDeallocateInstance(groupId, statefulInstanceId, accountId);
 
             retVal = new ApiResponse<>(isDetached);
 

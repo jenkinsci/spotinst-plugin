@@ -86,7 +86,17 @@ public class AzureSpotCloud extends BaseSpotinstCloud {
     }
 
     @Override
-    public Boolean detachInstance(String instanceId) {
+    protected String getStatefulInstanceId(String instanceId) {
+        return null;//TODO: implement
+    }
+
+    @Override
+    protected Boolean deallocateInstance(String instanceId) {
+        return false;//TODO: implement
+    }
+
+    @Override
+    protected Boolean detachInstance(String instanceId) {
         Boolean              retVal           = false;
         IAzureVmGroupRepo    azureVmGroupRepo = RepoManager.getInstance().getAzureVmGroupRepo();
         ApiResponse<Boolean> detachVmResponse = azureVmGroupRepo.detachVM(groupId, instanceId, this.accountId);

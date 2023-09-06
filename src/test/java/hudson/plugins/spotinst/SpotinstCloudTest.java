@@ -72,12 +72,12 @@ public class SpotinstCloudTest {
         RepoManager.getInstance().setLockRepo(lockRepo);
     }
 
-    private PendingInstance buildPendingInstance(String id, PendingInstance.StatusEnum status, Integer executors) {
+    private PendingInstance buildPendingInstance(String id, Integer executors) {
         PendingInstance pendingInstance = new PendingInstance();
         pendingInstance.setCreatedAt(new Date());
         pendingInstance.setNumOfExecutors(executors);
         pendingInstance.setId(id);
-        pendingInstance.setStatus(status);
+        pendingInstance.setStatus(PendingInstance.StatusEnum.PENDING);
 
         return pendingInstance;
     }
@@ -90,7 +90,7 @@ public class SpotinstCloudTest {
                 new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, SlaveUsageEnum.NORMAL, "", false, true, "", null,
                                      null, null, null, null, null, null, null);
         Map<String, PendingInstance> pendingInstances = new HashMap<>();
-        pendingInstances.put("sir-1", buildPendingInstance("sir-1", PendingInstance.StatusEnum.PENDING, 2));
+        pendingInstances.put("sir-1", buildPendingInstance("sir-1", 2));
         spotinstCloud.setPendingInstances(pendingInstances);
         spotinstCloud.provision(null, 2);
         Mockito.verify(RepoManager.getInstance().getAwsGroupRepo(), Mockito.never())
@@ -107,7 +107,7 @@ public class SpotinstCloudTest {
 
         jenkinsRule.jenkins.clouds.add(spotinstCloud);
         Map<String, PendingInstance> pendingInstances = new HashMap<>();
-        pendingInstances.put("sir-1", buildPendingInstance("sir-1", PendingInstance.StatusEnum.PENDING, 2));
+        pendingInstances.put("sir-1", buildPendingInstance("sir-1", 2));
         spotinstCloud.setPendingInstances(pendingInstances);
         AwsScaleUpResult      result  = new AwsScaleUpResult();
         AwsScaleResultNewSpot newSpot = new AwsScaleResultNewSpot();
@@ -115,7 +115,7 @@ public class SpotinstCloudTest {
         newSpot.setInstanceId("i-dqwadq");
         newSpot.setAvailabilityZone("us-east-1a");
         newSpot.setInstanceType(AwsInstanceTypeEnum.C4Large.getValue());
-        result.setNewSpotRequests(Arrays.asList(newSpot));
+        result.setNewSpotRequests(Collections.singletonList(newSpot));
         Mockito.when(RepoManager.getInstance().getAwsGroupRepo()
                                 .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString()))
                .thenReturn(new ApiResponse<>(result));
@@ -160,6 +160,7 @@ public class SpotinstCloudTest {
 
         for (Node node : allNodes) {
             SpotinstComputer computer = (SpotinstComputer) node.toComputer();
+            assertNotNull(computer);
             assertEquals(computer.getLauncher().getClass(), SpotinstComputerLauncher.class);
         }
 
@@ -207,6 +208,7 @@ public class SpotinstCloudTest {
         spotCloud.monitorInstances();
 
         SpotinstSlave agent = (SpotinstSlave) Jenkins.get().getNode(incomingInstance.getInstanceId());
+        assertNotNull(agent);
         assertEquals(agent.getLauncher().getClass(), SpotSSHComputerLauncher.class);
 
     }
@@ -255,6 +257,7 @@ public class SpotinstCloudTest {
 
         SpotinstSlave agent = (SpotinstSlave) Jenkins.get().getNode("i-2");
 
+        assertNotNull(agent);
         assertNotEquals(agent.getLauncher().getClass(), SpotSSHComputerLauncher.class);
         // but neither create our JNLP launcher
         assertNotEquals(agent.getLauncher().getClass(), SpotinstComputerLauncher.class);
@@ -268,7 +271,7 @@ public class SpotinstCloudTest {
                 new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, null, "", true, null, null, null, null, null,
                                      null, null, null, null, null);
 
-        assertEquals(spotCloud.getShouldUsePrivateIp(), false);
+        assertFalse(spotCloud.getShouldUsePrivateIp());
     }
 
     @Test
@@ -278,7 +281,7 @@ public class SpotinstCloudTest {
                 new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, null, "", true, null, null, null, null, null,
                                      null, null, true, null, null);
 
-        assertEquals(spotCloud.getShouldUsePrivateIp(), true);
+        assertTrue(spotCloud.getShouldUsePrivateIp());
     }
 
     @Test
@@ -288,7 +291,7 @@ public class SpotinstCloudTest {
                 new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, null, "", true, null, null, null, null, null,
                                      null, null, false, null, null);
 
-        assertEquals(spotCloud.getShouldUsePrivateIp(), false);
+        assertFalse(spotCloud.getShouldUsePrivateIp());
     }
     //endregion
 
@@ -300,7 +303,7 @@ public class SpotinstCloudTest {
                 new GcpSpotinstCloud(groupId, "", "20", "/tmp", null, "", false, true, "", null, null, null, null, null,
                                      null, null, null);
         Map<String, PendingInstance> pendingInstances = new HashMap<>();
-        pendingInstances.put("sin-1", buildPendingInstance("sin-1", PendingInstance.StatusEnum.PENDING, 2));
+        pendingInstances.put("sin-1", buildPendingInstance("sin-1", 2));
         spotinstCloud.setPendingInstances(pendingInstances);
         spotinstCloud.provision(null, 2);
         Mockito.verify(RepoManager.getInstance().getGcpGroupRepo(), Mockito.never())
@@ -316,7 +319,7 @@ public class SpotinstCloudTest {
                                      null, null, null, null);
         jenkinsRule.jenkins.clouds.add(spotinstCloud);
         Map<String, PendingInstance> pendingInstances = new HashMap<>();
-        pendingInstances.put("sin-1", buildPendingInstance("sin-1", PendingInstance.StatusEnum.PENDING, 2));
+        pendingInstances.put("sin-1", buildPendingInstance("sin-1", 2));
         spotinstCloud.setPendingInstances(pendingInstances);
 
         GcpScaleUpResult     result      = new GcpScaleUpResult();
@@ -324,7 +327,7 @@ public class SpotinstCloudTest {
         newInstance.setInstanceName("sin-2");
         newInstance.setZone("us-east-1a");
         newInstance.setMachineType(GcpMachineType.F1Micro.getName());
-        result.setNewInstances(Arrays.asList(newInstance));
+        result.setNewInstances(Collections.singletonList(newInstance));
         Mockito.when(RepoManager.getInstance().getGcpGroupRepo()
                                 .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString()))
                .thenReturn(new ApiResponse<>(result));
@@ -349,8 +352,8 @@ public class SpotinstCloudTest {
                 new AzureSpotinstCloud(groupId, "", "20", "/tmp", null, "", false, false, "", null, null, null, null,
                                        null, null, null, null);
         Map<String, PendingInstance> pendingInstances = new HashMap<>();
-        pendingInstances.put("q3213", buildPendingInstance(groupId, PendingInstance.StatusEnum.PENDING, 1));
-        pendingInstances.put("41234", buildPendingInstance(groupId, PendingInstance.StatusEnum.PENDING, 1));
+        pendingInstances.put("q3213", buildPendingInstance(groupId, 1));
+        pendingInstances.put("41234", buildPendingInstance(groupId, 1));
         spotinstCloud.setPendingInstances(pendingInstances);
         spotinstCloud.provision(null, 2);
         Mockito.verify(RepoManager.getInstance().getAzureGroupRepo(), Mockito.never())
@@ -365,13 +368,13 @@ public class SpotinstCloudTest {
                 new AzureSpotinstCloud(groupId, "", "20", "/tmp", null, "", false, false, "", null, null, accountId,
                                        null, null, null, null, null);
         Map<String, PendingInstance> pendingInstances = new HashMap<>();
-        pendingInstances.put("asda", buildPendingInstance(groupId, PendingInstance.StatusEnum.PENDING, 1));
-        pendingInstances.put("ada", buildPendingInstance(groupId, PendingInstance.StatusEnum.PENDING, 1));
+        pendingInstances.put("asda", buildPendingInstance(groupId, 1));
+        pendingInstances.put("ada", buildPendingInstance(groupId, 1));
         spotinstCloud.setPendingInstances(pendingInstances);
 
         Mockito.when(RepoManager.getInstance().getAzureGroupRepo()
                                 .scaleUp(Mockito.anyString(), Mockito.anyInt(), Mockito.anyString()))
-               .thenReturn(new ApiResponse<Boolean>(new Boolean(true)));
+               .thenReturn(new ApiResponse<>(Boolean.TRUE));
 
         spotinstCloud.provision(null, 4);
 
@@ -394,7 +397,7 @@ public class SpotinstCloudTest {
                                    null, null, null);
 
         Map<String, PendingInstance> pendingInstances = new HashMap<>();
-        pendingInstances.put("vm-1", buildPendingInstance("vm-1", PendingInstance.StatusEnum.PENDING, 2));
+        pendingInstances.put("vm-1", buildPendingInstance("vm-1", 2));
         spotinstCloud.setPendingInstances(pendingInstances);
         spotinstCloud.provision(null, 2);
 
@@ -411,7 +414,7 @@ public class SpotinstCloudTest {
                                    null, null, null, null);
         jenkinsRule.jenkins.clouds.add(spotinstCloud);
         Map<String, PendingInstance> pendingInstances = new HashMap<>();
-        pendingInstances.put("vm-1", buildPendingInstance("vm-1", PendingInstance.StatusEnum.PENDING, 2));
+        pendingInstances.put("vm-1", buildPendingInstance("vm-1", 2));
         spotinstCloud.setPendingInstances(pendingInstances);
 
         AzureScaleUpResultNewVm newSpot = new AzureScaleUpResultNewVm();
@@ -459,7 +462,7 @@ public class SpotinstCloudTest {
         spotinstCloud.provision(null, 4);
 
         Node node = Jenkins.get().getNode("vm-2");
-        assertNotEquals(node, null);
+        assertNotNull(node);
         assertEquals(1, node.getNumExecutors());
     }
 
@@ -509,7 +512,7 @@ public class SpotinstCloudTest {
                                    null, null, null, null);
         jenkinsRule.jenkins.clouds.add(spotinstCloud);
         Map<String, PendingInstance> pendingInstances = new HashMap<>();
-        pendingInstances.put("vm-1", buildPendingInstance("vm-1", PendingInstance.StatusEnum.PENDING, 2));
+        pendingInstances.put("vm-1", buildPendingInstance("vm-1", 2));
         spotinstCloud.setPendingInstances(pendingInstances);
 
         AzureVmSizeEnum vmSizeBasicA1 = AzureVmSizeEnum.BASIC_A1;
@@ -568,6 +571,7 @@ public class SpotinstCloudTest {
 
         for (Node node : allNodes) {
             SpotinstComputer computer = (SpotinstComputer) node.toComputer();
+            assertNotNull(computer);
             assertEquals(computer.getLauncher().getClass(), SpotinstComputerLauncher.class);
         }
 
@@ -627,6 +631,7 @@ public class SpotinstCloudTest {
         cloud.provision(null, 1);
 
         SpotinstSlave agent = (SpotinstSlave) Jenkins.get().getNode(newSpot.getInstanceId());
+        assertNotNull(agent);
         assertEquals(agent.getNumExecutors(), globalOverride.getExecutors().intValue());
 
     }
@@ -667,6 +672,7 @@ public class SpotinstCloudTest {
         cloud.provision(null, 1);
 
         SpotinstSlave agent = (SpotinstSlave) Jenkins.get().getNode(newSpot.getInstanceId());
+        assertNotNull(agent);
         assertEquals(agent.getNumExecutors(), globalOverride.getExecutors().intValue());
 
     }
@@ -713,6 +719,7 @@ public class SpotinstCloudTest {
         cloud.provision(null, 1);
 
         SpotinstSlave agent = (SpotinstSlave) Jenkins.get().getNode(newSpot.getInstanceId());
+        assertNotNull(agent);
         assertEquals(agent.getNumExecutors(), expectedExecutors);
 
     }
@@ -755,6 +762,7 @@ public class SpotinstCloudTest {
         cloud.provision(null, 1);
 
         SpotinstSlave agent = (SpotinstSlave) Jenkins.get().getNode(newSpot.getInstanceId());
+        assertNotNull(agent);
         assertEquals(agent.getNumExecutors(), 1);
 
     }
@@ -795,6 +803,7 @@ public class SpotinstCloudTest {
         cloud.provision(null, 1);
 
         SpotinstSlave agent = (SpotinstSlave) Jenkins.get().getNode(newSpot.getInstanceId());
+        assertNotNull(agent);
         assertEquals(agent.getNumExecutors(), AwsInstanceTypeEnum.C4Large.getExecutors().intValue());
 
     }
@@ -842,6 +851,7 @@ public class SpotinstCloudTest {
         cloud.provision(null, 1);
 
         SpotinstSlave agent = (SpotinstSlave) Jenkins.get().getNode(newSpot.getInstanceId());
+        assertNotNull(agent);
         assertEquals(agent.getNumExecutors(), expectedExecutors);
 
     }
@@ -883,6 +893,7 @@ public class SpotinstCloudTest {
         cloud.provision(null, 1);
 
         SpotinstSlave agent = (SpotinstSlave) Jenkins.get().getNode(newSpot.getInstanceId());
+        assertNotNull(agent);
         assertEquals(agent.getNumExecutors(), AwsInstanceTypeEnum.C4Large.getExecutors().intValue());
 
     }
@@ -923,6 +934,7 @@ public class SpotinstCloudTest {
         cloud.provision(null, 1);
 
         SpotinstSlave agent = (SpotinstSlave) Jenkins.get().getNode(newSpot.getInstanceId());
+        assertNotNull(agent);
         assertEquals(agent.getNumExecutors(), 1);
 
     }
@@ -970,6 +982,7 @@ public class SpotinstCloudTest {
         cloud.provision(null, 1);
 
         SpotinstSlave agent = (SpotinstSlave) Jenkins.get().getNode(newSpot.getInstanceId());
+        assertNotNull(agent);
         assertEquals(agent.getNumExecutors(), expectedExecutors);
 
     }
@@ -1010,6 +1023,7 @@ public class SpotinstCloudTest {
         cloud.provision(null, 1);
 
         SpotinstSlave agent = (SpotinstSlave) Jenkins.get().getNode(newSpot.getInstanceId());
+        assertNotNull(agent);
         assertEquals(agent.getNumExecutors(), AwsInstanceTypeEnum.C4Large.getExecutors().intValue());
 
     }
@@ -1050,6 +1064,7 @@ public class SpotinstCloudTest {
         cloud.provision(null, 1);
 
         SpotinstSlave agent = (SpotinstSlave) Jenkins.get().getNode(newSpot.getInstanceId());
+        assertNotNull(agent);
         assertEquals(agent.getNumExecutors(), 1);
 
     }
@@ -1097,6 +1112,7 @@ public class SpotinstCloudTest {
         cloud.provision(null, 1);
 
         SpotinstSlave agent = (SpotinstSlave) Jenkins.get().getNode(newSpot.getInstanceId());
+        assertNotNull(agent);
         assertEquals(agent.getNumExecutors(), expectedExecutors);
 
     }
@@ -1138,6 +1154,7 @@ public class SpotinstCloudTest {
         cloud.provision(null, 1);
 
         SpotinstSlave agent = (SpotinstSlave) Jenkins.get().getNode(newSpot.getInstanceId());
+        assertNotNull(agent);
         assertEquals(agent.getNumExecutors(), AwsInstanceTypeEnum.C4Large.getExecutors().intValue());
 
     }
@@ -1177,6 +1194,7 @@ public class SpotinstCloudTest {
         cloud.provision(null, 1);
 
         SpotinstSlave agent = (SpotinstSlave) Jenkins.get().getNode(newSpot.getInstanceId());
+        assertNotNull(agent);
         assertEquals(agent.getNumExecutors(), 1);
 
     }
@@ -1224,6 +1242,7 @@ public class SpotinstCloudTest {
         cloud.provision(null, 1);
 
         SpotinstSlave agent = (SpotinstSlave) Jenkins.get().getNode(newSpot.getInstanceId());
+        assertNotNull(agent);
         assertEquals(agent.getNumExecutors(), expectedExecutors);
 
     }
@@ -1255,7 +1274,9 @@ public class SpotinstCloudTest {
         Mockito.when(
                        RepoManager.getInstance().getAwsGroupRepo().getGroupInstances(Mockito.anyString(), Mockito.anyString()))
                .thenReturn(new ApiResponse<>(result));
-
+        Mockito.when(
+                       RepoManager.getInstance().getAwsGroupRepo().getStatefulInstances(Mockito.anyString(), Mockito.anyString()))
+               .thenReturn(new ApiResponse<>(new LinkedList<>()));
 
         List<AwsScaleResultNewSpot> spots         = Collections.singletonList(newSpot);
         AwsScaleUpResult            scaleUpResult = new AwsScaleUpResult();
@@ -1275,6 +1296,7 @@ public class SpotinstCloudTest {
         SpotinstSlave agent = (SpotinstSlave) Jenkins.get().getNode(newSpot.getInstanceId());
 
         assertEquals(cloud.isInstancePending(newSpot.getInstanceId()), true);
+        assertNotNull(agent);
         agent.terminate();
         assertEquals(cloud.isInstancePending(newSpot.getInstanceId()), false);
 
@@ -1300,8 +1322,7 @@ public class SpotinstCloudTest {
 
     //region Helper Methods
     public SSHConnector getSSHConnector() {
-        SSHConnector retVal = new SSHConnector(22, "testCredentials");
-        return retVal;
+        return new SSHConnector(22, "testCredentials");
     }
     //endregion
 }

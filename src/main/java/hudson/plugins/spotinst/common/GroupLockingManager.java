@@ -261,8 +261,9 @@ public class GroupLockingManager {
                 TimeUtils.isTimePassedInSeconds(initializingStateStartTimeStamp, INITIALIZING_PERIOD_IN_SECONDS);
 
         if (isTimeout) {
-            LOGGER.error("Initialization time has expired, error description: {}", errorDescription);
-            setFailedState(errorDescription);
+            String timeoutErrorDescription =
+                    String.format("Initialization time has expired, error description: %s", errorDescription);
+            setFailedState(timeoutErrorDescription);
         }
         else {
             LOGGER.warn(
@@ -282,6 +283,7 @@ public class GroupLockingManager {
     }
 
     public void setFailedState(String description) {
+        LOGGER.error("Cloud failed to communicate with the group. {}", description);
         setCloudCommunicationState(SpotinstCloudCommunicationState.FAILED);
         setErrorDescription(description);
     }

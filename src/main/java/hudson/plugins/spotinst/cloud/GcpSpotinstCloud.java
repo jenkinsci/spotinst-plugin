@@ -99,7 +99,17 @@ public class GcpSpotinstCloud extends BaseSpotinstCloud {
     }
 
     @Override
-    public Boolean detachInstance(String instanceId) {
+    protected String getStatefulInstanceId(String instanceId) {
+        return null;//TODO: implement
+    }
+
+    @Override
+    protected Boolean deallocateInstance(String instanceId) {
+        return false;//TODO: implement
+    }
+
+    @Override
+    protected Boolean detachInstance(String instanceId) {
         Boolean              retVal                 = false;
         IGcpGroupRepo        gcpGroupRepo           = RepoManager.getInstance().getGcpGroupRepo();
         ApiResponse<Boolean> detachInstanceResponse = gcpGroupRepo.detachInstance(groupId, instanceId, this.accountId);

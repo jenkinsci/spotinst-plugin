@@ -853,7 +853,26 @@ public abstract class BaseSpotinstCloud extends Cloud {
     //region Abstract Methods
     abstract List<SpotinstSlave> scaleUp(ProvisionRequest request);
 
-    public abstract Boolean detachInstance(String instanceId);
+    public Boolean removeInstance(String instanceId) {
+        boolean retVal;
+        String  statefulInstanceId = getStatefulInstanceId(instanceId);
+        boolean isStateful         = statefulInstanceId != null;
+
+        if (isStateful) {
+            retVal = deallocateInstance(statefulInstanceId);
+        }
+        else {
+            retVal = detachInstance(instanceId);
+        }
+
+        return retVal;
+    }
+
+    protected abstract String getStatefulInstanceId(String instanceId);
+
+    protected abstract Boolean detachInstance(String instanceId);
+
+    protected abstract Boolean deallocateInstance(String instanceId);
 
     public abstract String getCloudUrl();
 

@@ -4,9 +4,11 @@ import hudson.Extension;
 import hudson.model.Node;
 import hudson.plugins.spotinst.api.infra.ApiResponse;
 import hudson.plugins.spotinst.api.infra.JsonMapper;
+import hudson.plugins.spotinst.common.stateful.AwsStatefulInstancesManager;
 import hudson.plugins.spotinst.common.ConnectionMethodEnum;
 import hudson.plugins.spotinst.common.SpotAwsInstanceTypesHelper;
 import hudson.plugins.spotinst.model.aws.*;
+import hudson.plugins.spotinst.model.aws.stateful.AwsStatefulInstance;
 import hudson.plugins.spotinst.repos.IAwsGroupRepo;
 import hudson.plugins.spotinst.repos.RepoManager;
 import hudson.plugins.spotinst.slave.*;
@@ -14,6 +16,7 @@ import hudson.slaves.ComputerConnector;
 import hudson.slaves.EnvironmentVariablesNodeProperty;
 import hudson.tools.ToolLocationNodeProperty;
 import jenkins.model.Jenkins;
+import org.apache.commons.collections4.CollectionUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -100,7 +103,55 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
     }
 
     @Override
-    public Boolean detachInstance(String instanceId) {
+    protected String getStatefulInstanceId(String instanceId) {
+        String retVal = null;
+
+        IAwsGroupRepo awsGroupRepo = RepoManager.getInstance().getAwsGroupRepo();
+        ApiResponse<List<AwsStatefulInstance>> statefulInstancesResponse =
+                awsGroupRepo.getStatefulInstances(groupId, accountId);
+
+        if (statefulInstancesResponse.isRequestSucceed()) {
+            List<AwsStatefulInstance> groupStatefulInstances      = statefulInstancesResponse.getValue();
+            boolean                   isGroupHasStatefulInstances = CollectionUtils.isNotEmpty(groupStatefulInstances);
+
+            if (isGroupHasStatefulInstances) {
+                Optional<AwsStatefulInstance> optionalAwsStatefulInstance = groupStatefulInstances.stream()
+                                                                                                  .filter(statefulInstance -> instanceId.equals(
+                                                                                                          statefulInstance.getInstanceId()))
+                                                                                                  .findFirst();
+                boolean isStatefulInstance = optionalAwsStatefulInstance.isPresent();
+
+                if (isStatefulInstance) {
+                    retVal = optionalAwsStatefulInstance.get().getId();
+                }
+            }
+        }
+
+        return retVal;
+    }
+
+    @Override
+    public Boolean deallocateInstance(String statefulInstanceId) {
+        boolean retVal = false;
+
+        IAwsGroupRepo awsGroupRepo = RepoManager.getInstance().getAwsGroupRepo();
+        ApiResponse<Boolean> detachInstanceResponse =
+                awsGroupRepo.deallocateInstance(groupId, statefulInstanceId, accountId);
+
+        if (detachInstanceResponse.isRequestSucceed()) {
+            LOGGER.info(String.format("Stateful Instance %s deallocated", statefulInstanceId));
+            retVal = true;
+        }
+        else {
+            LOGGER.error(String.format("Failed to deallocate instance %s. Errors: %s", statefulInstanceId,
+                                       detachInstanceResponse.getErrors()));
+        }
+
+        return retVal;
+    }
+
+    @Override
+    protected Boolean detachInstance(String instanceId) {
         Boolean retVal = false;
 
         IAwsGroupRepo        awsGroupRepo           = RepoManager.getInstance().getAwsGroupRepo();
@@ -136,6 +187,7 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
 
             this.slaveInstancesDetailsByInstanceId = new HashMap<>(slaveInstancesDetailsByInstanceId);
 
+            syncGroupStatefulInstances();
             addNewSlaveInstances(instances);
             removeOldSlaveInstances(instances);
         }
@@ -144,7 +196,6 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
                                        instancesResponse.getErrors()));
         }
     }
-
 
     @Override
     public Map<String, String> getInstanceIpsById() {
@@ -212,6 +263,24 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
         }
 
         return retVal;
+    }
+
+    private void syncGroupStatefulInstances() {
+        List<AwsStatefulInstance> statefulInstances;
+        IAwsGroupRepo             awsGroupRepo = RepoManager.getInstance().getAwsGroupRepo();
+        ApiResponse<List<AwsStatefulInstance>> statefulInstancesResponse =
+                awsGroupRepo.getStatefulInstances(groupId, this.accountId);
+
+        if (statefulInstancesResponse.isRequestSucceed()) {
+            statefulInstances = statefulInstancesResponse.getValue();
+        }
+        else {
+            statefulInstances = new LinkedList<>();
+        }
+
+        Map<String, AwsStatefulInstance> ssiById = new HashMap<>();
+        statefulInstances.forEach(ssi -> ssiById.put(ssi.getId(), ssi));
+        AwsStatefulInstancesManager.getAwsStatefulInstanceBySsiByGroupId().put(groupId, ssiById);
     }
 
     private List<SpotinstSlave> handleNewAwsSpots(AwsScaleUpResult scaleUpResult, String label) {

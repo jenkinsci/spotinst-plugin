@@ -76,7 +76,17 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
     }
 
     @Override
-    public Boolean detachInstance(String instanceId) {
+    protected String getStatefulInstanceId(String instanceId) {
+        return null;//TODO: implement
+    }
+
+    @Override
+    protected Boolean deallocateInstance(String instanceId) {
+        return false;//TODO: implement
+    }
+
+    @Override
+    protected Boolean detachInstance(String instanceId) {
         Boolean              retVal                 = false;
         IAzureGroupRepo      azureGroupRepo         = RepoManager.getInstance().getAzureGroupRepo();
         ApiResponse<Boolean> detachInstanceResponse = azureGroupRepo.detachInstance(groupId, instanceId, accountId);
