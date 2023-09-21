@@ -40,6 +40,12 @@ termination"
 
 [SpotinstPlugin-Versionhistory]
 == Version history
+[SpotinstPlugin-Version2.2.14(Sep21,2023)]
+=== Version 2.2.14 (Sep 21, 2023)
+
+* AWS stateful groups: deallocate stateful instances resources when removed from Jenkins
+* Fixed : monitor alert won't show up for Spotinst Clouds Communication Monitor when all groups are properly connected
+
 [SpotinstPlugin-Version2.2.13(Apr19,2023)]
 === Version 2.2.13 (Apr 19, 2023)
 

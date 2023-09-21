@@ -17,16 +17,16 @@ import java.util.concurrent.TimeUnit;
  * Created by ohadmuchnik on 25/05/2016.
  */
 @Extension
-public class SpotinstSyncInstances extends AsyncPeriodicWork {
+public class SpotinstSyncGroups extends AsyncPeriodicWork {
 
     //region Members
-    private static final Logger  LOGGER                  = LoggerFactory.getLogger(SpotinstSyncInstances.class);
+    private static final Logger  LOGGER                  = LoggerFactory.getLogger(SpotinstSyncGroups.class);
     public static final  Integer JOB_INTERVAL_IN_MINUTES = 1;
     final                long    recurrencePeriod;
     //endregion
 
     //region Constructor
-    public SpotinstSyncInstances() {
+    public SpotinstSyncGroups() {
         super("Sync Instances");
         recurrencePeriod = TimeUnit.MINUTES.toMillis(JOB_INTERVAL_IN_MINUTES);
     }
@@ -44,7 +44,7 @@ public class SpotinstSyncInstances extends AsyncPeriodicWork {
                     BaseSpotinstCloud spotinstCloud = (BaseSpotinstCloud) cloud;
 
                     try {
-                        spotinstCloud.syncGroupInstances();
+                        spotinstCloud.syncGroup();
                     }
                     catch (Exception e) {
                         LOGGER.error(String.format("Failed to sync group: %s instances", spotinstCloud.getGroupId()),
