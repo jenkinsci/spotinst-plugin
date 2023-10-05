@@ -59,7 +59,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
     private   SpotGlobalExecutorOverride        globalExecutorOverride;
     protected Integer                           pendingThreshold;
     private   GroupLockingManager               groupLockingManager;
-    private   boolean                           isStatefulGroup;
+    private   Boolean                           isStatefulGroup;
     //endregion
 
     //region Constructor
@@ -131,15 +131,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
         groupLockingManager = new GroupLockingManager(groupId, accountId);
         groupLockingManager.syncGroupController();
 
-        BlResponse<Boolean> checkIsStatefulGroupResponse = checkIsStatefulGroup();
-
-        if (checkIsStatefulGroupResponse.isSucceed()) {
-            this.isStatefulGroup = checkIsStatefulGroupResponse.getResult();
-        }
-        else {
-            LOGGER.warn("failed to get the group's details, currently referring to it as stateless");
-            this.isStatefulGroup = false;
-        }
+        initIsStatefulGroup();
     }
     //endregion
 
@@ -890,6 +882,18 @@ public abstract class BaseSpotinstCloud extends Cloud {
 
     protected abstract BlResponse<Boolean> checkIsStatefulGroup();
 
+    private void initIsStatefulGroup(){
+        BlResponse<Boolean> isStatefulResponse = checkIsStatefulGroup();
+
+        if (isStatefulResponse.isSucceed()) {
+            isStatefulGroup = isStatefulResponse.getResult();
+        }
+        else if (isStatefulGroup == null) {
+            LOGGER.warn("failed to get the group's details, currently referring to it as stateless");
+            isStatefulGroup = false;
+        }
+    }
+
     public Boolean isStatefulGroup() {
         return isStatefulGroup;
     }
@@ -906,11 +910,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
         boolean isCloudReadyForGroupCommunication = isCloudReadyForGroupCommunication();
 
         if (isCloudReadyForGroupCommunication) {
-            BlResponse<Boolean> isStatefulResponse = checkIsStatefulGroup();
-
-            if (isStatefulResponse.isSucceed()) {
-                this.isStatefulGroup = isStatefulResponse.getResult();
-            }
+            initIsStatefulGroup();
 
             syncGroupInstances();
         }
