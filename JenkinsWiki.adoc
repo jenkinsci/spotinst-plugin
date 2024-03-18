@@ -40,6 +40,11 @@ termination"
 
 [SpotinstPlugin-Versionhistory]
 == Version history
+[SpotinstPlugin-Version2.2.16(Mar18,2024)]
+=== Version 2.2.16 (Mar 18, 2024)
+
+* AWS stateful groups: ignore stateful instances with no running instance
+
 [SpotinstPlugin-Version2.2.15(Sep26,2023)]
 === Version 2.2.15 (Sep 26, 2023)
 
