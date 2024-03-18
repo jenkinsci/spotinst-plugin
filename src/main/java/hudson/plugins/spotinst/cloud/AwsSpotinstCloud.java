@@ -306,14 +306,15 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
 
         if (statefulInstancesResponse.isRequestSucceed()) {
             List<AwsStatefulInstance> statefulInstances = statefulInstancesResponse.getValue();
-            this.ssiByInstanceId = statefulInstances.stream().collect(
+            this.ssiByInstanceId = statefulInstances.stream().filter(statefulInstance -> StringUtils.isNotEmpty(
+                    statefulInstance.getInstanceId())).collect(
                     Collectors.toMap(AwsStatefulInstance::getInstanceId, statefulInstance -> statefulInstance));
+            LOGGER.info("found {} running stateful instances for group {}", ssiByInstanceId.size(), groupId);
         }
         else {
             LOGGER.error(String.format("Failed to get group %s stateful instances. Errors: %s", groupId,
                                        statefulInstancesResponse.getErrors()));
         }
-
     }
 
     private List<SpotinstSlave> handleNewAwsSpots(AwsScaleUpResult scaleUpResult, String label) {

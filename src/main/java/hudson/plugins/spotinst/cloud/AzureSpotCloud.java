@@ -88,7 +88,7 @@ public class AzureSpotCloud extends BaseSpotinstCloud {
 
     @Override
     protected BlResponse<Boolean> checkIsStatefulGroup() {
-        return new BlResponse<>(false);
+        return new BlResponse<>(Boolean.FALSE);
     }
 
     @Override
