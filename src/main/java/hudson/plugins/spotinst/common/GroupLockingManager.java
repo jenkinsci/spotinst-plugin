@@ -24,8 +24,14 @@ public class GroupLockingManager {
     //endregion
 
     //region members
-    private static final Logger LOGGER                      = LoggerFactory.getLogger(GroupLockingManager.class);
-    private static final String currentControllerIdentifier = generateControllerIdentifier();
+    private static final Logger LOGGER = LoggerFactory.getLogger(GroupLockingManager.class);
+
+    /*
+    Jenkins ID. Must only be accesses only through the getter.
+    Must be initialized lazily, cannot call JenkinsLocationConfiguration.get() before initialization is complete,
+    Causing major UI bugs (defecting Jobs' pipelines loading)
+    */
+    private static String currentControllerIdentifier;
 
     private final GroupLockKey                    key;
     private       SpotinstCloudCommunicationState cloudCommunicationState;
@@ -36,16 +42,13 @@ public class GroupLockingManager {
     //region Constructor
     public GroupLockingManager(String groupId, String accountId) {
         key = new GroupLockKey(groupId, accountId);
-        setInitializingState();
+        boolean hasGroupId = isActive();
 
-        if (StringUtils.isEmpty(groupId)) {
-            setFailedState("Found a cloud with uninitialized Group ID. please check configuration");
+        if (hasGroupId) {
+            setInitializingState();
         }
-        else if (StringUtils.isEmpty(accountId)) {
-            String errMsg = String.format(
-                    "Found a cloud with groupId '%s' and uninitialized Account ID. please check configuration",
-                    groupId);
-            setFailedState(errMsg);
+        else {
+            setFailedState("Found a cloud with uninitialized Group ID. please check configuration");
         }
     }
     //endregion
@@ -62,7 +65,7 @@ public class GroupLockingManager {
 
                 if (isGroupAlreadyHasAnyController) {
                     boolean isGroupBelongToCurrentController =
-                            StringUtils.equals(currentControllerIdentifier, lockGroupControllerValue);
+                            StringUtils.equals(getCurrentControllerIdentifier(), lockGroupControllerValue);
 
                     if (isGroupBelongToCurrentController) {
                         SetGroupLockExpiry();
@@ -76,8 +79,8 @@ public class GroupLockingManager {
                 }
             }
             else {
-                LOGGER.error("failed to get lock for groupId {}, accountId {}. Errors: {}", getGroupId(),
-                             getAccountId(), getLockGroupRepoResponse.getErrors());
+                LOGGER.error("failed to get lock for groupId {}. Errors: {}", getGroupId(),
+                             getLockGroupRepoResponse.getErrors());
 
                 if (cloudCommunicationState == SpotinstCloudCommunicationState.INITIALIZING) {
                     String failureDescription =
@@ -111,7 +114,7 @@ public class GroupLockingManager {
     }
 
     public boolean isActive() {
-        boolean retVal = StringUtils.isNotEmpty(getAccountId()) && StringUtils.isNotEmpty(getGroupId());
+        boolean retVal = StringUtils.isNotEmpty(getGroupId());
 
         return retVal;
     }
@@ -137,7 +140,7 @@ public class GroupLockingManager {
         LOGGER.info(String.format("group %s doesn't belong to any controller. trying to lock it", getGroupId()));
         ApiResponse<String> lockGroupRepoResponse = RepoManager.getInstance().getLockRepo()
                                                                .acquireGroupControllerLock(getAccountId(), getGroupId(),
-                                                                                           currentControllerIdentifier,
+                                                                                           getCurrentControllerIdentifier(),
                                                                                            LOCK_TIME_TO_LIVE_IN_SECONDS);
 
         if (lockGroupRepoResponse.isRequestSucceed()) {
@@ -181,7 +184,7 @@ public class GroupLockingManager {
         LOGGER.debug("group {} already belongs this controller, reviving the lock duration.", getGroupId());
         ApiResponse<String> response = RepoManager.getInstance().getLockRepo()
                                                   .setGroupControllerLockExpiry(getAccountId(), getGroupId(),
-                                                                                currentControllerIdentifier,
+                                                                                getCurrentControllerIdentifier(),
                                                                                 LOCK_TIME_TO_LIVE_IN_SECONDS);
         if (response.isRequestSucceed()) {
             String  currentLock                  = response.getValue();
@@ -192,12 +195,12 @@ public class GroupLockingManager {
             }
             else {
                 LOGGER.error("Failed to revive the lock for group {} by the controller {}", getGroupId(),
-                             currentControllerIdentifier);
+                             getCurrentControllerIdentifier());
             }
         }
         else {
             LOGGER.error("Failed to revive the lock for group {} by the controller {}, error description:{}",
-                         getGroupId(), currentControllerIdentifier, response.getErrors());
+                         getGroupId(), getCurrentControllerIdentifier(), response.getErrors());
 
         }
     }
@@ -206,7 +209,7 @@ public class GroupLockingManager {
         boolean isGroupAlreadyHasAnyController = lockGroupController != null;
 
         if (isGroupAlreadyHasAnyController) {
-            boolean isGroupBelongToController = currentControllerIdentifier.equals(lockGroupController);
+            boolean isGroupBelongToController = getCurrentControllerIdentifier().equals(lockGroupController);
 
             if (isGroupBelongToController) {
                 ApiResponse<Integer> deleteGroupRepoResponse =
@@ -222,7 +225,7 @@ public class GroupLockingManager {
             }
             else {
                 LOGGER.error("Controller {} could not unlock group {} - already locked by another Controller {}",
-                             currentControllerIdentifier, getGroupId(), lockGroupController);
+                             getCurrentControllerIdentifier(), getGroupId(), lockGroupController);
             }
         }
         else {
@@ -258,8 +261,9 @@ public class GroupLockingManager {
                 TimeUtils.isTimePassedInSeconds(initializingStateStartTimeStamp, INITIALIZING_PERIOD_IN_SECONDS);
 
         if (isTimeout) {
-            LOGGER.error("Initialization time has expired, error description: {}", errorDescription);
-            setFailedState(errorDescription);
+            String timeoutErrorDescription =
+                    String.format("Initialization time has expired, error description: %s", errorDescription);
+            setFailedState(timeoutErrorDescription);
         }
         else {
             LOGGER.warn(
@@ -268,7 +272,7 @@ public class GroupLockingManager {
         }
     }
 
-    private void setInitializingState() {
+    public void setInitializingState() {
         setCloudCommunicationState(SpotinstCloudCommunicationState.INITIALIZING);
         setErrorDescription(null);
         initializingStateStartTimeStamp = new Date();
@@ -278,7 +282,8 @@ public class GroupLockingManager {
         setCloudCommunicationState(SpotinstCloudCommunicationState.READY);
     }
 
-    private void setFailedState(String description) {
+    public void setFailedState(String description) {
+        LOGGER.error("Cloud failed to communicate with the group. {}", description);
         setCloudCommunicationState(SpotinstCloudCommunicationState.FAILED);
         setErrorDescription(description);
     }
@@ -327,6 +332,10 @@ public class GroupLockingManager {
 
     //region getters & setters
     public static String getCurrentControllerIdentifier() {
+        if (currentControllerIdentifier == null) {
+            currentControllerIdentifier = generateControllerIdentifier();
+        }
+
         return currentControllerIdentifier;
     }
 

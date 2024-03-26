@@ -8,6 +8,7 @@ import hudson.plugins.spotinst.common.ConnectionMethodEnum;
 import hudson.plugins.spotinst.common.Constants;
 import hudson.plugins.spotinst.model.azure.AzureGroupInstance;
 import hudson.plugins.spotinst.model.azure.AzureScaleSetSizeEnum;
+import hudson.plugins.spotinst.model.common.BlResponse;
 import hudson.plugins.spotinst.repos.IAzureGroupRepo;
 import hudson.plugins.spotinst.repos.RepoManager;
 import hudson.plugins.spotinst.slave.SlaveInstanceDetails;
@@ -76,7 +77,22 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
     }
 
     @Override
-    public Boolean detachInstance(String instanceId) {
+    protected BlResponse<Boolean> checkIsStatefulGroup() {
+        return new BlResponse<>(Boolean.FALSE);
+    }
+
+    @Override
+    protected String getSsiId(String instanceId) {
+        return null;//TODO: implement
+    }
+
+    @Override
+    protected Boolean deallocateInstance(String statefulInstanceId) {
+        return false;//TODO: implement
+    }
+
+    @Override
+    protected Boolean detachInstance(String instanceId) {
         Boolean              retVal                 = false;
         IAzureGroupRepo      azureGroupRepo         = RepoManager.getInstance().getAzureGroupRepo();
         ApiResponse<Boolean> detachInstanceResponse = azureGroupRepo.detachInstance(groupId, instanceId, accountId);
@@ -94,12 +110,12 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
     }
 
     @Override
-    public void syncGroupInstances() {
+    public void syncGroup() {
 
     }
 
     @Override
-    protected void internalSyncGroupInstances() {
+    protected void syncGroupInstances() {
 
     }
 

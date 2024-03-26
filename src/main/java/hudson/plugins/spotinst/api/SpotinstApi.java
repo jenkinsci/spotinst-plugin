@@ -5,6 +5,10 @@ import hudson.PluginWrapper;
 import hudson.plugins.spotinst.api.infra.*;
 import hudson.plugins.spotinst.common.SpotinstContext;
 import hudson.plugins.spotinst.model.aws.*;
+import hudson.plugins.spotinst.model.aws.stateful.AwsDeallocateStatefulInstanceRequest;
+import hudson.plugins.spotinst.model.aws.stateful.AwsStatefulDeallocationConfig;
+import hudson.plugins.spotinst.model.aws.stateful.AwsStatefulInstance;
+import hudson.plugins.spotinst.model.aws.stateful.AwsStatefulInstancesResponse;
 import hudson.plugins.spotinst.model.azure.*;
 import hudson.plugins.spotinst.model.gcp.*;
 import hudson.plugins.spotinst.model.redis.DeleteGroupControllerResponse;
@@ -72,6 +76,23 @@ public class SpotinstApi {
     }
 
     //region AWS
+    public static AwsGroup getAwsGroup(String groupId, String accountId) throws ApiException {
+        AwsGroup retVal      = null;
+        Map<String, String>    headers     = buildHeaders();
+        Map<String, String>    queryParams = buildQueryParams(accountId);
+
+        RestResponse response =
+                RestClient.sendGet(SPOTINST_API_HOST + "/aws/ec2/group/" + groupId, headers, queryParams);
+
+        AwsGroupResponse instancesResponse = getCastedResponse(response, AwsGroupResponse.class);
+
+        if (instancesResponse.getResponse().getItems().size() > 0) {
+            retVal = instancesResponse.getResponse().getItems().get(0);
+        }
+
+        return retVal;
+    }
+
     public static List<AwsGroupInstance> getAwsGroupInstances(String groupId, String accountId) throws ApiException {
         List<AwsGroupInstance> retVal      = new LinkedList<>();
         Map<String, String>    headers     = buildHeaders();
@@ -81,6 +102,27 @@ public class SpotinstApi {
                 RestClient.sendGet(SPOTINST_API_HOST + "/aws/ec2/group/" + groupId + "/status", headers, queryParams);
 
         AwsGroupInstancesResponse instancesResponse = getCastedResponse(response, AwsGroupInstancesResponse.class);
+
+        if (instancesResponse.getResponse().getItems().size() > 0) {
+            retVal = instancesResponse.getResponse().getItems();
+        }
+
+        return retVal;
+    }
+
+
+    public static List<AwsStatefulInstance> getAwsStatefulInstances(String groupId,
+                                                                    String accountId) throws ApiException {
+        List<AwsStatefulInstance> retVal      = new LinkedList<>();
+        Map<String, String>       headers     = buildHeaders();
+        Map<String, String>       queryParams = buildQueryParams(accountId);
+
+        RestResponse response =
+                RestClient.sendGet(SPOTINST_API_HOST + "/aws/ec2/group/" + groupId + "/statefulInstance", headers,
+                                   queryParams);
+
+        AwsStatefulInstancesResponse instancesResponse =
+                getCastedResponse(response, AwsStatefulInstancesResponse.class);
 
         if (instancesResponse.getResponse().getItems().size() > 0) {
             retVal = instancesResponse.getResponse().getItems();
@@ -121,6 +163,32 @@ public class SpotinstApi {
 
         RestResponse response =
                 RestClient.sendPut(SPOTINST_API_HOST + "/aws/ec2/instance/detach", body, headers, queryParams);
+
+        getCastedResponse(response, ApiEmptyResponse.class);
+        Boolean retVal = true;
+
+        return retVal;
+    }
+
+
+    public static Boolean awsDeallocateInstance(String groupId, String statefulInstanceId,
+                                                String accountId) throws ApiException {
+        Map<String, String> headers     = buildHeaders();
+        Map<String, String> queryParams = buildQueryParams(accountId);
+
+        AwsDeallocateStatefulInstanceRequest request              = new AwsDeallocateStatefulInstanceRequest();
+        AwsStatefulDeallocationConfig        statefulDeallocation = new AwsStatefulDeallocationConfig();
+        statefulDeallocation.setShouldDeleteImages(true);
+        statefulDeallocation.setShouldDeleteSnapshots(true);
+        statefulDeallocation.setShouldDeleteVolumes(true);
+        statefulDeallocation.setShouldDeleteNetworkInterfaces(true);
+        request.setStatefulDeallocation(statefulDeallocation);
+
+        String body = JsonMapper.toJson(request);
+
+        RestResponse response = RestClient.sendPut(
+                SPOTINST_API_HOST + "/aws/ec2/group/" + groupId + "/statefulInstance/" + statefulInstanceId +
+                "/deallocate", body, headers, queryParams);
 
         getCastedResponse(response, ApiEmptyResponse.class);
         Boolean retVal = true;

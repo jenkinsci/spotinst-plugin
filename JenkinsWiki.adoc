@@ -40,6 +40,27 @@ termination"
 
 [SpotinstPlugin-Versionhistory]
 == Version history
+[SpotinstPlugin-Version2.2.16(Mar18,2024)]
+=== Version 2.2.16 (Mar 18, 2024)
+
+* AWS stateful groups: ignore stateful instances with no running instance
+
+[SpotinstPlugin-Version2.2.15(Sep26,2023)]
+=== Version 2.2.15 (Sep 26, 2023)
+
+* AWS stateful groups: deallocate stateful instances resources when removed from Jenkins
+* Fixed : monitor alert won't show up for Spotinst Clouds Communication Monitor when all groups are properly connected
+
+[SpotinstPlugin-Version2.2.13(Apr19,2023)]
+=== Version 2.2.13 (Apr 19, 2023)
+
+* Allow using default accountId by setting empty accountId in clouds configuration
+
+[SpotinstPlugin-Version2.2.12(Apr2,2023)]
+=== Version 2.2.12 (Apr 2, 2023)
+
+* Fixed severe UI bug: Pipeline projects' configurations weren't shown
+
 [SpotinstPlugin-Version2.2.11(Mar21,2023)]
 === Version 2.2.11 (Mar 21, 2023)
 
