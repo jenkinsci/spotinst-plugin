@@ -5,7 +5,7 @@ import hudson.model.AdministrativeMonitor;
 import hudson.plugins.spotinst.cloud.AwsSpotinstCloud;
 import hudson.slaves.Cloud;
 import jenkins.model.Jenkins;
-import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections4.CollectionUtils;
 
 import java.util.*;
 import java.util.stream.Collectors;

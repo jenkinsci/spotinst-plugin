@@ -91,6 +91,170 @@
                 <artifactId>stapler</artifactId>
                 <version>1839.ved17667b_a_eb_5</version>
             </dependency>
+            <dependency>
+                <groupId>args4j</groupId>
+                <artifactId>args4j</artifactId>
+                <version>2.37</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.code.findbugs</groupId>
+                <artifactId>jsr305</artifactId>
+                <version>3.0.2</version>
+                <optional>true</optional>
+            </dependency>
+            <dependency>
+                <groupId>com.google.errorprone</groupId>
+                <artifactId>error_prone_annotations</artifactId>
+                <version>2.26.1</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>33.1.0-jre</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava-testlib</artifactId>
+                <version>33.1.0-jre</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.inject</groupId>
+                <artifactId>guice</artifactId>
+                <version>7.0.0</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.inject</groupId>
+                <artifactId>guice</artifactId>
+                <version>7.0.0</version>
+                <classifier>classes</classifier>
+            </dependency>
+            <dependency>
+                <groupId>com.google.inject.extensions</groupId>
+                <artifactId>guice-assistedinject</artifactId>
+                <version>7.0.0</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.inject.extensions</groupId>
+                <artifactId>guice-dagger-adapter</artifactId>
+                <version>7.0.0</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.inject.extensions</groupId>
+                <artifactId>guice-grapher</artifactId>
+                <version>7.0.0</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.inject.extensions</groupId>
+                <artifactId>guice-jmx</artifactId>
+                <version>7.0.0</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.inject.extensions</groupId>
+                <artifactId>guice-jndi</artifactId>
+                <version>7.0.0</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.inject.extensions</groupId>
+                <artifactId>guice-persist</artifactId>
+                <version>7.0.0</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.inject.extensions</groupId>
+                <artifactId>guice-servlet</artifactId>
+                <version>7.0.0</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.inject.extensions</groupId>
+                <artifactId>guice-spring</artifactId>
+                <version>7.0.0</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.inject.extensions</groupId>
+                <artifactId>guice-struts2</artifactId>
+                <version>7.0.0</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.inject.extensions</groupId>
+                <artifactId>guice-testlib</artifactId>
+                <version>7.0.0</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.inject.extensions</groupId>
+                <artifactId>guice-throwingproviders</artifactId>
+                <version>7.0.0</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.truth</groupId>
+                <artifactId>truth</artifactId>
+                <version>1.4.2</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.google.truth.extensions</groupId>
+                <artifactId>truth-java8-extension</artifactId>
+                <version>1.4.2</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>commons-codec</groupId>
+                <artifactId>commons-codec</artifactId>
+                <version>1.16.1</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-collections</groupId>
+                <artifactId>commons-collections</artifactId>
+                <version>20040616</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-jelly</groupId>
+                <artifactId>commons-jelly</artifactId>
+                <version>2.16</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-jelly</groupId>
+                <artifactId>commons-jelly-tags-ant</artifactId>
+                <version>20040902.071105</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-jelly</groupId>
+                <artifactId>commons-jelly-tags-util</artifactId>
+                <version>20040902.071012</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-jelly</groupId>
+                <artifactId>commons-jelly-tags-xml</artifactId>
+                <version>20040902.072037</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-jelly</groupId>
+                <artifactId>commons-jelly-tags-fmt</artifactId>
+                <version>20040902.072321</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-jelly</groupId>
+                <artifactId>commons-jelly-tags-beanshell</artifactId>
+                <version>20040902.071629</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-jelly</groupId>
+                <artifactId>commons-jelly-tags-junit</artifactId>
+                <version>20040902.070920</version>
+            </dependency>
+            <dependency>
+                <groupId>io.jenkins</groupId>
+                <artifactId>configuration-as-code</artifactId>
+                <version>1775.v810dc950b_514</version>
+            </dependency>
+            <dependency>
+                <groupId>io.jenkins.configuration-as-code</groupId>
+                <artifactId>test-harness</artifactId>
+                <version>1775.v810dc950b_514</version>
+            </dependency>
+            <dependency>
+                <groupId>io.jenkins.plugins</groupId>
+                <artifactId>snakeyaml-api</artifactId>
+                <version>2.2-111.vc6598e30cc65</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -205,11 +369,13 @@
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-collections4</artifactId>
             <version>4.4</version>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>commons-codec</groupId>
             <artifactId>commons-codec</artifactId>
             <version>1.16.1</version>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.kohsuke.stapler</groupId>
