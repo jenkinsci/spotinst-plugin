@@ -174,6 +174,11 @@ public abstract class BaseSpotinstCloud extends Cloud {
     }
 
     @Override
+    public Collection<NodeProvisioner.PlannedNode> provision(CloudState state, int excessWorkload) {
+        return this.provision(state.getLabel(), excessWorkload);
+    }
+
+    @Override
     public boolean canProvision(Label label) {
         boolean canProvision = true;
 
@@ -187,6 +192,11 @@ public abstract class BaseSpotinstCloud extends Cloud {
         }
 
         return canProvision;
+    }
+
+    @Override
+    public boolean canProvision(CloudState state) {
+        return this.canProvision(state.getLabel());
     }
 
     @Override
