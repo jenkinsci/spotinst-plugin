@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
         <groupId>org.jenkins-ci.plugins</groupId>
         <artifactId>plugin</artifactId>
         <version>4.9</version>
-        <relativePath />
+        <relativePath/>
     </parent>
 
     <artifactId>spotinst</artifactId>
@@ -14,7 +15,6 @@
     <packaging>hpi</packaging>
 
     <name>Spotinst plugin</name>
-    <description>This plugin allows Jenkins to start agents with the Spot framework and terminate them as they become idle.</description>
     <url>https://github.com/jenkinsci/spotinst-plugin/blob/master/JenkinsWiki.adoc</url>
     <licenses>
         <license>
@@ -33,7 +33,7 @@
     </developers>
 
     <scm>
-        <connection>scm:git:git://github.com/jenkinsci/spotinst-plugin.git</connection>
+        <connection>scm:git:https://github.com/jenkinsci/spotinst-plugin.git</connection>
         <developerConnection>scm:git:git@github.com:jenkinsci/spotinst-plugin.git</developerConnection>
         <url>https://github.com/jenkinsci/spotinst-plugin</url>
         <tag>HEAD</tag>
@@ -256,6 +256,12 @@
                 <artifactId>snakeyaml-api</artifactId>
                 <version>2.2-111.vc6598e30cc65</version>
             </dependency>
+            <dependency>
+                <groupId>org.codehaus.mojo.signature</groupId>
+                <artifactId>java18</artifactId>
+                <version>1.0</version>
+                <type>signature</type>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -405,15 +411,11 @@
             </snapshots>
             <id>central</id>
             <name>Maven Repository Switchboard</name>
-            <url>http://repo1.maven.org/maven2</url>
+            <url>https://repo1.maven.org/maven2</url>
         </repository>
         <repository>
             <id>repo.jenkins-ci.org</id>
             <url>http://repo.jenkins-ci.org/public/</url>
-        </repository>
-        <repository>
-            <id>groovy.jfrog.io</id>
-            <url>http://groovy.jfrog.io/ui/native/libs-snapshot</url>
         </repository>
     </repositories>
 
@@ -427,15 +429,11 @@
             </snapshots>
             <id>central</id>
             <name>Maven Plugin Repository</name>
-            <url>http://repo1.maven.org/maven2</url>
+            <url>https://repo1.maven.org/maven2</url>
         </pluginRepository>
         <pluginRepository>
             <id>repo.jenkins-ci.org</id>
             <url>https://repo.jenkins-ci.org/public/</url>
-        </pluginRepository>
-        <pluginRepository>
-            <id>groovy.jfrog.io</id>
-            <url>https://groovy.jfrog.io/ui/native/libs-snapshot</url>
         </pluginRepository>
     </pluginRepositories>
 
@@ -492,6 +490,7 @@
                     </configuration>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>findbugs-maven-plugin</artifactId>
+                    <version>3.0.5</version>
                     <executions>
                         <execution>
                             <phase>none</phase>
@@ -503,6 +502,11 @@
 
         <plugins>
             <plugin>
+                <groupId>org.jenkins-ci.tools</groupId>
+                <artifactId>maven-hpi-plugin</artifactId>
+                <version>3.48</version>
+            </plugin>
+            <plugin>
                 <artifactId>maven-enforcer-plugin</artifactId>
                 <version>3.4.1</version>
                 <dependencies>
@@ -513,6 +517,40 @@
                         <scope>compile</scope>
                     </dependency>
                 </dependencies>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>animal-sniffer-maven-plugin</artifactId>
+                <version>1.19</version>
+                <executions>
+                    <execution>
+                        <id>check</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                        <configuration>
+                            <signature>
+                                <groupId>org.codehaus.mojo.signature</groupId>
+                                <artifactId>java18</artifactId>
+                            </signature>
+                        </configuration>
+                    </execution>
+                </executions>
+                <configuration>
+                    <skip>true</skip>
+                    <signature>
+                        <groupId>org.codehaus.mojo.signature</groupId>
+                        <artifactId>java18</artifactId>
+                        <version>1.0</version>
+                    </signature>
+                    <ignores>java.lang.invoke.MethodHandle</ignores>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-maven-plugin</artifactId>
+                <version>11.0.15</version>
             </plugin>
         </plugins>
     </build>
