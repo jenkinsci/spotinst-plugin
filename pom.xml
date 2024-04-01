@@ -207,41 +207,6 @@
                 <version>20040616</version>
             </dependency>
             <dependency>
-                <groupId>commons-jelly</groupId>
-                <artifactId>commons-jelly</artifactId>
-                <version>2.16</version>
-            </dependency>
-            <dependency>
-                <groupId>commons-jelly</groupId>
-                <artifactId>commons-jelly-tags-ant</artifactId>
-                <version>20040902.071105</version>
-            </dependency>
-            <dependency>
-                <groupId>commons-jelly</groupId>
-                <artifactId>commons-jelly-tags-util</artifactId>
-                <version>20040902.071012</version>
-            </dependency>
-            <dependency>
-                <groupId>commons-jelly</groupId>
-                <artifactId>commons-jelly-tags-xml</artifactId>
-                <version>20040902.072037</version>
-            </dependency>
-            <dependency>
-                <groupId>commons-jelly</groupId>
-                <artifactId>commons-jelly-tags-fmt</artifactId>
-                <version>20040902.072321</version>
-            </dependency>
-            <dependency>
-                <groupId>commons-jelly</groupId>
-                <artifactId>commons-jelly-tags-beanshell</artifactId>
-                <version>20040902.071629</version>
-            </dependency>
-            <dependency>
-                <groupId>commons-jelly</groupId>
-                <artifactId>commons-jelly-tags-junit</artifactId>
-                <version>20040902.070920</version>
-            </dependency>
-            <dependency>
                 <groupId>io.jenkins</groupId>
                 <artifactId>configuration-as-code</artifactId>
                 <version>1775.v810dc950b_514</version>
@@ -402,6 +367,11 @@
                 </exclusion>
             </exclusions>
         </dependency>
+        <dependency>
+            <groupId>org.twdata.maven</groupId>
+            <artifactId>mojo-executor</artifactId>
+            <version>2.4.0</version>
+        </dependency>
     </dependencies>
 
     <repositories>
@@ -472,7 +442,7 @@
                 <plugin>
                     <groupId>org.jenkins-ci.tools</groupId>
                     <artifactId>maven-hpi-plugin</artifactId>
-                    <version>2.1</version>
+                    <version>3.48</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -504,7 +474,7 @@
             <plugin>
                 <groupId>org.jenkins-ci.tools</groupId>
                 <artifactId>maven-hpi-plugin</artifactId>
-                <version>2.1</version>
+                <version>3.48</version>
             </plugin>
             <plugin>
                 <artifactId>maven-enforcer-plugin</artifactId>
