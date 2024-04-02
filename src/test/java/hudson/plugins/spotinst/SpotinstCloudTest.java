@@ -89,9 +89,10 @@ public class SpotinstCloudTest {
     @Test
     public void testAwsProvision_whenThereArePendingInsatcnesForAllExecutors_thenShouldNotSacleUp() {
         String groupId = "sig-1";
+        String accountId = "act-111";
         BaseSpotinstCloud spotinstCloud =
                 new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, SlaveUsageEnum.NORMAL, "", false, true, "", null,
-                                     null, null, null, null, null, null, null);
+                                     null, accountId, null, null, null, null, null);
         Map<String, PendingInstance> pendingInstances = new HashMap<>();
         pendingInstances.put("sir-1", buildPendingInstance("sir-1", 2));
         spotinstCloud.setPendingInstances(pendingInstances);
@@ -137,8 +138,9 @@ public class SpotinstCloudTest {
     @Test
     public void testAwCloud_whenNoConnectionMethodIsProvided_thenDefaultIsJNLP() {
         String groupId = "sig-1";
+        String accountId = "act-111";
         BaseSpotinstCloud spotCloud =
-                new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, null, "", true, null, null, null, null, null,
+                new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, null, "", true, null, null, null, null, accountId,
                                      null, null, false, null, null);
         jenkinsRule.jenkins.clouds.add(spotCloud);
         assertEquals(spotCloud.getConnectionMethod(), ConnectionMethodEnum.JNLP);
@@ -270,8 +272,9 @@ public class SpotinstCloudTest {
     @Test
     public void testAwCloud_whenUsePrivateIpIsNull_thenUsePublicIp() {
         String groupId = "sig-1";
+        String accountId = "act-111";
         BaseSpotinstCloud spotCloud =
-                new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, null, "", true, null, null, null, null, null,
+                new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, null, "", true, null, null, null, null, accountId,
                                      null, null, null, null, null);
 
         assertFalse(spotCloud.getShouldUsePrivateIp());
@@ -280,8 +283,9 @@ public class SpotinstCloudTest {
     @Test
     public void testAwCloud_whenUsePrivateIpIsTrue_thenUsePrivateIp() {
         String groupId = "sig-1";
+        String accountId = "act-111";
         BaseSpotinstCloud spotCloud =
-                new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, null, "", true, null, null, null, null, null,
+                new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, null, "", true, null, null, null, null, accountId,
                                      null, null, true, null, null);
 
         assertTrue(spotCloud.getShouldUsePrivateIp());
@@ -290,8 +294,9 @@ public class SpotinstCloudTest {
     @Test
     public void testAwCloud_whenUsePrivateIpIsFalse_thenUsePublicIp() {
         String groupId = "sig-1";
+        String accountId = "act-111";
         BaseSpotinstCloud spotCloud =
-                new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, null, "", true, null, null, null, null, null,
+                new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, null, "", true, null, null, null, null, accountId,
                                      null, null, false, null, null);
 
         assertFalse(spotCloud.getShouldUsePrivateIp());
@@ -302,8 +307,9 @@ public class SpotinstCloudTest {
     @Test
     public void testGcpProvision_whenThereArePendingInsatcnesForAllExecutors_thenShouldNotSacleUp() {
         String groupId = "sig-1";
+        String accountId = "act-111";
         BaseSpotinstCloud spotinstCloud =
-                new GcpSpotinstCloud(groupId, "", "20", "/tmp", null, "", false, true, "", null, null, null, null, null,
+                new GcpSpotinstCloud(groupId, "", "20", "/tmp", null, "", false, true, "", null, null, accountId, null, null,
                                      null, null, null);
         Map<String, PendingInstance> pendingInstances = new HashMap<>();
         pendingInstances.put("sin-1", buildPendingInstance("sin-1", 2));
@@ -351,8 +357,9 @@ public class SpotinstCloudTest {
     @Test
     public void testAzureProvision_whenThereArePendingInsatcnesForAllExecutors_thenShouldNotSacleUp() {
         String groupId = "sig-1";
+        String accountId = "act-111";
         BaseSpotinstCloud spotinstCloud =
-                new AzureSpotinstCloud(groupId, "", "20", "/tmp", null, "", false, false, "", null, null, null, null,
+                new AzureSpotinstCloud(groupId, "", "20", "/tmp", null, "", false, false, "", null, null, accountId, null,
                                        null, null, null, null);
         Map<String, PendingInstance> pendingInstances = new HashMap<>();
         pendingInstances.put("q3213", buildPendingInstance(groupId, 1));
@@ -395,8 +402,9 @@ public class SpotinstCloudTest {
     @Test
     public void testAzureV3Provision_whenThereArePendingInstancesForAllExecutors_thenShouldNotScaleUp() {
         String groupId = "sig-1";
+        String accountId = "act-111";
         BaseSpotinstCloud spotinstCloud =
-                new AzureSpotCloud(groupId, "", "20", "/tmp", null, "", false, true, "", null, null, null, null, null,
+                new AzureSpotCloud(groupId, "", "20", "/tmp", null, "", false, true, "", null, null, accountId, null, null,
                                    null, null, null);
 
         Map<String, PendingInstance> pendingInstances = new HashMap<>();
@@ -549,8 +557,9 @@ public class SpotinstCloudTest {
     @Test
     public void testAzureV3Cloud_whenNoConnectionMethodIsProvided_thenDefaultIsJNLP() {
         String groupId = "sig-1";
+        String accountId = "act-111";
         BaseSpotinstCloud spotCloud =
-                new AzureSpotCloud(groupId, "", "20", "/tmp", null, "", false, true, "", null, null, null, null, null,
+                new AzureSpotCloud(groupId, "", "20", "/tmp", null, "", false, true, "", null, null, accountId, null, null,
                                    null, null, null);
 
         jenkinsRule.jenkins.clouds.add(spotCloud);
@@ -585,9 +594,10 @@ public class SpotinstCloudTest {
     @Test
     public void testGlobalExecutorOverride_whenIsPassedAsNullInCloudConstructor_ThenDefaultIsNotEnabledAndExecutors1() {
         String                     groupId        = "sig-1";
+        String accountId = "act-111";
         SpotGlobalExecutorOverride globalOverride = null;
         BaseSpotinstCloud cloud =
-                new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, null, "", true, null, null, null, null, null,
+                new AwsSpotinstCloud(groupId, "", "20", "/tmp", null, null, "", true, null, null, null, null, accountId,
                                      ConnectionMethodEnum.SSH, getSSHConnector(), false, globalOverride, null);
 
         jenkinsRule.jenkins.clouds.add(cloud);

@@ -274,26 +274,34 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
         ApiResponse<AwsGroup> groupResponse = awsGroupRepo.getGroup(groupId, this.accountId);
 
         if (groupResponse.isRequestSucceed()) {
-            Boolean          result        = false;
-            AwsGroup         awsGroup      = groupResponse.getValue();
-            AwsGroupStrategy groupStrategy = awsGroup.getStrategy();
-
-            if (groupStrategy != null) {
-                AwsGroupPersistence groupPersistence = groupStrategy.getPersistence();
-
-                if (groupPersistence != null) {
-                    result = BooleanUtils.isTrue(groupPersistence.getShouldPersistPrivateIp()) ||
-                             BooleanUtils.isTrue(groupPersistence.getShouldPersistBlockDevices()) ||
-                             BooleanUtils.isTrue(groupPersistence.getShouldPersistRootDevice()) ||
-                             StringUtils.isNotEmpty(groupPersistence.getBlockDevicesMode());
-                }
-            }
+            Boolean result = getIsStatefulFromGroup(groupResponse.getValue());
 
             retVal = new BlResponse<>(result);
         }
         else {
             LOGGER.error(String.format("Failed to get group %s. Errors: %s", groupId, groupResponse.getErrors()));
             retVal = new BlResponse<>(false);
+        }
+
+        return retVal;
+    }
+
+    private static Boolean getIsStatefulFromGroup(AwsGroup awsGroup) {
+        boolean          retVal        = false;
+
+        if(awsGroup != null) {
+            AwsGroupStrategy groupStrategy = awsGroup.getStrategy();
+
+            if (groupStrategy != null) {
+                AwsGroupPersistence groupPersistence = groupStrategy.getPersistence();
+
+                if (groupPersistence != null) {
+                    retVal = BooleanUtils.isTrue(groupPersistence.getShouldPersistPrivateIp()) ||
+                             BooleanUtils.isTrue(groupPersistence.getShouldPersistBlockDevices()) ||
+                             BooleanUtils.isTrue(groupPersistence.getShouldPersistRootDevice()) ||
+                             StringUtils.isNotEmpty(groupPersistence.getBlockDevicesMode());
+                }
+            }
         }
 
         return retVal;
