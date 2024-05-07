@@ -6,10 +6,12 @@ import hudson.plugins.spotinst.api.infra.ApiResponse;
 import hudson.plugins.spotinst.api.infra.JsonMapper;
 import hudson.plugins.spotinst.common.ConnectionMethodEnum;
 import hudson.plugins.spotinst.common.Constants;
+import hudson.plugins.spotinst.model.azure.AzureGroup;
 import hudson.plugins.spotinst.model.azure.AzureGroupVm;
 import hudson.plugins.spotinst.model.azure.AzureScaleUpResultNewVm;
 import hudson.plugins.spotinst.model.azure.AzureVmSizeEnum;
 import hudson.plugins.spotinst.model.common.BlResponse;
+import hudson.plugins.spotinst.repos.IAzureGroupRepo;
 import hudson.plugins.spotinst.repos.IAzureVmGroupRepo;
 import hudson.plugins.spotinst.repos.RepoManager;
 import hudson.plugins.spotinst.slave.SlaveInstanceDetails;
@@ -20,6 +22,7 @@ import hudson.slaves.EnvironmentVariablesNodeProperty;
 import hudson.tools.ToolLocationNodeProperty;
 import jenkins.model.Jenkins;
 import org.apache.commons.lang.BooleanUtils;
+import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,6 +56,11 @@ public class AzureSpotCloud extends BaseSpotinstCloud {
     //endregion
 
     // region Override Methods
+    @Override
+    public String getElastigroupName(){
+        return getElastigroupName(groupId, accountId);
+    }
+
     @Override
     public DescriptorImpl getDescriptor() {
         return (DescriptorImpl) super.getDescriptor();
@@ -198,6 +206,25 @@ public class AzureSpotCloud extends BaseSpotinstCloud {
     //endregion
 
     //region Private Methods
+    private static String getElastigroupName(String groupId, String accountId){
+        String                retVal        = null;
+
+        if(StringUtils.isNotEmpty(groupId)) {
+            IAzureGroupRepo         azureGroupRepo = RepoManager.getInstance().getAzureGroupRepo();
+            ApiResponse<AzureGroup> groupResponse  = azureGroupRepo.getGroup(groupId, accountId);
+
+            if (groupResponse.isRequestSucceed() && groupResponse.getValue() != null) {
+                AzureGroup group = groupResponse.getValue();
+                retVal = group.getName();
+            }
+            else {
+                LOGGER.error("Failed to get group {}. Errors: {}", groupId, groupResponse.getErrors());
+            }
+        }
+
+        return retVal;
+    }
+
     private List<SpotinstSlave> handleNewVms(List<AzureScaleUpResultNewVm> newVms, String label, String groupId) {
         List<SpotinstSlave> retVal = new LinkedList<>();
         LOGGER.info(String.format("%s new instances launched in group %s", newVms.size(), groupId));

@@ -6,6 +6,7 @@ import hudson.plugins.spotinst.api.infra.ApiResponse;
 import hudson.plugins.spotinst.api.infra.JsonMapper;
 import hudson.plugins.spotinst.common.ConnectionMethodEnum;
 import hudson.plugins.spotinst.common.Constants;
+import hudson.plugins.spotinst.model.azure.AzureGroup;
 import hudson.plugins.spotinst.model.azure.AzureGroupInstance;
 import hudson.plugins.spotinst.model.azure.AzureScaleSetSizeEnum;
 import hudson.plugins.spotinst.model.common.BlResponse;
@@ -18,6 +19,7 @@ import hudson.slaves.ComputerConnector;
 import hudson.slaves.EnvironmentVariablesNodeProperty;
 import hudson.tools.ToolLocationNodeProperty;
 import jenkins.model.Jenkins;
+import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,6 +54,11 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
     //endregion
 
     //region Overrides
+    @Override
+    public String getElastigroupName(){
+        return getElastigroupName(groupId, accountId);
+    }
+
     @Override
     public DescriptorImpl getDescriptor() {
         return (DescriptorImpl) super.getDescriptor();
@@ -236,6 +243,25 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
     //endregion
 
     //region Private Methods
+    private static String getElastigroupName(String groupId, String accountId){
+        String                retVal        = null;
+
+        if(StringUtils.isNotEmpty(groupId)) {
+            IAzureGroupRepo         azureGroupRepo = RepoManager.getInstance().getAzureGroupRepo();
+            ApiResponse<AzureGroup> groupResponse  = azureGroupRepo.getGroup(groupId, accountId);
+
+            if (groupResponse.isRequestSucceed() && groupResponse.getValue() != null) {
+                AzureGroup group = groupResponse.getValue();
+                retVal = group.getName();
+            }
+            else {
+                LOGGER.error("Failed to get group {}. Errors: {}", groupId, groupResponse.getErrors());
+            }
+        }
+
+        return retVal;
+    }
+
     private void addNewSlaveInstances(List<AzureGroupInstance> azureGroupInstances) {
         if (azureGroupInstances.size() > 0) {
             for (AzureGroupInstance instance : azureGroupInstances) {

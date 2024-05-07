@@ -43,6 +43,8 @@ public class SpotinstCloudTest {
         IAzureVmGroupRepo azureVmGroupRepo = Mockito.mock(IAzureVmGroupRepo.class);
 
         Mockito.when(awsGroupRepo.getGroup(Mockito.anyString(), Mockito.anyString())).thenReturn(new ApiResponse<>(false));
+        Mockito.when(gcpGroupRepo.getGroup(Mockito.anyString(), Mockito.anyString())).thenReturn(new ApiResponse<>(false));
+        Mockito.when(azureGroupRepo.getGroup(Mockito.anyString(), Mockito.anyString())).thenReturn(new ApiResponse<>(false));
 
         RepoManager.getInstance().setAwsGroupRepo(awsGroupRepo);
         RepoManager.getInstance().setGcpGroupRepo(gcpGroupRepo);
