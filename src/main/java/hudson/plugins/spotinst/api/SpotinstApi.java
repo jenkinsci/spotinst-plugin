@@ -77,17 +77,17 @@ public class SpotinstApi {
 
     //region AWS
     public static AwsGroup getAwsGroup(String groupId, String accountId) throws ApiException {
-        AwsGroup retVal      = null;
-        Map<String, String>    headers     = buildHeaders();
-        Map<String, String>    queryParams = buildQueryParams(accountId);
+        AwsGroup            retVal      = null;
+        Map<String, String> headers     = buildHeaders();
+        Map<String, String> queryParams = buildQueryParams(accountId);
 
         RestResponse response =
                 RestClient.sendGet(SPOTINST_API_HOST + "/aws/ec2/group/" + groupId, headers, queryParams);
 
-        AwsGroupResponse instancesResponse = getCastedResponse(response, AwsGroupResponse.class);
+        AwsGroupResponse groupResponse = getCastedResponse(response, AwsGroupResponse.class);
 
-        if (instancesResponse.getResponse().getItems().size() > 0) {
-            retVal = instancesResponse.getResponse().getItems().get(0);
+        if (groupResponse.getResponse().getItems().size() > 0) {
+            retVal = groupResponse.getResponse().getItems().get(0);
         }
 
         return retVal;
@@ -215,6 +215,23 @@ public class SpotinstApi {
     //endregion
 
     //region GCP
+    public static GcpGroup getGcpGroup(String groupId, String accountId) throws ApiException {
+        GcpGroup            retVal      = null;
+        Map<String, String> headers     = buildHeaders();
+        Map<String, String> queryParams = buildQueryParams(accountId);
+
+        RestResponse response =
+                RestClient.sendGet(SPOTINST_API_HOST + "/gcp/gce/group/" + groupId, headers, queryParams);
+
+        GcpGroupResponse groupResponse = getCastedResponse(response, GcpGroupResponse.class);
+
+        if (groupResponse.getResponse().getItems().size() > 0) {
+            retVal = groupResponse.getResponse().getItems().get(0);
+        }
+
+        return retVal;
+    }
+
     public static GcpScaleUpResult gcpScaleUp(String groupId, int adjustment, String accountId) throws ApiException {
 
         GcpScaleUpResult    retVal  = null;
@@ -273,6 +290,23 @@ public class SpotinstApi {
     //endregion
 
     //region Azure Scale Sets
+    public static AzureGroup getAzureGroup(String groupId, String accountId) throws ApiException {
+        AzureGroup          retVal      = null;
+        Map<String, String> headers     = buildHeaders();
+        Map<String, String> queryParams = buildQueryParams(accountId);
+
+        RestResponse response =
+                RestClient.sendGet(SPOTINST_API_HOST + "/azure/compute/group/" + groupId, headers, queryParams);
+
+        AzureGroupResponse groupResponse = getCastedResponse(response, AzureGroupResponse.class);
+
+        if (groupResponse.getResponse().getItems().size() > 0) {
+            retVal = groupResponse.getResponse().getItems().get(0);
+        }
+
+        return retVal;
+    }
+
     public static List<AzureGroupInstance> getAzureGroupInstances(String groupId,
                                                                   String accountId) throws ApiException {
         List<AzureGroupInstance> retVal      = new LinkedList<>();

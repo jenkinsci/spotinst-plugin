@@ -40,6 +40,12 @@ termination"
 
 [SpotinstPlugin-Versionhistory]
 == Version history
+[SpotinstPlugin-Version2.2.18(May07,2024)]
+=== Version 2.2.18 (May 07, 2024)
+
+* Change cloud display name to full elastigroup name & groupId
+* Added cloud description to cloud's tooltip, for Jenkins versions 2.420 and above
+
 [SpotinstPlugin-Version2.2.17(Mar18,2024)]
 === Version 2.2.17 (Mar 18, 2024)
 

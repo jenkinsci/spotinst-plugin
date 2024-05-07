@@ -1,16 +1,14 @@
 package hudson.plugins.spotinst.model.aws;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonInclude;
 
 /**
  * Created by ItayShklar on 07/08/2023.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-@JsonInclude(JsonInclude.Include.NON_NULL)
 public class AwsGroup {
     //region members
-    private String                        id;
+    private String           id;
     private String           name;
     private String           description;
     private AwsGroupStrategy strategy;

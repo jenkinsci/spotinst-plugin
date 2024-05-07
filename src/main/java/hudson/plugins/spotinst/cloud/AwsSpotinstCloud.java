@@ -71,6 +71,11 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
 
     //region Overrides
     @Override
+    public String getElastigroupName(){
+        return getElastigroupName(groupId, accountId);
+    }
+
+    @Override
     List<SpotinstSlave> scaleUp(ProvisionRequest request) {
         List<SpotinstSlave> retVal = new LinkedList<>();
 
@@ -248,6 +253,25 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
     //endregion
 
     //region Private Methods
+    private static String getElastigroupName(String groupId, String accountId){
+        String retVal = null;
+
+        if(StringUtils.isNotEmpty(groupId)) {
+            IAwsGroupRepo         awsGroupRepo  = RepoManager.getInstance().getAwsGroupRepo();
+            ApiResponse<AwsGroup> groupResponse = awsGroupRepo.getGroup(groupId, accountId);
+
+            if (groupResponse.isRequestSucceed() && groupResponse.getValue() != null) {
+                AwsGroup group = groupResponse.getValue();
+                retVal = group.getName();
+            }
+            else {
+                LOGGER.error("Failed to get group {}. Errors: {}", groupId, groupResponse.getErrors());
+            }
+        }
+
+        return retVal;
+    }
+
     @Override
     protected int getOverriddenNumberOfExecutors(String instanceType) {
         Integer retVal;
