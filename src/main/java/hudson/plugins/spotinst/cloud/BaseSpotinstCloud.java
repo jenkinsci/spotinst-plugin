@@ -15,6 +15,7 @@ import hudson.tools.ToolInstallation;
 import hudson.tools.ToolLocationNodeProperty;
 import jenkins.model.Jenkins;
 import org.apache.commons.lang.BooleanUtils;
+import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,6 +38,8 @@ public abstract class BaseSpotinstCloud extends Cloud {
     //region Members
     private static final Logger LOGGER = LoggerFactory.getLogger(BaseSpotinstCloud.class);
 
+    protected String                            elastigroupName;
+    protected String                            elastigroupDisplayName;
     protected String                            accountId;
     protected String                            groupId;
     protected Map<String, PendingInstance>      pendingInstances;
@@ -63,18 +66,19 @@ public abstract class BaseSpotinstCloud extends Cloud {
     //endregion
 
     //region Constructor
-    public BaseSpotinstCloud(String groupId, String labelString, String idleTerminationMinutes, String workspaceDir,
-                             SlaveUsageEnum usage, String tunnel, Boolean shouldUseWebsocket,
+    public BaseSpotinstCloud(String groupId, String labelString, String idleTerminationMinutes,
+                             String workspaceDir, SlaveUsageEnum usage, String tunnel, Boolean shouldUseWebsocket,
                              Boolean shouldRetriggerBuilds, String vmargs,
                              EnvironmentVariablesNodeProperty environmentVariables,
                              ToolLocationNodeProperty toolLocations, String accountId,
                              ConnectionMethodEnum connectionMethod, ComputerConnector computerConnector,
                              Boolean shouldUsePrivateIp, SpotGlobalExecutorOverride globalExecutorOverride,
                              Integer pendingThreshold) {
-
         super(groupId);
         this.groupId = groupId;
         this.accountId = accountId;
+        this.elastigroupName = getElastigroupName();
+        this.elastigroupDisplayName = generateGroupDisplayName(elastigroupName, groupId);
         this.labelString = labelString;
         this.idleTerminationMinutes = idleTerminationMinutes;
         this.workspaceDir = workspaceDir;
@@ -209,6 +213,18 @@ public abstract class BaseSpotinstCloud extends Cloud {
         return this.name;
     }
 
+    //Used by Jelly for retrieve cloud's alt text (used for cloud's tooltip, since 2.420)
+    public String getIconAltText() {
+        String retVal;
+        String cloudDescriptorName = getDescriptor().getDisplayName();
+        String labelToolTip =
+                StringUtils.isEmpty(labelString) ? StringUtils.EMPTY : String.format("%nLabels: %s", labelString);
+        String idleToolTip = StringUtils.isEmpty(idleTerminationMinutes) ? StringUtils.EMPTY :
+                             String.format("%nIdle time: %s", idleTerminationMinutes);
+        retVal = String.format("%s%s%s", cloudDescriptorName, labelToolTip, idleToolTip);
+        return retVal;
+    }
+
     public Boolean isInstancePending(String id) {
         Boolean retVal = pendingInstances.containsKey(id);
         return retVal;
@@ -216,6 +232,16 @@ public abstract class BaseSpotinstCloud extends Cloud {
     //endregion
 
     //region Public Methods
+    public static String generateGroupDisplayName(String groupName, String groupId) {
+        String retVal = null;
+
+        if (StringUtils.isNotEmpty(groupName)) {
+            retVal = String.format("%s (%s)", groupName, groupId);
+        }
+
+        return retVal;
+    }
+
     public Boolean onInstanceReady(String instanceId) {
         boolean retVal = isCloudReadyForGroupCommunication();
 
@@ -703,6 +729,23 @@ public abstract class BaseSpotinstCloud extends Cloud {
     //endregion
 
     //region Getters / Setters
+    public String getName() {
+        String retVal;
+
+        if (StringUtils.isNotEmpty(elastigroupDisplayName)) {
+            retVal = elastigroupDisplayName;
+        }
+        else {
+            retVal = groupId;
+        }
+
+        return retVal;
+    }
+
+    public void setName(String elastigroupName) {
+        this.elastigroupDisplayName = elastigroupName;
+    }
+
     public String getGroupId() {
         return groupId;
     }
@@ -865,6 +908,8 @@ public abstract class BaseSpotinstCloud extends Cloud {
     //endregion
 
     //region Abstract Methods
+    abstract String getElastigroupName();
+
     abstract List<SpotinstSlave> scaleUp(ProvisionRequest request);
 
     public Boolean removeInstance(String instanceId) {
@@ -892,7 +937,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
 
     protected abstract BlResponse<Boolean> checkIsStatefulGroup();
 
-    private void initIsStatefulGroup(){
+    private void initIsStatefulGroup() {
         BlResponse<Boolean> isStatefulResponse = checkIsStatefulGroup();
 
         if (isStatefulResponse.isSucceed()) {
@@ -954,6 +999,29 @@ public abstract class BaseSpotinstCloud extends Cloud {
 
         public Integer getDefaultPendingThreshold() {
             return Constants.DEFAULT_PENDING_INSTANCE_TIMEOUT_IN_MINUTES;
+        }
+    }
+    //endregion
+
+    //region backward compatibility
+    public void handleBackwardCompatibility(){
+        initializeElastigroupDisplayName();
+    }
+
+    private void initializeElastigroupDisplayName() {
+        boolean shouldSetElastigroupNameToCloud =
+                StringUtils.isNotEmpty(groupId) && (StringUtils.isEmpty(elastigroupDisplayName));
+
+        if (shouldSetElastigroupNameToCloud) {
+            LOGGER.info("found cloud {} without elastigroup name. fetching...", this.groupId);
+            String elastigroupName = getElastigroupName();
+
+            if (elastigroupName != null) {
+                this.elastigroupName = elastigroupName;
+                this.elastigroupDisplayName = generateGroupDisplayName(elastigroupName, groupId);
+                LOGGER.info("fetched elastigroup name {} for cloud {}. generated name {}", elastigroupName, groupId,
+                            elastigroupDisplayName);
+            }
         }
     }
     //endregion
