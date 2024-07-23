@@ -52,6 +52,13 @@ class SpotLauncherHelper {
                         if (executable instanceof Actionable) {
                             actions = ((Actionable) executable).getActions();
                         }
+                        else {
+                            Queue.Executable parentExec = executable.getParentExecutable();
+
+                            if (parentExec instanceof Actionable) {
+                                actions = ((Actionable) parentExec).getActions().subList(0,2);
+                            }
+                        }
 
                         LOGGER.info(String.format("RETRIGGERING: %s - WITH ACTIONS: %s", task, actions));
 
