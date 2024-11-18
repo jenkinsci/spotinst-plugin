@@ -308,8 +308,7 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
                 if (groupPersistence != null) {
                     result = BooleanUtils.isTrue(groupPersistence.getShouldPersistPrivateIp()) ||
                              BooleanUtils.isTrue(groupPersistence.getShouldPersistBlockDevices()) ||
-                             BooleanUtils.isTrue(groupPersistence.getShouldPersistRootDevice()) ||
-                             StringUtils.isNotEmpty(groupPersistence.getBlockDevicesMode());
+                             BooleanUtils.isTrue(groupPersistence.getShouldPersistRootDevice());
                 }
             }
 

@@ -6,7 +6,7 @@ import hudson.plugins.spotinst.cloud.BaseSpotinstCloud;
 import hudson.plugins.spotinst.common.GroupLockingManager;
 import hudson.plugins.spotinst.common.SpotinstCloudCommunicationState;
 import jenkins.model.Jenkins;
-import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections4.CollectionUtils;
 
 import java.util.*;
 import java.util.stream.Collectors;
