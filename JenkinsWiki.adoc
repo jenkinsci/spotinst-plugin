@@ -40,6 +40,12 @@ termination"
 
 [SpotinstPlugin-Versionhistory]
 == Version history
+[SpotinstPlugin-Version2.2.19(Nov18,2024)]
+=== Version 2.2.19 (Nov 18, 2024)
+
+* Support Java 11 and above (Java 8 is no longer supported)
+* Fix retrigger bug when a slave terminates during Jenkins pipeline run job
+
 [SpotinstPlugin-Version2.2.18(May07,2024)]
 === Version 2.2.18 (May 07, 2024)
 

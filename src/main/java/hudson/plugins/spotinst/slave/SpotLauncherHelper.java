@@ -7,8 +7,10 @@ import org.apache.commons.lang.BooleanUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 
 /**
@@ -19,12 +21,15 @@ import java.util.List;
  */
 class SpotLauncherHelper {
     //region Members
-    private static final Logger LOGGER = LoggerFactory.getLogger(SpotLauncherHelper.class);
+    private static final Logger LOGGER                               =
+            LoggerFactory.getLogger(SpotLauncherHelper.class);
+    private static final String PREVIOUS_EXECUTION_ACTION_CLASS_NAME =
+            "org.jenkinsci.plugins.pipeline.modeldefinition.actions.ExecutionModelAction";
     //endregion
 
     //region Methods
-    static void handleDisconnect(final SlaveComputer computer, Boolean shouldRetriggerBuilds){
-
+    static void handleDisconnect(final SlaveComputer computer, Boolean shouldRetriggerBuilds) {
+        LOGGER.info("Start handling disconnect event.");
         shouldRetriggerBuilds = resolveShouldRetriggerBuilds(shouldRetriggerBuilds);
 
         // according to jenkins docs could be null in edge cases, check ComputerLauncher.afterDisconnect
@@ -44,18 +49,7 @@ class SpotLauncherHelper {
                     if (executable != null) {
                         executor.interrupt(Result.ABORTED);
 
-                        final SubTask    subTask = executable.getParent();
-                        final Queue.Task task    = subTask.getOwnerTask();
-
-                        List<Action> actions = new LinkedList<>();
-
-                        if (executable instanceof Actionable) {
-                            actions = ((Actionable) executable).getActions();
-                        }
-
-                        LOGGER.info(String.format("RETRIGGERING: %s - WITH ACTIONS: %s", task, actions));
-
-                        Queue.getInstance().schedule2(task, 10, actions);
+                        retriggerJob(executable);
                     }
                 }
 
@@ -74,6 +68,43 @@ class SpotLauncherHelper {
         else {
             LOGGER.info("Skipping executable resubmission, computer is null");
         }
+    }
+
+    private static void retriggerJob(Queue.Executable executable) {
+        final SubTask    subTask        = executable.getParent();
+        final Queue.Task task           = subTask.getOwnerTask();
+        List<Action>     actions        = null;
+        Queue.Executable currExecutable = executable;
+
+        while (currExecutable != null && currExecutable instanceof Actionable == false) {
+            currExecutable = currExecutable.getParentExecutable();
+        }
+
+        if (currExecutable != null) {
+            LOGGER.info("Getting actions from executable.");
+
+            actions = ((Actionable) currExecutable).getActions();
+
+            if (actions != null) {
+                actions = removePreviousRunningActions(actions);
+            }
+        }
+
+        if (actions == null) {
+            LOGGER.info("No actions found on executable.");
+            actions = new ArrayList<>();
+        }
+
+        LOGGER.info(String.format("RETRIGGERING: %s - WITH ACTIONS: %s", task, actions));
+        Queue.getInstance().schedule2(task, 10, actions);
+    }
+
+    private static List<Action> removePreviousRunningActions(List<Action> actions) {
+        List<Action> retVal;
+        retVal = actions.stream()
+                        .filter(action -> action.getClass().getName().equals(PREVIOUS_EXECUTION_ACTION_CLASS_NAME) ==
+                                          false).collect(Collectors.toList());
+        return retVal;
     }
 
     /**

@@ -10,7 +10,7 @@ import hudson.plugins.spotinst.common.GroupLockingManager;
 import hudson.plugins.spotinst.jobs.jobSynchronizer.JobSynchronizer;
 import hudson.slaves.Cloud;
 import jenkins.model.Jenkins;
-import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
