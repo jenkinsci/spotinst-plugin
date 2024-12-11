@@ -401,13 +401,25 @@ public abstract class BaseSpotinstCloud extends Cloud {
             Date    slaveCreatedAt         = slave.getCreatedAt();
             Boolean isOverOfflineThreshold = TimeUtils.isTimePassedInMinutes(slaveCreatedAt, offlineThreshold);
 
+            boolean isSlavePending = isInstancePending(slaveInstanceId);
+
             if (isSlaveOffline && isSlaveConnecting == false && isOverOfflineThreshold && temporarilyOffline == false &&
-                isOverIdleThreshold) {
+                isOverIdleThreshold && isSlavePending == false) {
                 LOGGER.info(String.format(
                         "Agent for instance: %s running in group: %s is offline and created more than %d minutes ago (agent creation time: %s), terminating",
                         slaveInstanceId, groupId, offlineThreshold, slaveCreatedAt));
 
                 slave.terminate();
+            }
+            else if (isSlavePending){
+                boolean isOverPendingThreshold = TimeUtils.isTimePassedInMinutes(slaveCreatedAt, pendingThreshold);
+
+                if (isOverPendingThreshold){
+                    LOGGER.info(String.format(
+                            "Agent for instance: %s running in group: %s is pending and created more than %d minutes ago (agent creation time: %s), terminating",
+                            slaveInstanceId, groupId, pendingThreshold, slaveCreatedAt));
+                    slave.terminate();
+                }
             }
         }
     }
