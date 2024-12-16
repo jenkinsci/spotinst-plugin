@@ -272,10 +272,18 @@ public abstract class BaseSpotinstCloud extends Cloud {
                             TimeUtils.isTimePassedInMinutes(pendingInstance.getCreatedAt(), pendingThreshold);
 
                     if (isPendingOverThreshold) {
-                        LOGGER.info(String.format(
-                                "Instance %s is in initiating state for over than %s minutes, ignoring this instance",
-                                pendingInstance.getId(), pendingThreshold));
                         removeInstanceFromPending(key);
+                        List<SpotinstSlave> slaves = getAllSpotinstSlaves();
+
+                        for (SpotinstSlave slave : slaves) {
+                            if (slave.getInstanceId().equals(key)) {
+                                LOGGER.info(String.format(
+                                        "Instance %s is in initiating state for over than %s minutes, terminating this instance",
+                                        pendingInstance.getId(), pendingThreshold));
+                                slave.terminate();
+                                break;
+                            }
+                        }
                     }
                 }
             }
@@ -403,23 +411,24 @@ public abstract class BaseSpotinstCloud extends Cloud {
 
             boolean isSlavePending = isInstancePending(slaveInstanceId);
 
-            if (isSlaveOffline && isSlaveConnecting == false && isOverOfflineThreshold && temporarilyOffline == false &&
-                isOverIdleThreshold && isSlavePending == false) {
+            if (isSlavePending) {
+                boolean isOverPendingThreshold = TimeUtils.isTimePassedInMinutes(slaveCreatedAt, pendingThreshold);
+
+                if (isOverPendingThreshold) {
+                    LOGGER.info(String.format(
+                            "Agent for instance: %s running in group: %s is pending and created more than %d minutes ago (agent creation time: %s), terminating",
+                            slaveInstanceId, groupId, pendingThreshold, slaveCreatedAt));
+                    removeInstanceFromPending(slaveInstanceId);
+                    slave.terminate();
+                }
+            }
+            else if (isSlaveOffline && isSlaveConnecting == false && isOverOfflineThreshold && temporarilyOffline == false &&
+                isOverIdleThreshold) {
                 LOGGER.info(String.format(
                         "Agent for instance: %s running in group: %s is offline and created more than %d minutes ago (agent creation time: %s), terminating",
                         slaveInstanceId, groupId, offlineThreshold, slaveCreatedAt));
 
                 slave.terminate();
-            }
-            else if (isSlavePending){
-                boolean isOverPendingThreshold = TimeUtils.isTimePassedInMinutes(slaveCreatedAt, pendingThreshold);
-
-                if (isOverPendingThreshold){
-                    LOGGER.info(String.format(
-                            "Agent for instance: %s running in group: %s is pending and created more than %d minutes ago (agent creation time: %s), terminating",
-                            slaveInstanceId, groupId, pendingThreshold, slaveCreatedAt));
-                    slave.terminate();
-                }
             }
         }
     }
