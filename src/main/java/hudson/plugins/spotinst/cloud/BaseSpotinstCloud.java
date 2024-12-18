@@ -283,6 +283,9 @@ public abstract class BaseSpotinstCloud extends Cloud {
                                     "Instance %s is in initiating state for over than %s minutes, terminating this instance",
                                     pendingInstance.getId(), pendingThreshold));
                         }
+                        else{
+                            LOGGER.error(String.format("Can't find the slave %s",key));
+                        }
                     }
                 }
             }
