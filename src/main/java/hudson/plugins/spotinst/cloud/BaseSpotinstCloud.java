@@ -261,9 +261,9 @@ public abstract class BaseSpotinstCloud extends Cloud {
     protected void internalMonitorInstances() {
         if (pendingInstances.size() > 0) {
             List<String> keys = new LinkedList<>(pendingInstances.keySet());
+            List<SpotinstSlave> slaves = getAllSpotinstSlaves();
 
             for (String key : keys) {
-                List<SpotinstSlave> slaves = getAllSpotinstSlaves();
                 Optional<SpotinstSlave> slaveToTerminateOptional =
                         slaves.stream().filter(slave -> slave.getInstanceId().equals(key)).findFirst();
 
