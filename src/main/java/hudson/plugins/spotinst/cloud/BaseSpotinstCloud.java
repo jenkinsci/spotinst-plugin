@@ -264,21 +264,20 @@ public abstract class BaseSpotinstCloud extends Cloud {
             List<SpotinstSlave> slaves = getAllSpotinstSlaves();
 
             for (String key : keys) {
-                Optional<SpotinstSlave> slaveToTerminateOptional =
-                        slaves.stream().filter(slave -> slave.getInstanceId().equals(key)).findFirst();
+                PendingInstance pendingInstance = pendingInstances.get(key);
 
-                if (slaveToTerminateOptional.isPresent()) {
-                    SpotinstSlave slave = slaveToTerminateOptional.get();
+                if (pendingInstance != null) {
 
-                    PendingInstance pendingInstance = pendingInstances.get(key);
+                    Integer pendingThreshold = getPendingThreshold();
+                    Boolean isPendingOverThreshold =
+                            TimeUtils.isTimePassedInMinutes(pendingInstance.getCreatedAt(), pendingThreshold);
 
-                    if (pendingInstance != null) {
+                    if (isPendingOverThreshold) {
+                        Optional<SpotinstSlave> slaveToTerminateOptional =
+                                slaves.stream().filter(slave -> slave.getInstanceId().equals(key)).findFirst();
 
-                        Integer pendingThreshold = getPendingThreshold();
-                        Boolean isPendingOverThreshold =
-                                TimeUtils.isTimePassedInMinutes(pendingInstance.getCreatedAt(), pendingThreshold);
-
-                        if (isPendingOverThreshold) {
+                        if (slaveToTerminateOptional.isPresent()) {
+                            SpotinstSlave slave = slaveToTerminateOptional.get();
                             slave.terminate();
                             LOGGER.info(String.format(
                                     "Instance %s is in initiating state for over than %s minutes, terminating this instance",
