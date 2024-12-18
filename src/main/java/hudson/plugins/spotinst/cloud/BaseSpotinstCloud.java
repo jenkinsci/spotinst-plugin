@@ -263,26 +263,26 @@ public abstract class BaseSpotinstCloud extends Cloud {
             List<String> keys = new LinkedList<>(pendingInstances.keySet());
 
             for (String key : keys) {
-                PendingInstance pendingInstance = pendingInstances.get(key);
+                List<SpotinstSlave> slaves = getAllSpotinstSlaves();
+                Optional<SpotinstSlave> slaveToTerminateOptional =
+                        slaves.stream().filter(slave -> slave.getInstanceId().equals(key)).findFirst();
 
-                if (pendingInstance != null) {
+                if (slaveToTerminateOptional.isPresent()) {
+                    SpotinstSlave slave = slaveToTerminateOptional.get();
 
-                    Integer pendingThreshold = getPendingThreshold();
-                    Boolean isPendingOverThreshold =
-                            TimeUtils.isTimePassedInMinutes(pendingInstance.getCreatedAt(), pendingThreshold);
+                    PendingInstance pendingInstance = pendingInstances.get(key);
 
-                    if (isPendingOverThreshold) {
-                        removeInstanceFromPending(key);
-                        List<SpotinstSlave> slaves = getAllSpotinstSlaves();
+                    if (pendingInstance != null) {
 
-                        for (SpotinstSlave slave : slaves) {
-                            if (slave.getInstanceId().equals(key)) {
-                                LOGGER.info(String.format(
-                                        "Instance %s is in initiating state for over than %s minutes, terminating this instance",
-                                        pendingInstance.getId(), pendingThreshold));
-                                slave.terminate();
-                                break;
-                            }
+                        Integer pendingThreshold = getPendingThreshold();
+                        Boolean isPendingOverThreshold =
+                                TimeUtils.isTimePassedInMinutes(pendingInstance.getCreatedAt(), pendingThreshold);
+
+                        if (isPendingOverThreshold) {
+                            slave.terminate();
+                            LOGGER.info(String.format(
+                                    "Instance %s is in initiating state for over than %s minutes, terminating this instance",
+                                    pendingInstance.getId(), pendingThreshold));
                         }
                     }
                 }

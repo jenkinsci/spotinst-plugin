@@ -31,6 +31,7 @@ public class SpotinstSlave extends Slave implements EphemeralNode {
     private SlaveUsageEnum    usage;
     private Date              createdAt;
     private BaseSpotinstCloud lastCloud;
+    private boolean           isTerminated = false;
     //endregion
 
     //region Constructor
@@ -173,29 +174,35 @@ public class SpotinstSlave extends Slave implements EphemeralNode {
     //endregion
 
     //region Public Methods
-    public void terminate() {
-        boolean isGroupManagedByThisController = getSpotinstCloud().isCloudReadyForGroupCommunication();
+    public synchronized void terminate() {
+        if (isTerminated == false) {
+            boolean isGroupManagedByThisController = getSpotinstCloud().isCloudReadyForGroupCommunication();
 
-        if (isGroupManagedByThisController) {
-            Boolean isTerminated = getSpotinstCloud().removeInstance(instanceId);
+            if (isGroupManagedByThisController) {
+                Boolean isInstanceRemoved = getSpotinstCloud().removeInstance(instanceId);
 
-            if (isTerminated) {
-                LOGGER.info(String.format("Instance: %s terminated successfully", getInstanceId()));
-                removeIfInPending();
-                try {
-                    Jenkins.getInstance().removeNode(this);
+                if (isInstanceRemoved) {
+                    LOGGER.info(String.format("Instance: %s terminated successfully", getInstanceId()));
+                    removeIfInPending();
+                    try {
+                        Jenkins.getInstance().removeNode(this);
+                        isTerminated = true;
+                    }
+                    catch (IOException e) {
+                        LOGGER.error(String.format("Failed to remove node %s", getInstanceId(), e));
+                    }
                 }
-                catch (IOException e) {
-                    e.printStackTrace();
+                else {
+                    LOGGER.error(String.format("Failed to terminate instance: %s", getInstanceId()));
                 }
             }
             else {
-                LOGGER.error(String.format("Failed to terminate instance: %s", getInstanceId()));
+                LOGGER.error("Skipped terminating slave instance {} - slave's group {} is not ready for communication.",
+                             getInstanceId(), getSpotinstCloud().getGroupId());
             }
         }
         else {
-            LOGGER.error("Skipped terminating slave instance {} - slave's group {} is not ready for communication.",
-                         getInstanceId(), getSpotinstCloud().getGroupId());
+            LOGGER.info(String.format("Instance: %s is already terminated. Ignore the termination.", getInstanceId()));
         }
     }
 
