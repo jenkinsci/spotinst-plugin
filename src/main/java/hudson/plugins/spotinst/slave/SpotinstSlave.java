@@ -182,10 +182,10 @@ public class SpotinstSlave extends Slave implements EphemeralNode {
                 Boolean isInstanceRemoved = getSpotinstCloud().removeInstance(instanceId);
 
                 if (isInstanceRemoved) {
-                    LOGGER.info(String.format("Instance: %s terminated successfully", getInstanceId()));
                     removeIfInPending();
                     try {
                         Jenkins.getInstance().removeNode(this);
+                        LOGGER.info(String.format("Instance: %s terminated successfully", getInstanceId()));
                         isTerminated = true;
                     }
                     catch (IOException e) {
