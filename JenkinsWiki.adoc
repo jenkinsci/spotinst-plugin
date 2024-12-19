@@ -40,6 +40,11 @@ termination"
 
 [SpotinstPlugin-Versionhistory]
 == Version history
+[SpotinstPlugin-Version2.2.20(Dec19,2024)]
+=== Version 2.2.20 (Dec 19, 2024)
+
+* Pending Timeout Behavior Change: The pending timeout field is no longer limited to a maximum of 15 minutes. Generally, the pending timeout defines the maximum time to wait for launching a new machine. The default timeout (if this field is not set) is 10 minutes. In the previous version, it was also limited to a maximum of 15 minutes. We have removed that limitation, and from this version, the pending timeout will be respected with any defined value to support cases with long startup scripts.
+
 [SpotinstPlugin-Version2.2.19(Nov18,2024)]
 === Version 2.2.19 (Nov 18, 2024)
 
