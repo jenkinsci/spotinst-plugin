@@ -261,6 +261,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
     protected void internalMonitorInstances() {
         if (pendingInstances.size() > 0) {
             List<String> keys = new LinkedList<>(pendingInstances.keySet());
+            List<SpotinstSlave> slaves = getAllSpotinstSlaves();
 
             for (String key : keys) {
                 PendingInstance pendingInstance = pendingInstances.get(key);
@@ -272,10 +273,19 @@ public abstract class BaseSpotinstCloud extends Cloud {
                             TimeUtils.isTimePassedInMinutes(pendingInstance.getCreatedAt(), pendingThreshold);
 
                     if (isPendingOverThreshold) {
-                        LOGGER.info(String.format(
-                                "Instance %s is in initiating state for over than %s minutes, ignoring this instance",
-                                pendingInstance.getId(), pendingThreshold));
-                        removeInstanceFromPending(key);
+                        Optional<SpotinstSlave> slaveToTerminateOptional =
+                                slaves.stream().filter(slave -> slave.getInstanceId().equals(key)).findFirst();
+
+                        if (slaveToTerminateOptional.isPresent()) {
+                            SpotinstSlave slave = slaveToTerminateOptional.get();
+                            slave.terminate();
+                            LOGGER.info(String.format(
+                                    "Instance %s is in initiating state for over than %s minutes, terminating this instance",
+                                    pendingInstance.getId(), pendingThreshold));
+                        }
+                        else {
+                            LOGGER.error(String.format("Can't find the slave %s",key));
+                        }
                     }
                 }
             }
@@ -401,8 +411,10 @@ public abstract class BaseSpotinstCloud extends Cloud {
             Date    slaveCreatedAt         = slave.getCreatedAt();
             Boolean isOverOfflineThreshold = TimeUtils.isTimePassedInMinutes(slaveCreatedAt, offlineThreshold);
 
+            boolean isSlavePending = isInstancePending(slaveInstanceId);
+
             if (isSlaveOffline && isSlaveConnecting == false && isOverOfflineThreshold && temporarilyOffline == false &&
-                isOverIdleThreshold) {
+                isOverIdleThreshold && isSlavePending == false) {
                 LOGGER.info(String.format(
                         "Agent for instance: %s running in group: %s is offline and created more than %d minutes ago (agent creation time: %s), terminating",
                         slaveInstanceId, groupId, offlineThreshold, slaveCreatedAt));
