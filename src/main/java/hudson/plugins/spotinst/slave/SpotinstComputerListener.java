@@ -2,7 +2,8 @@ package hudson.plugins.spotinst.slave;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Extension;
-import hudson.model.*;
+import hudson.model.Computer;
+import hudson.model.TaskListener;
 import hudson.slaves.ComputerListener;
 import hudson.slaves.OfflineCause;
 import org.slf4j.Logger;
