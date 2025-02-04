@@ -40,6 +40,10 @@ termination"
 
 [SpotinstPlugin-Versionhistory]
 == Version history
+[SpotinstPlugin-Version2.2.21(Feb4,2025)]
+=== Version 2.2.21 (Feb 4,2025)
+* Fixed the bug when the Agent Still Exists After The Instance Is Terminated
+
 [SpotinstPlugin-Version2.2.20(Dec19,2024)]
 === Version 2.2.20 (Dec 19, 2024)
 
