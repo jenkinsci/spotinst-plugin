@@ -175,6 +175,7 @@ public class SpotinstSlave extends Slave implements EphemeralNode {
 
     //region Public Methods
     public synchronized void terminate() {
+
         if (isTerminated == false) {
             boolean isGroupManagedByThisController = getSpotinstCloud().isCloudReadyForGroupCommunication();
 
@@ -245,7 +246,15 @@ public class SpotinstSlave extends Slave implements EphemeralNode {
         Boolean           isInstancePending = cloud.isInstancePending(instanceId);
 
         if (isInstancePending) {
+            LOGGER.info(
+                    "Removing the instance {} from pending list.",
+                    instanceId);
             cloud.removeInstanceFromPending(instanceId);
+        }
+        else {
+            LOGGER.info(
+                    "The instance {} is NOT pending, ignored removing from pending list.",
+                    instanceId);
         }
     }
 

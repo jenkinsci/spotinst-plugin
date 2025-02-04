@@ -85,6 +85,7 @@ public class SpotinstRetentionStrategy extends RetentionStrategy<SpotinstCompute
         }
 
         if (slave.isSlavePending()) {
+            LOGGER.info("The slave {} is pending, skipping idle check", slave.getInstanceId());
             return 1;
         }
 
