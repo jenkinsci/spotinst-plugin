@@ -31,7 +31,8 @@ public class SpotinstSlave extends Slave implements EphemeralNode {
     private SlaveUsageEnum    usage;
     private Date              createdAt;
     private BaseSpotinstCloud lastCloud;
-    private boolean           isTerminated = false;
+    private volatile boolean           isTerminated = false;
+    private transient volatile boolean terminationInProgress = false;
     //endregion
 
     //region Constructor
@@ -174,47 +175,87 @@ public class SpotinstSlave extends Slave implements EphemeralNode {
     //endregion
 
     //region Public Methods
-    public synchronized void terminate() {
+    public void terminate() {
+        synchronized (this) {
+            if (isTerminated || terminationInProgress) {
+                LOGGER.info(String.format(
+                        "Instance: %s is already terminated or termination is in progress. Ignoring.",
+                        getInstanceId()));
+                return;
+            }
+            terminationInProgress = true;
+        }
 
-        if (isTerminated == false) {
+        boolean completed = false;
+
+        try {
             boolean isGroupManagedByThisController = getSpotinstCloud().isCloudReadyForGroupCommunication();
 
-            if (isGroupManagedByThisController) {
-                Boolean isInstanceRemoved = getSpotinstCloud().removeInstance(instanceId);
-
-                if (isInstanceRemoved) {
-                    removeIfInPending();
-                    try {
-                        Jenkins.getInstance().removeNode(this);
-                        LOGGER.info(String.format("Instance: %s terminated successfully", getInstanceId()));
-                        isTerminated = true;
-                    }
-                    catch (IOException e) {
-                        LOGGER.error(String.format("Failed to remove node %s", getInstanceId(), e));
-                    }
-                }
-                else {
-                    LOGGER.error(String.format("Failed to terminate instance: %s", getInstanceId()));
-                }
+            if (!isGroupManagedByThisController) {
+                LOGGER.error(
+                        "Skipped terminating slave instance {} - slave's group {} is not ready for communication.",
+                        getInstanceId(), getSpotinstCloud().getGroupId());
+                return;
             }
-            else {
-                LOGGER.error("Skipped terminating slave instance {} - slave's group {} is not ready for communication.",
-                             getInstanceId(), getSpotinstCloud().getGroupId());
+
+            Boolean isInstanceRemoved = getSpotinstCloud().removeInstance(instanceId);
+
+            if (!Boolean.TRUE.equals(isInstanceRemoved)) {
+                LOGGER.error(String.format("Failed to terminate instance: %s", getInstanceId()));
+                return;
+            }
+
+            removeIfInPending();
+
+            try {
+                // Do not hold the SpotinstSlave monitor while Jenkins acquires its queue lock.
+                Jenkins.get().removeNode(this);
+                completed = true;
+                LOGGER.info(String.format("Instance: %s terminated successfully", getInstanceId()));
+            }
+            catch (IOException e) {
+                LOGGER.error(String.format("Failed to remove node %s", getInstanceId()), e);
             }
         }
-        else {
-            LOGGER.info(String.format("Instance: %s is already terminated. Ignore the termination.", getInstanceId()));
+        finally {
+            synchronized (this) {
+                if (completed) {
+                    isTerminated = true;
+                }
+                else {
+                    terminationInProgress = false;
+                }
+            }
         }
     }
 
     public Boolean forceTerminate() {
-        Boolean retVal                         = false;
-        boolean isGroupManagedByThisController = getSpotinstCloud().isCloudReadyForGroupCommunication();
+        synchronized (this) {
+            if (isTerminated || terminationInProgress) {
+                LOGGER.info(String.format(
+                        "Instance: %s is already terminated or termination is in progress. Ignoring force-terminate.",
+                        getInstanceId()));
+                return false;
+            }
+            terminationInProgress = true;
+        }
 
-        if (isGroupManagedByThisController) {
-            Boolean isTerminated = getSpotinstCloud().removeInstance(instanceId);
+        boolean instanceRemoved = false;
+        boolean completed = false;
 
-            if (isTerminated) {
+        try {
+            boolean isGroupManagedByThisController = getSpotinstCloud().isCloudReadyForGroupCommunication();
+
+            if (!isGroupManagedByThisController) {
+                LOGGER.error(
+                        "Skipped force terminating slave instance {} - slave's group {} is not ready for communication.",
+                        getInstanceId(), getSpotinstCloud().getGroupId());
+                return false;
+            }
+
+            instanceRemoved = Boolean.TRUE.equals(getSpotinstCloud().removeInstance(instanceId));
+
+            if (instanceRemoved) {
                 LOGGER.info(String.format("Instance: %s terminated successfully", getInstanceId()));
                 removeIfInPending();
             }
@@ -223,21 +264,27 @@ public class SpotinstSlave extends Slave implements EphemeralNode {
             }
 
             try {
+                // Do not hold the SpotinstSlave monitor while Jenkins acquires its queue lock.
                 Jenkins.get().removeNode(this);
+                completed = instanceRemoved;
             }
             catch (IOException e) {
-                e.printStackTrace();
+                LOGGER.error(String.format(
+                        "Failed to remove node %s during force termination", getInstanceId()), e);
             }
 
-            retVal = isTerminated;
+            return instanceRemoved;
         }
-        else {
-            LOGGER.error(
-                    "Skipped force terminating slave instance {} - slave's group {} is not ready for communication.",
-                    getInstanceId(), getSpotinstCloud().getGroupId());
+        finally {
+            synchronized (this) {
+                if (completed) {
+                    isTerminated = true;
+                }
+                else {
+                    terminationInProgress = false;
+                }
+            }
         }
-
-        return retVal;
     }
 
     private void removeIfInPending() {
