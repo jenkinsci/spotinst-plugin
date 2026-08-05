@@ -40,6 +40,11 @@ termination"
 
 [SpotinstPlugin-Versionhistory]
 == Version history
+
+[SpotinstPlugin-Version2.2.23(August05,2026)]
+=== Version 2.2.23 (August 05,2026)
+* Minor Bug Fixes release agent lock to prevent Jenkins controller deadlock.
+
 [SpotinstPlugin-Version2.2.22(April28,2026)]
 === Version 2.2.22 (April 28,2026)
 * Minor Bug Fixes
