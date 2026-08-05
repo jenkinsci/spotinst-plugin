@@ -20,6 +20,7 @@ import java.util.List;
  */
 public class SpotinstSlave extends Slave implements EphemeralNode {
 
+    private static final long serialVersionUID = 1L;
     //region Members
     private static final Logger LOGGER = LoggerFactory.getLogger(SpotinstSlave.class);
 
@@ -30,7 +31,7 @@ public class SpotinstSlave extends Slave implements EphemeralNode {
     private String            groupUrl;
     private SlaveUsageEnum    usage;
     private Date              createdAt;
-    private BaseSpotinstCloud lastCloud;
+    private transient BaseSpotinstCloud lastCloud;
     private volatile boolean           isTerminated = false;
     private transient volatile boolean terminationInProgress = false;
     //endregion
