@@ -16,7 +16,6 @@ import hudson.slaves.ComputerConnector;
 import hudson.slaves.EnvironmentVariablesNodeProperty;
 import hudson.tools.ToolLocationNodeProperty;
 import jenkins.model.Jenkins;
-import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,6 +26,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import hudson.Util;
 
 /**
  * Created by ohadmuchnik on 20/03/2017.
@@ -217,7 +217,7 @@ public class GcpSpotinstCloud extends BaseSpotinstCloud {
     private static String getElastigroupName(String groupId, String accountId){
         String                retVal        = null;
 
-        if(StringUtils.isNotEmpty(groupId)) {
+        if(Util.fixEmpty(groupId) != null) {
             IGcpGroupRepo         gcpGroupRepo  = RepoManager.getInstance().getGcpGroupRepo();
             ApiResponse<GcpGroup> groupResponse = gcpGroupRepo.getGroup(groupId, accountId);
 

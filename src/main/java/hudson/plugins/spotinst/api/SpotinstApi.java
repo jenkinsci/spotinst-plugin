@@ -18,11 +18,11 @@ import hudson.plugins.spotinst.model.redis.LockGroupControllerResponse;
 import jenkins.model.Jenkins;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.http.HttpStatus;
-import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import hudson.Util;
 
 
 public class SpotinstApi {
@@ -52,7 +52,7 @@ public class SpotinstApi {
 
         Map<String, String> queryParams = new HashMap<>();
 
-        if (StringUtils.isNotEmpty(accountId)) {
+        if (Util.fixEmpty(accountId) != null) {
             queryParams.put(QUERY_PARAM_ACCOUNT_ID, accountId);
         }
 
@@ -536,11 +536,11 @@ public class SpotinstApi {
         Map<String, String> queryParams    = new HashMap<>();
         String              accountIdParam = accountId;
 
-        if (StringUtils.isEmpty(accountIdParam)) {
+        if (Util.fixEmpty(accountIdParam) == null) {
             accountIdParam = SpotinstContext.getInstance().getAccountId();
         }
 
-        if (StringUtils.isNotEmpty(accountIdParam)) {
+        if (Util.fixEmpty(accountIdParam) != null) {
             queryParams.put(QUERY_PARAM_ACCOUNT_ID, accountIdParam);
         }
 

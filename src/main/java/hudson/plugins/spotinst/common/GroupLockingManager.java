@@ -1,16 +1,17 @@
 package hudson.plugins.spotinst.common;
 
+import java.security.SecureRandom;
 import hudson.plugins.spotinst.api.infra.ApiResponse;
 import hudson.plugins.spotinst.repos.RepoManager;
 import jenkins.model.JenkinsLocationConfiguration;
-import org.apache.commons.lang.RandomStringUtils;
-import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Date;
+import hudson.Util;
+import java.util.Objects;
 
 public class GroupLockingManager {
     //region constants
@@ -65,7 +66,7 @@ public class GroupLockingManager {
 
                 if (isGroupAlreadyHasAnyController) {
                     boolean isGroupBelongToCurrentController =
-                            StringUtils.equals(getCurrentControllerIdentifier(), lockGroupControllerValue);
+                            Objects.equals(getCurrentControllerIdentifier(), lockGroupControllerValue);
 
                     if (isGroupBelongToCurrentController) {
                         SetGroupLockExpiry();
@@ -114,7 +115,7 @@ public class GroupLockingManager {
     }
 
     public boolean isActive() {
-        boolean retVal = StringUtils.isNotEmpty(getGroupId());
+        boolean retVal = Util.fixEmpty(getGroupId()) != null;
 
         return retVal;
     }
@@ -306,7 +307,7 @@ public class GroupLockingManager {
             LOGGER.info("Generated Jenkins controller identifier: {}", retVal);
         }
         catch (Exception exception) {
-            retVal = RandomStringUtils.randomAlphanumeric(10);
+            retVal = randomAlphanumeric(10);
             LOGGER.warn(
                     "Exception while getting Controller identifier by host name and port. generating random identifier '{}' as fallback instead. Exception {}",
                     retVal, exception);
@@ -363,4 +364,17 @@ public class GroupLockingManager {
         this.errorDescription = errorDescription;
     }
     //endregion
+
+    private static final String ALPHANUMERIC =
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    private static final SecureRandom RANDOM = new SecureRandom();
+
+    private static String randomAlphanumeric(int length) {
+        StringBuilder builder = new StringBuilder(length);
+        for (int i = 0; i < length; i++) {
+            builder.append(ALPHANUMERIC.charAt(RANDOM.nextInt(ALPHANUMERIC.length())));
+        }
+        return builder.toString();
+    }
+
 }

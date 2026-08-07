@@ -19,7 +19,6 @@ import hudson.slaves.ComputerConnector;
 import hudson.slaves.EnvironmentVariablesNodeProperty;
 import hudson.tools.ToolLocationNodeProperty;
 import jenkins.model.Jenkins;
-import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,6 +26,7 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.*;
+import hudson.Util;
 
 /**
  * Created by ohadmuchnik on 19/06/2017.
@@ -246,7 +246,7 @@ public class AzureSpotinstCloud extends BaseSpotinstCloud {
     private static String getElastigroupName(String groupId, String accountId){
         String                retVal        = null;
 
-        if(StringUtils.isNotEmpty(groupId)) {
+        if(Util.fixEmpty(groupId) != null) {
             IAzureGroupRepo         azureGroupRepo = RepoManager.getInstance().getAzureGroupRepo();
             ApiResponse<AzureGroup> groupResponse  = azureGroupRepo.getGroup(groupId, accountId);
 
