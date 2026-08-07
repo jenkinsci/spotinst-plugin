@@ -3,7 +3,6 @@ package hudson.plugins.spotinst.slave;
 import hudson.model.*;
 import hudson.model.queue.SubTask;
 import hudson.slaves.SlaveComputer;
-import org.apache.commons.lang.BooleanUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,7 +37,7 @@ class SpotLauncherHelper {
             SpotinstSlave    slave            = spotinstComputer.getNode();
 
 
-            if (shouldRetriggerBuilds && (slave == null || BooleanUtils.isFalse(slave.isSlavePending()))) {
+            if (shouldRetriggerBuilds && (slave == null || Boolean.FALSE.equals(slave.isSlavePending()))) {
                 LOGGER.info(String.format("Start retriggering executors for %s", spotinstComputer.getDisplayName()));
 
                 final List<Executor> executors = spotinstComputer.getExecutors();
@@ -55,7 +54,7 @@ class SpotLauncherHelper {
 
                 LOGGER.info(String.format("Finished retriggering executors for %s", spotinstComputer.getDisplayName()));
             }
-            else if (BooleanUtils.isFalse(shouldRetriggerBuilds)) {
+            else if (Boolean.FALSE.equals(shouldRetriggerBuilds)) {
                 LOGGER.info(String.format("Retrigger Build disabled for %s, not retriggering executors",
                                           spotinstComputer.getDisplayName()));
             }

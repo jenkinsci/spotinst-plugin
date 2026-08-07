@@ -21,8 +21,6 @@ import hudson.slaves.ComputerConnector;
 import hudson.slaves.EnvironmentVariablesNodeProperty;
 import hudson.tools.ToolLocationNodeProperty;
 import jenkins.model.Jenkins;
-import org.apache.commons.lang.BooleanUtils;
-import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,6 +29,7 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
+import hudson.Util;
 
 /**
  * Created by Shibel Karmi Mansour on 08/12/2020.
@@ -209,7 +208,7 @@ public class AzureSpotCloud extends BaseSpotinstCloud {
     private static String getElastigroupName(String groupId, String accountId){
         String                retVal        = null;
 
-        if(StringUtils.isNotEmpty(groupId)) {
+        if(Util.fixEmpty(groupId) != null) {
             IAzureGroupRepo         azureGroupRepo = RepoManager.getInstance().getAzureGroupRepo();
             ApiResponse<AzureGroup> groupResponse  = azureGroupRepo.getGroup(groupId, accountId);
 
@@ -258,7 +257,7 @@ public class AzureSpotCloud extends BaseSpotinstCloud {
                 Boolean slaveIdNotNull  = slaveInstanceId != null;
                 Boolean slaveExistsInEg = elastigroupVmIds.contains(slaveInstanceId);
 
-                if (slaveIdNotNull && BooleanUtils.isFalse(slaveExistsInEg)) {
+                if (slaveIdNotNull && Boolean.FALSE.equals(slaveExistsInEg)) {
                     LOGGER.info(String.format("Slave for instance: %s is no longer running in group: %s, removing it",
                                               slaveInstanceId, groupId));
                     try {
@@ -284,7 +283,7 @@ public class AzureSpotCloud extends BaseSpotinstCloud {
         if (azureGroupVms.size() > 0) {
 
             for (AzureGroupVm vm : azureGroupVms) {
-                Boolean doesSlaveNotExist = BooleanUtils.isFalse(isSlaveExistForInstance(vm));
+                Boolean doesSlaveNotExist = Boolean.FALSE.equals(isSlaveExistForInstance(vm));
 
                 if (doesSlaveNotExist) {
                     LOGGER.info(String.format("Instance: %s of group: %s doesn't have slave , adding new one",

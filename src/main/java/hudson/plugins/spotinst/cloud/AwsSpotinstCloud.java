@@ -17,8 +17,6 @@ import hudson.slaves.ComputerConnector;
 import hudson.slaves.EnvironmentVariablesNodeProperty;
 import hudson.tools.ToolLocationNodeProperty;
 import jenkins.model.Jenkins;
-import org.apache.commons.lang.BooleanUtils;
-import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,6 +25,8 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
+import hudson.Util;
+import java.util.Objects;
 
 /**
  * Created by ohadmuchnik on 20/03/2017.
@@ -256,7 +256,7 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
     private static String getElastigroupName(String groupId, String accountId){
         String retVal = null;
 
-        if(StringUtils.isNotEmpty(groupId)) {
+        if(Util.fixEmpty(groupId) != null) {
             IAwsGroupRepo         awsGroupRepo  = RepoManager.getInstance().getAwsGroupRepo();
             ApiResponse<AwsGroup> groupResponse = awsGroupRepo.getGroup(groupId, accountId);
 
@@ -306,9 +306,9 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
                 AwsGroupPersistence groupPersistence = groupStrategy.getPersistence();
 
                 if (groupPersistence != null) {
-                    result = BooleanUtils.isTrue(groupPersistence.getShouldPersistPrivateIp()) ||
-                             BooleanUtils.isTrue(groupPersistence.getShouldPersistBlockDevices()) ||
-                             BooleanUtils.isTrue(groupPersistence.getShouldPersistRootDevice());
+                    result = Boolean.TRUE.equals(groupPersistence.getShouldPersistPrivateIp()) ||
+                             Boolean.TRUE.equals(groupPersistence.getShouldPersistBlockDevices()) ||
+                             Boolean.TRUE.equals(groupPersistence.getShouldPersistRootDevice());
                 }
             }
 
@@ -329,8 +329,8 @@ public class AwsSpotinstCloud extends BaseSpotinstCloud {
 
         if (statefulInstancesResponse.isRequestSucceed()) {
             List<AwsStatefulInstance> statefulInstances = statefulInstancesResponse.getValue();
-            this.ssiByInstanceId = statefulInstances.stream().filter(statefulInstance -> StringUtils.isNotEmpty(
-                    statefulInstance.getInstanceId())).collect(
+            this.ssiByInstanceId = statefulInstances.stream().filter(statefulInstance -> Util.fixEmpty(
+                    statefulInstance.getInstanceId()) != null).collect(
                     Collectors.toMap(AwsStatefulInstance::getInstanceId, statefulInstance -> statefulInstance));
             LOGGER.info("found {} running stateful instances for group {}", ssiByInstanceId.size(), groupId);
         }

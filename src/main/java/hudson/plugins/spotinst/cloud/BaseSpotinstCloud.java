@@ -14,8 +14,6 @@ import hudson.tools.ToolDescriptor;
 import hudson.tools.ToolInstallation;
 import hudson.tools.ToolLocationNodeProperty;
 import jenkins.model.Jenkins;
-import org.apache.commons.lang.BooleanUtils;
-import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,6 +22,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import hudson.Util;
 
 /**
  * Created by ohadmuchnik on 25/05/2016.
@@ -92,7 +91,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
             this.usage = SlaveUsageEnum.NORMAL;
         }
 
-        this.shouldRetriggerBuilds = shouldRetriggerBuilds == null || BooleanUtils.isTrue(shouldRetriggerBuilds);
+        this.shouldRetriggerBuilds = shouldRetriggerBuilds == null || Boolean.TRUE.equals(shouldRetriggerBuilds);
         this.tunnel = tunnel;
         this.shouldUseWebsocket = shouldUseWebsocket;
         this.vmargs = vmargs;
@@ -208,8 +207,8 @@ public abstract class BaseSpotinstCloud extends Cloud {
         String retVal;
         String cloudDescriptorName = getDescriptor().getDisplayName();
         String labelToolTip =
-                StringUtils.isEmpty(labelString) ? StringUtils.EMPTY : String.format("%nLabels: %s", labelString);
-        String idleToolTip = StringUtils.isEmpty(idleTerminationMinutes) ? StringUtils.EMPTY :
+                Util.fixEmpty(labelString) == null ? "" : String.format("%nLabels: %s", labelString);
+        String idleToolTip = Util.fixEmpty(idleTerminationMinutes) == null ? "" :
                              String.format("%nIdle time: %s", idleTerminationMinutes);
         retVal = String.format("%s%s%s", cloudDescriptorName, labelToolTip, idleToolTip);
         return retVal;
@@ -225,7 +224,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
     public static String generateGroupDisplayName(String groupName, String groupId) {
         String retVal = null;
 
-        if (StringUtils.isNotEmpty(groupName)) {
+        if (Util.fixEmpty(groupName) != null) {
             retVal = String.format("%s (%s)", groupName, groupId);
         }
 
@@ -736,7 +735,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
     public String getName() {
         String retVal;
 
-        if (StringUtils.isNotEmpty(elastigroupDisplayName)) {
+        if (Util.fixEmpty(elastigroupDisplayName) != null) {
             retVal = elastigroupDisplayName;
         }
         else {
@@ -1014,7 +1013,7 @@ public abstract class BaseSpotinstCloud extends Cloud {
 
     private void initializeElastigroupDisplayName() {
         boolean shouldSetElastigroupNameToCloud =
-                StringUtils.isNotEmpty(groupId) && (StringUtils.isEmpty(elastigroupDisplayName));
+                Util.fixEmpty(groupId) != null && (Util.fixEmpty(elastigroupDisplayName) == null);
 
         if (shouldSetElastigroupNameToCloud) {
             LOGGER.info("found cloud {} without elastigroup name. fetching...", this.groupId);

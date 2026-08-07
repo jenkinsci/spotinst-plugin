@@ -1,6 +1,7 @@
 package hudson.plugins.spotinst.common;
 
-import org.apache.commons.lang.StringUtils;
+import java.util.Objects;
+
 
 public class GroupLockKey {
     //region members
@@ -35,8 +36,8 @@ public class GroupLockKey {
         }
         else if (other != null) {
             if (other instanceof GroupLockKey) {
-                boolean isEqualGroupIds   = StringUtils.equals(getGroupId(), ((GroupLockKey) other).getGroupId());
-                boolean isEqualAccountIds = StringUtils.equals(getAccountId(), ((GroupLockKey) other).getAccountId());
+                boolean isEqualGroupIds   = Objects.equals(getGroupId(), ((GroupLockKey) other).getGroupId());
+                boolean isEqualAccountIds = Objects.equals(getAccountId(), ((GroupLockKey) other).getAccountId());
                 retVal = isEqualGroupIds && isEqualAccountIds;
             }
         }
