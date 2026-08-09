@@ -1,7 +1,10 @@
 package hudson.plugins.spotinst.slave;
 
 import hudson.Extension;
-import hudson.model.*;
+import hudson.model.Computer;
+import hudson.model.Descriptor;
+import hudson.model.Node;
+import hudson.model.Slave;
 import hudson.plugins.spotinst.cloud.BaseSpotinstCloud;
 import hudson.slaves.*;
 import jenkins.model.Jenkins;

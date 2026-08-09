@@ -1,15 +1,10 @@
 package hudson.plugins.spotinst.slave;
 
-import hudson.model.*;
-import hudson.model.queue.SubTask;
+import hudson.model.TaskListener;
 import hudson.slaves.JNLPLauncher;
 import hudson.slaves.SlaveComputer;
-import org.apache.commons.lang.BooleanUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.LinkedList;
-import java.util.List;
 
 /**
  * Created by ohadmuchnik on 25/05/2016.

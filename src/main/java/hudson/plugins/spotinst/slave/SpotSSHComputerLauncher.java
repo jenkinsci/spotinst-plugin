@@ -1,6 +1,6 @@
 package hudson.plugins.spotinst.slave;
 
-import hudson.model.*;
+import hudson.model.TaskListener;
 import hudson.slaves.ComputerLauncher;
 import hudson.slaves.DelegatingComputerLauncher;
 import hudson.slaves.SlaveComputer;
