@@ -1,6 +1,5 @@
 package hudson.plugins.spotinst.common;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.plugins.spotinst.model.aws.AwsInstanceType;
 
 import java.util.*;
@@ -53,12 +52,10 @@ public class SpotinstContext {
         this.awsInstanceTypes = awsInstanceTypes;
     }
 
-    @SuppressFBWarnings(value = {"EI_EXPOSE_REP"})
     public Date getAwsInstanceTypesLastUpdate() {
         return awsInstanceTypesLastUpdate;
     }
 
-    @SuppressFBWarnings(value = {"EI_EXPOSE_REP"})
     public void setAwsInstanceTypesLastUpdate(Date awsInstanceTypesLastUpdate) {
         this.awsInstanceTypesLastUpdate = awsInstanceTypesLastUpdate;
     }
