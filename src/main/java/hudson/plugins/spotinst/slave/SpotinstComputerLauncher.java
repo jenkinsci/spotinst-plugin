@@ -4,7 +4,6 @@ import hudson.model.*;
 import hudson.model.queue.SubTask;
 import hudson.slaves.JNLPLauncher;
 import hudson.slaves.SlaveComputer;
-import org.apache.commons.lang.BooleanUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

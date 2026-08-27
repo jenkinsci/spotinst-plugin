@@ -10,7 +10,6 @@ import java.util.Collections;
 import static com.cloudbees.plugins.credentials.CredentialsMatchers.firstOrNull;
 import static com.cloudbees.plugins.credentials.CredentialsMatchers.withId;
 import static com.cloudbees.plugins.credentials.CredentialsProvider.lookupCredentials;
-import static org.apache.commons.lang.StringUtils.trimToEmpty;
 
 /**
  * Created by Liron Arad on 07/10/2021.
@@ -30,7 +29,7 @@ public class CredentialsStoreReader extends AbstractDescribableImpl<CredentialsS
 
         retVal =  firstOrNull(
                 lookupCredentials(SpotTokenCredentials.class, Jenkins.get(), ACL.SYSTEM, Collections.emptyList()),
-                withId(trimToEmpty(credentialsId)));
+                withId(credentialsId == null ? "" : credentialsId.trim()));
 
         return retVal;
     }
