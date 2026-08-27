@@ -44,8 +44,7 @@
         <jenkins.version>${jenkins.baseline}.3</jenkins.version>
         <banObsoleteDependencyOverrides.skip>false</banObsoleteDependencyOverrides.skip>
         <ban-commons-lang-2.skip>false</ban-commons-lang-2.skip>
-        <!-- TODO -->
-        <ban-junit4-imports.skip>true</ban-junit4-imports.skip>
+        <ban-junit4-imports.skip>false</ban-junit4-imports.skip>
         <java.level>17</java.level>
         <java.version>17</java.version>
         <maven.compiler.source>17</maven.compiler.source>

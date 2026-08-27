@@ -18,26 +18,27 @@ import hudson.plugins.spotinst.repos.*;
 import hudson.plugins.spotinst.slave.*;
 import hudson.plugins.sshslaves.SSHConnector;
 import jenkins.model.Jenkins;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 import java.util.*;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Created by ohadmuchnik on 19/03/2017.
  */
+@WithJenkins
 public class SpotinstCloudTest {
-    @Rule
-    public JenkinsRule jenkinsRule = new JenkinsRule();
+    private JenkinsRule jenkinsRule;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    public void setUp(JenkinsRule rule) {
+        jenkinsRule = rule;
         IAwsGroupRepo     awsGroupRepo     = Mockito.mock(IAwsGroupRepo.class);
         IGcpGroupRepo     gcpGroupRepo     = Mockito.mock(IGcpGroupRepo.class);
         IAzureGroupRepo   azureGroupRepo   = Mockito.mock(IAzureGroupRepo.class);
