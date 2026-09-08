@@ -45,7 +45,7 @@ public class SpotinstSyncGroupsController extends AsyncPeriodicWork {
 
     //region Public Methods
     @Initializer(after = InitMilestone.JOB_CONFIG_ADAPTED)
-    public static void init() {
+    public static void initialize() {
         initFailedGroupLockingManagers();
         new SpotinstSyncGroupsController().execute(null);
 
