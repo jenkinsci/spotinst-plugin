@@ -43,7 +43,7 @@ termination"
 
 [SpotinstPlugin-Version2.2.25(Sep08,2026)]
 === Version 2.2.25 (Sep 08,2026)
-* *** Note: this version requires Jenkins core 2.541.3 or later and Java 17 on both the controller and agents. If you are not yet ready to upgrade, we recommend remaining on plugin version 2.2.24 ***
+* ** Note: this version requires Jenkins core 2.541.3 or later and Java 17 on both the controller and agents. If you are not yet ready to upgrade, we recommend remaining on plugin version 2.2.24 **
 * Remove commons-lang-2 dependency to fix compatibility with newer Jenkins core versions
 * Upgrade Maven parent POM and Java compiler level (11 → 17)
 * Migrate unit tests from JUnit 4 to JUnit Jupiter
