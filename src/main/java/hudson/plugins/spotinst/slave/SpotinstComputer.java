@@ -88,15 +88,13 @@ public class SpotinstComputer extends SlaveComputer {
     public HttpResponse doDoDelete() throws IOException {
         checkPermission(DELETE);
 
-        try {
-            if (getNode() != null) {
-                getNode().forceTerminate();
-            }
+        SpotinstSlave node = getNode();
 
-            return new HttpRedirect("..");
-        } catch (NullPointerException ex) {
-            return HttpResponses.error(500, ex);
+        if (node != null) {
+            node.forceTerminate();
         }
+
+        return new HttpRedirect("..");
     }
 
 

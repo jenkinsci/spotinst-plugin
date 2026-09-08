@@ -3,14 +3,14 @@ package hudson.plugins.spotinst.common;
 import hudson.plugins.spotinst.api.infra.ApiResponse;
 import hudson.plugins.spotinst.repos.RepoManager;
 import jenkins.model.JenkinsLocationConfiguration;
-import org.apache.commons.lang.RandomStringUtils;
-import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Date;
+import java.util.Objects;
+import java.util.UUID;
 
 public class GroupLockingManager {
     //region constants
@@ -65,7 +65,7 @@ public class GroupLockingManager {
 
                 if (isGroupAlreadyHasAnyController) {
                     boolean isGroupBelongToCurrentController =
-                            StringUtils.equals(getCurrentControllerIdentifier(), lockGroupControllerValue);
+                            Objects.equals(getCurrentControllerIdentifier(), lockGroupControllerValue);
 
                     if (isGroupBelongToCurrentController) {
                         SetGroupLockExpiry();
@@ -114,7 +114,7 @@ public class GroupLockingManager {
     }
 
     public boolean isActive() {
-        boolean retVal = StringUtils.isNotEmpty(getGroupId());
+        boolean retVal = getGroupId() != null && !getGroupId().isEmpty();
 
         return retVal;
     }
@@ -306,7 +306,7 @@ public class GroupLockingManager {
             LOGGER.info("Generated Jenkins controller identifier: {}", retVal);
         }
         catch (Exception exception) {
-            retVal = RandomStringUtils.randomAlphanumeric(10);
+            retVal = UUID.randomUUID().toString().replace("-", "").substring(0, 10);
             LOGGER.warn(
                     "Exception while getting Controller identifier by host name and port. generating random identifier '{}' as fallback instead. Exception {}",
                     retVal, exception);
